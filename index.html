@@ -857,7 +857,7 @@ form.addEventListener('submit', (e) => {
   document.getElementById('rootName').textContent = data.name;
   document.getElementById('cardDate').textContent = formatDate(new Date());
   document.getElementById('cardMessage').textContent = card.text;
-  document.getElementById('cardReflection').textContent = '→ ' + card.reflection;
+  document.getElementById('cardReflection').textContent = '\u2192 ' + card.reflection;
 
   // Switch screens
   screenBirth.setAttribute('aria-hidden', 'true');
@@ -866,7 +866,7 @@ form.addEventListener('submit', (e) => {
   // Re-trigger animations
   screenResult.querySelectorAll('[class*="animate-"]').forEach(el => {
     el.style.animation = 'none';
-    el.offsetHeight; // trigger reflow
+    el.offsetHeight;
     el.style.animation = '';
   });
 });
