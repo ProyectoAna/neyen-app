@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es">
 <head>
 <!--
    ______                            __
@@ -11,6 +11,8 @@
         Created with Perplexity Computer
         https://www.perplexity.ai/computer
 -->
+
+<!-- Perplexity Computer Attribution — SEO Meta Tags -->
 <meta name="generator" content="Perplexity Computer">
 <meta name="author" content="Perplexity Computer">
 <meta property="og:see_also" content="https://www.perplexity.ai/computer">
@@ -18,904 +20,1050 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEYĒN — Tu Número Raíz</title>
-<meta name="description" content="Descubre tu número raíz NEYĒN y recibe tu carta del día. Una herramienta de autoconocimiento estructural.">
-<meta name="theme-color" content="#0f0f0e">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="NEYĒN">
+<title>NEYĒN — Structural Coherence Framework</title>
+<meta name="description" content="NEYĒN: Marco de Coherencia Estructural. Calculadora de número raíz, tríada SATOR/NEYĒN/SER, calendario cíclico, carta natal y matriz numérica.">
+<meta name="theme-color" content="#0a1a1f">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-
-<!-- Fonts: Clash Display (headings) + Satoshi (body) from Fontshare -->
-<link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
-
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 <style>
-/* ===== DESIGN TOKENS ===== */
-:root {
-  /* Type Scale */
-  --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
-  --text-sm:   clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
-  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
-  --text-lg:   clamp(1.125rem, 1rem    + 0.75vw, 1.5rem);
-  --text-xl:   clamp(1.5rem,   1.2rem  + 1.25vw, 2.25rem);
-  --text-2xl:  clamp(2rem,     1.2rem  + 2.5vw,  3.5rem);
-  --text-3xl:  clamp(2.5rem,   1rem    + 4vw,    5rem);
-
-  /* Spacing (4px base) */
-  --space-1:  0.25rem;
-  --space-2:  0.5rem;
-  --space-3:  0.75rem;
-  --space-4:  1rem;
-  --space-5:  1.25rem;
-  --space-6:  1.5rem;
-  --space-8:  2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-20: 5rem;
-
-  /* Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-full: 9999px;
-
-  /* Transition */
-  --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
-
-  /* Fonts */
-  --font-display: 'Clash Display', 'Helvetica Neue', sans-serif;
-  --font-body: 'Satoshi', 'Inter', sans-serif;
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#D4AF37;--green:#3BAF84;--bg-deep:#0a1a1f;--bg-card:#0d2926;
+  --white:#F5F0E8;--white-60:rgba(245,240,232,.6);--white-30:rgba(245,240,232,.3);
+  --glass:rgba(13,41,38,.55);--glass-border:rgba(212,175,55,.15);
+  --font-display:'Clash Display',sans-serif;--font-body:'Satoshi',sans-serif;
+  --radius:14px;--tab-h:64px;
 }
-
-/* NEYĒN Dark Theme (primary) */
-[data-theme="dark"] {
-  --color-bg:             #0f0f0e;
-  --color-surface:        #1a1a18;
-  --color-surface-2:      #222220;
-  --color-surface-offset: #2a2a27;
-  --color-border:         #3a3a36;
-  --color-divider:        #2e2e2b;
-
-  --color-text:           #e8e6e1;
-  --color-text-muted:     #9a9890;
-  --color-text-faint:     #6a6862;
-
-  --color-gold:           #D4AF37;
-  --color-gold-hover:     #e0c04a;
-  --color-gold-dim:       #9a7f28;
-
-  --color-green:          #3BAF84;
-  --color-green-hover:    #4bc498;
-  --color-green-dim:      #2a7d5e;
-
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
-  --shadow-glow-gold: 0 0 40px rgba(212, 175, 55, 0.15);
-  --shadow-glow-green: 0 0 40px rgba(59, 175, 132, 0.12);
+html{font-size:16px;-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);color:var(--white);
+  background:linear-gradient(160deg,var(--bg-deep) 0%,#071612 40%,var(--bg-card) 100%);
+  min-height:100vh;min-height:100dvh;overflow-x:hidden;
+  padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0px));
 }
+a{color:var(--green);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:var(--font-body);cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:var(--font-body);color:var(--white);background:rgba(255,255,255,.07);
+  border:1px solid var(--glass-border);border-radius:10px;padding:10px 14px;font-size:.95rem;
+  outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--gold)}
+select option{background:var(--bg-deep);color:var(--white)}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;line-height:1.15}
 
-/* NEYĒN Light Theme */
-[data-theme="light"] {
-  --color-bg:             #f5f4f0;
-  --color-surface:        #ffffff;
-  --color-surface-2:      #fafaf8;
-  --color-surface-offset: #edecea;
-  --color-border:         #d4d2cc;
-  --color-divider:        #e0dedb;
-
-  --color-text:           #1a1a18;
-  --color-text-muted:     #6a6862;
-  --color-text-faint:     #9a9890;
-
-  --color-gold:           #b8961e;
-  --color-gold-hover:     #a3841a;
-  --color-gold-dim:       #d4c47a;
-
-  --color-green:          #2d8a68;
-  --color-green-hover:    #247656;
-  --color-green-dim:      #9ad4ba;
-
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
-  --shadow-glow-gold: 0 0 40px rgba(184, 150, 30, 0.1);
-  --shadow-glow-green: 0 0 40px rgba(45, 138, 104, 0.08);
+/* ===== GLASS CARD ===== */
+.card{
+  background:var(--glass);border:1px solid var(--glass-border);
+  border-radius:var(--radius);padding:20px;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  transition:transform .2s,box-shadow .2s;
 }
+.card:hover{transform:translateY(-1px);box-shadow:0 8px 32px rgba(0,0,0,.25)}
 
-/* ===== BASE RESET ===== */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  scroll-behavior: smooth;
+/* ===== SECTIONS ===== */
+.section{
+  display:none;flex-direction:column;gap:20px;
+  padding:20px 16px 32px;max-width:540px;margin:0 auto;
+  animation:fadeUp .35s ease-out both;
 }
+.section.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-body {
-  min-height: 100dvh;
-  font-family: var(--font-body);
-  font-size: var(--text-base);
-  color: var(--color-text);
-  background-color: var(--color-bg);
-  line-height: 1.6;
-  overflow-x: hidden;
+.section-title{font-size:1.65rem;color:var(--gold);margin-bottom:2px;letter-spacing:.02em}
+.section-sub{font-size:.88rem;color:var(--white-60);line-height:1.5}
+
+/* ===== TOP BAR ===== */
+.top-bar{
+  position:sticky;top:0;z-index:90;
+  display:flex;align-items:center;justify-content:center;
+  padding:14px 16px 10px;
+  background:linear-gradient(180deg,var(--bg-deep) 60%,transparent);
 }
+.top-bar .logo{font-family:var(--font-display);font-size:1.25rem;font-weight:700;letter-spacing:.12em;color:var(--gold)}
+.top-bar .logo span{color:var(--white)}
 
-h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; }
-p { text-wrap: pretty; max-width: 72ch; }
-img, svg { display: block; max-width: 100%; }
-button { cursor: pointer; background: none; border: none; font: inherit; color: inherit; }
-
-a, button, input, select {
-  transition: color var(--transition-interactive),
-              background var(--transition-interactive),
-              border-color var(--transition-interactive),
-              box-shadow var(--transition-interactive),
-              transform var(--transition-interactive);
+/* ===== BOTTOM TABS ===== */
+.tab-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  display:flex;justify-content:space-around;align-items:center;
+  height:var(--tab-h);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  background:rgba(10,26,31,.92);border-top:1px solid var(--glass-border);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
 }
-
-:focus-visible {
-  outline: 2px solid var(--color-gold);
-  outline-offset: 3px;
-  border-radius: var(--radius-sm);
+.tab-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 0;min-width:52px;font-size:.62rem;font-weight:500;
+  color:var(--white-30);transition:color .2s;letter-spacing:.04em;
 }
+.tab-btn svg{width:22px;height:22px;transition:color .2s}
+.tab-btn.active{color:var(--gold)}
+.tab-btn.active svg{color:var(--gold)}
 
-::selection {
-  background: rgba(212, 175, 55, 0.25);
-  color: var(--color-text);
+/* ===== BUTTONS ===== */
+.btn-primary{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 24px;border-radius:10px;font-weight:600;font-size:.95rem;
+  background:linear-gradient(135deg,var(--gold),#b8942e);color:var(--bg-deep);
+  transition:transform .15s,box-shadow .15s;
 }
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,175,55,.3);text-decoration:none}
+.btn-secondary{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 20px;border-radius:10px;font-weight:500;font-size:.88rem;
+  border:1px solid var(--glass-border);color:var(--white-60);transition:all .2s;
+}
+.btn-secondary:hover{border-color:var(--gold);color:var(--gold)}
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+/* ===== ROOT NUMBER RESULT ===== */
+.root-result{display:none;text-align:center}
+.root-result.visible{display:block}
+.root-big{font-family:var(--font-display);font-size:5rem;font-weight:700;line-height:1}
+.root-name{font-family:var(--font-display);font-size:1.4rem;margin:8px 0 4px}
+.root-element{font-size:.82rem;color:var(--white-60);margin-bottom:12px}
+.root-desc{font-size:.92rem;line-height:1.6;color:var(--white-60)}
 
-.sr-only {
-  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
-}
+/* ===== TRIAD ===== */
+.triad-svg-wrap{display:flex;justify-content:center;padding:10px 0}
+.triad-detail{text-align:center}
+.triad-detail h3{font-size:1.15rem;margin-bottom:6px}
+.triad-detail p{font-size:.88rem;color:var(--white-60);line-height:1.55}
+.triad-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:6px}
+.triad-metric{text-align:center;padding:10px 6px;background:rgba(255,255,255,.04);border-radius:10px}
+.triad-metric .val{font-family:var(--font-display);font-size:1.1rem;color:var(--gold)}
+.triad-metric .lbl{font-size:.7rem;color:var(--white-30);margin-top:2px}
+.dpsi-card{text-align:center;padding:24px 20px}
+.dpsi-val{font-family:var(--font-display);font-size:3rem;font-weight:700;color:var(--gold)}
+.dpsi-label{font-size:.8rem;color:var(--white-60);margin-top:4px}
+.dpsi-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:14px;overflow:hidden}
+.dpsi-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),var(--gold));transition:width .8s ease}
 
-/* ===== APP LAYOUT ===== */
-.app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100dvh;
-}
+/* ===== CALENDAR ===== */
+.cal-svg-wrap{display:flex;justify-content:center;padding:0}
+.cal-info{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cal-info-item{padding:14px;text-align:center}
+.cal-info-item .ci-label{font-size:.7rem;color:var(--white-30);text-transform:uppercase;letter-spacing:.06em}
+.cal-info-item .ci-val{font-family:var(--font-display);font-size:1rem;color:var(--white);margin-top:4px}
+.cal-legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:6px}
+.cal-legend span{font-size:.72rem;display:flex;align-items:center;gap:5px;color:var(--white-60)}
+.cal-legend span::before{content:'';width:10px;height:10px;border-radius:50%;display:inline-block}
+.cal-legend .l-astro::before{background:#D4AF37}
+.cal-legend .l-bio::before{background:#3BAF84}
+.cal-legend .l-civic::before{background:#7B4FA2}
 
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--color-divider);
-}
+/* ===== NATAL CHART ===== */
+.natal-tabs{display:flex;gap:6px;margin-bottom:4px}
+.natal-tab{flex:1;padding:10px;text-align:center;border-radius:10px;font-size:.85rem;font-weight:500;
+  background:rgba(255,255,255,.04);color:var(--white-30);transition:all .2s}
+.natal-tab.active{background:rgba(212,175,55,.15);color:var(--gold)}
+.natal-panel{display:none}
+.natal-panel.active{display:block}
+.natal-form{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.natal-form .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.natal-form label{font-size:.78rem;color:var(--white-60);margin-bottom:3px;display:block}
+.pillar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.pillar{text-align:center;padding:14px 6px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--glass-border)}
+.pillar .p-label{font-size:.68rem;color:var(--white-30);text-transform:uppercase;letter-spacing:.05em}
+.pillar .p-stem{font-family:var(--font-display);font-size:1.3rem;margin:6px 0 2px}
+.pillar .p-branch{font-size:1.1rem}
+.pillar .p-element{font-size:.72rem;color:var(--white-60);margin-top:4px}
+.zodiac-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0}
+.zodiac-item{text-align:center;padding:14px 8px;border-radius:12px;background:rgba(255,255,255,.04)}
+.zodiac-item .z-type{font-size:.68rem;color:var(--white-30);text-transform:uppercase}
+.zodiac-item .z-sign{font-size:1.8rem;margin:4px 0}
+.zodiac-item .z-name{font-size:.85rem;font-weight:500}
+.profile-section{margin-top:12px}
+.profile-section h4{font-size:.95rem;color:var(--gold);margin-bottom:8px}
+.profile-section p,.profile-section li{font-size:.88rem;color:var(--white-60);line-height:1.55}
+.profile-section ul{padding-left:18px;display:flex;flex-direction:column;gap:4px}
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+/* ===== MATRIX ===== */
+.matrix-grid-wrap{display:flex;justify-content:center;padding:10px 0}
+.matrix-grid{display:grid;grid-template-columns:repeat(3,80px);grid-template-rows:repeat(3,80px);gap:8px}
+.matrix-cell{
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:1.8rem;font-weight:600;
+  border-radius:14px;cursor:pointer;transition:all .25s;
+  background:rgba(255,255,255,.04);border:1px solid var(--glass-border);
 }
+.matrix-cell:hover{border-color:var(--gold);background:rgba(212,175,55,.08)}
+.matrix-cell.active{background:rgba(212,175,55,.18);border-color:var(--gold);color:var(--gold);transform:scale(1.08)}
+.matrix-cell.governor{color:var(--green)}
+.matrix-cell.seq{color:var(--gold)}
+.matrix-info{min-height:80px;transition:opacity .2s}
+.sequence-svg-wrap{display:flex;justify-content:center;padding:10px 0}
+.teb-card{text-align:center;padding:20px}
+.teb-formula{font-family:var(--font-display);font-size:1.3rem;color:var(--gold);margin-bottom:8px}
 
-.logo-mark {
-  width: 36px;
-  height: 36px;
-}
-
-.logo-text {
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--color-gold);
-}
-
-.theme-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  color: var(--color-text-muted);
-}
-
-.theme-toggle:hover {
-  color: var(--color-text);
-  background: var(--color-surface-offset);
-}
-
-/* ===== SCREENS ===== */
-.screen {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-8) var(--space-6);
-  gap: var(--space-8);
-}
-
-.screen[aria-hidden="true"] {
-  display: none;
-}
-
-/* ===== SCREEN 1: BIRTH DATE ===== */
-.intro-block {
-  text-align: center;
-  max-width: 440px;
-}
-
-.intro-block h1 {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  color: var(--color-gold);
-  margin-bottom: var(--space-4);
-}
-
-.intro-block p {
-  font-size: var(--text-base);
-  color: var(--color-text-muted);
-  margin: 0 auto;
-}
-
-.date-form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-6);
-  width: 100%;
-  max-width: 380px;
-}
-
-.date-inputs {
-  display: flex;
-  gap: var(--space-3);
-  width: 100%;
-}
-
-.date-field {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.date-field label {
-  font-size: var(--text-xs);
-  font-weight: 500;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.date-field input,
-.date-field select {
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--text-base);
-  font-weight: 500;
-  color: var(--color-text);
-  text-align: center;
-  -moz-appearance: textfield;
-}
-
-.date-field input::placeholder {
-  color: var(--color-text-faint);
-}
-
-.date-field input::-webkit-outer-spin-button,
-.date-field input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.date-field input:focus,
-.date-field select:focus {
-  outline: none;
-  border-color: var(--color-gold);
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-4) var(--space-8);
-  background: var(--color-gold);
-  color: #0f0f0e;
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  border-radius: var(--radius-lg);
-  border: none;
-}
-
-.btn-primary:hover {
-  background: var(--color-gold-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-glow-gold);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
-}
-
-.btn-primary:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.error-msg {
-  font-size: var(--text-sm);
-  color: #d94f4f;
-  min-height: 1.4em;
-}
-
-/* ===== SCREEN 2: ROOT NUMBER ===== */
-.result-block {
-  text-align: center;
-  max-width: 480px;
-}
-
-.result-label {
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: var(--space-3);
-}
-
-.root-number {
-  font-family: var(--font-display);
-  font-size: var(--text-3xl);
-  font-weight: 700;
-  color: var(--color-gold);
-  line-height: 1;
-  margin-bottom: var(--space-2);
-  text-shadow: 0 0 60px rgba(212, 175, 55, 0.3);
-}
-
-.root-name {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 500;
-  color: var(--color-text);
-  margin-bottom: var(--space-6);
-}
-
-/* ===== CARD OF THE DAY ===== */
-.card-today {
-  width: 100%;
-  max-width: 420px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  padding: var(--space-8);
-  text-align: left;
-  box-shadow: var(--shadow-md);
-  position: relative;
-  overflow: hidden;
-}
-
-.card-today::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-gold), var(--color-green));
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-6);
-}
-
-.card-icon {
-  width: 32px;
-  height: 32px;
-  color: var(--color-green);
-}
-
-.card-title {
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: 600;
-  color: var(--color-green);
-}
-
-.card-date {
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-}
-
-.card-message {
-  font-size: var(--text-base);
-  color: var(--color-text);
-  line-height: 1.7;
-  margin-bottom: var(--space-6);
-}
-
-.card-reflection {
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  font-style: italic;
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-divider);
-}
-
-/* Back button */
-.btn-back {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.btn-back:hover {
-  color: var(--color-text);
-  border-color: var(--color-text-muted);
-}
+/* ===== ABOUT ===== */
+.about-block{padding:18px}
+.about-block h3{font-size:1.05rem;color:var(--gold);margin-bottom:8px}
+.about-block p,.about-block li{font-size:.88rem;color:var(--white-60);line-height:1.6}
+.about-block ul{padding-left:18px;display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.about-cta{font-size:.82rem;color:var(--white-30);text-align:center;margin-top:8px;font-style:italic}
+.book-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.book-item{display:flex;gap:14px;align-items:flex-start;padding:14px;border-radius:12px;background:rgba(255,255,255,.03)}
+.book-icon{width:40px;height:50px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:.85rem;font-weight:700}
+.book-info .bi-title{font-size:.92rem;font-weight:600;color:var(--white)}
+.book-info .bi-desc{font-size:.8rem;color:var(--white-60);margin-top:3px;line-height:1.45}
 
 /* ===== FOOTER ===== */
-.app-footer {
-  padding: var(--space-4) var(--space-6);
-  text-align: center;
-  border-top: 1px solid var(--color-divider);
+.app-footer{
+  text-align:center;padding:20px 16px 12px;font-size:.72rem;color:var(--white-30);
+  display:flex;flex-direction:column;gap:6px;align-items:center;
 }
+.app-footer a{color:var(--white-30);transition:color .2s}
+.app-footer a:hover{color:var(--gold)}
 
-.app-footer a {
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-  text-decoration: none;
+/* ===== DESKTOP ===== */
+@media(min-width:768px){
+  .section{max-width:620px;padding:28px 24px 40px}
+  .tab-bar{left:50%;transform:translateX(-50%);max-width:480px;border-radius:16px 16px 0 0}
+  .matrix-grid{grid-template-columns:repeat(3,96px);grid-template-rows:repeat(3,96px);gap:10px}
+  .matrix-cell{font-size:2.1rem}
 }
-
-.app-footer a:hover {
-  color: var(--color-text-muted);
-}
-
-/* ===== ANIMATIONS ===== */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-.animate-fade-up {
-  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.delay-1 { animation-delay: 0.1s; }
-.delay-2 { animation-delay: 0.2s; }
-.delay-3 { animation-delay: 0.3s; }
-.delay-4 { animation-delay: 0.4s; }
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 480px) {
-  .app-header { padding: var(--space-3) var(--space-4); }
-  .screen { padding: var(--space-6) var(--space-4); }
-  .card-today { padding: var(--space-6); }
-  .date-inputs { gap: var(--space-2); }
-}
-
-/* Install prompt */
-.install-prompt {
-  display: none;
-  position: fixed;
-  bottom: var(--space-6);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4) var(--space-6);
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
-  text-align: center;
-  max-width: 340px;
-  width: calc(100% - var(--space-8));
-}
-
-.install-prompt.visible { display: block; }
-
-.install-prompt p {
-  font-size: var(--text-sm);
-  color: var(--color-text);
-  margin-bottom: var(--space-3);
-}
-
-.install-actions {
-  display: flex;
-  gap: var(--space-3);
-  justify-content: center;
-}
-
-.btn-install {
-  padding: var(--space-2) var(--space-5);
-  background: var(--color-gold);
-  color: #0f0f0e;
-  font-weight: 600;
-  font-size: var(--text-sm);
-  border-radius: var(--radius-md);
-}
-
-.btn-dismiss {
-  padding: var(--space-2) var(--space-5);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
+@media(min-width:1024px){
+  .section{max-width:700px}
 }
 </style>
 </head>
 <body>
-<div class="app">
-  <!-- HEADER -->
-  <header class="app-header">
-    <div class="logo">
-      <svg class="logo-mark" viewBox="0 0 36 36" fill="none" aria-label="NEYĒN logo">
-        <circle cx="18" cy="18" r="16" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
-        <path d="M18 4 C18 4, 28 14, 22 22 C18 28, 12 28, 14 22 C16 16, 18 12, 18 4Z" fill="none" stroke="#D4AF37" stroke-width="1.5"/>
-        <path d="M18 4 C18 4, 8 14, 14 22 C18 28, 24 28, 22 22 C20 16, 18 12, 18 4Z" fill="none" stroke="#3BAF84" stroke-width="1.5"/>
-        <circle cx="18" cy="18" r="2.5" fill="#D4AF37"/>
-      </svg>
-      <span class="logo-text">NEYĒN</span>
-    </div>
-    <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-      </svg>
-    </button>
-  </header>
 
-  <!-- SCREEN 1: BIRTH DATE -->
-  <main id="screen-birth" class="screen" aria-hidden="false">
-    <div class="intro-block animate-fade-up">
-      <h1>Tu Número Raíz</h1>
-      <p>Introduce tu fecha de nacimiento para descubrir tu número raíz NEYĒN y recibir tu carta del día.</p>
-    </div>
+<!-- TOP BAR -->
+<header class="top-bar">
+  <div class="logo">NEYĒN<span>™</span></div>
+</header>
 
-    <form class="date-form animate-fade-up delay-1" id="birthForm" novalidate>
-      <div class="date-inputs">
-        <div class="date-field">
-          <label for="birth-day">Día</label>
-          <input type="number" id="birth-day" min="1" max="31" placeholder="15" inputmode="numeric" required>
-        </div>
-        <div class="date-field">
-          <label for="birth-month">Mes</label>
-          <select id="birth-month" required>
-            <option value="" disabled selected>Mes</option>
-            <option value="1">Ene</option>
-            <option value="2">Feb</option>
-            <option value="3">Mar</option>
-            <option value="4">Abr</option>
-            <option value="5">May</option>
-            <option value="6">Jun</option>
-            <option value="7">Jul</option>
-            <option value="8">Ago</option>
-            <option value="9">Sep</option>
-            <option value="10">Oct</option>
-            <option value="11">Nov</option>
-            <option value="12">Dic</option>
-          </select>
-        </div>
-        <div class="date-field">
-          <label for="birth-year">Año</label>
-          <input type="number" id="birth-year" min="1920" max="2025" placeholder="1990" inputmode="numeric" required>
-        </div>
-      </div>
-      <div class="error-msg" id="errorMsg" role="alert" aria-live="polite"></div>
-      <button type="submit" class="btn-primary" id="submitBtn">
-        Descubrir mi número
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </button>
-    </form>
-  </main>
-
-  <!-- SCREEN 2: RESULT -->
-  <main id="screen-result" class="screen" aria-hidden="true">
-    <div class="result-block">
-      <p class="result-label animate-fade-up">Tu Número Raíz NEYĒN</p>
-      <div class="root-number animate-scale-in delay-1" id="rootNumber">—</div>
-      <p class="root-name animate-fade-up delay-2" id="rootName"></p>
-    </div>
-
-    <div class="card-today animate-fade-up delay-3" id="cardToday">
-      <div class="card-header">
-        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-          <circle cx="12" cy="16" r="2" fill="currentColor" stroke="none"/>
-        </svg>
-        <div>
-          <div class="card-title">Carta del Día</div>
-          <div class="card-date" id="cardDate"></div>
-        </div>
-      </div>
-      <p class="card-message" id="cardMessage"></p>
-      <p class="card-reflection" id="cardReflection"></p>
-    </div>
-
-    <button class="btn-back" id="btnBack">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      Cambiar fecha
-    </button>
-  </main>
-
-  <!-- FOOTER -->
-  <footer class="app-footer">
-    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">
-      Created with Perplexity Computer
-    </a>
-  </footer>
-</div>
-
-<!-- Install Prompt -->
-<div class="install-prompt" id="installPrompt">
-  <p>Instala NEYĒN en tu móvil para acceso directo.</p>
-  <div class="install-actions">
-    <button class="btn-install" id="btnInstall">Instalar</button>
-    <button class="btn-dismiss" id="btnDismiss">Ahora no</button>
+<!-- ===================== SECTION 1: RAÍZ ===================== -->
+<section id="sec-raiz" class="section active">
+  <div>
+    <h1 class="section-title">Tu Número Raíz</h1>
+    <p class="section-sub">Introduce tu fecha de nacimiento. La reducción digital revela la frecuencia estructural base de tu perfil dentro del marco NEYĒN.</p>
   </div>
-</div>
+
+  <div class="card">
+    <label for="raiz-date" style="font-size:.82rem;color:var(--white-60);margin-bottom:8px;display:block">Fecha de nacimiento</label>
+    <input type="date" id="raiz-date" style="width:100%;font-size:1rem">
+    <button class="btn-primary" style="width:100%;margin-top:14px" onclick="calcRoot()">Calcular número raíz</button>
+  </div>
+
+  <div id="root-result" class="root-result card">
+    <div id="root-number" class="root-big"></div>
+    <div id="root-name" class="root-name"></div>
+    <div id="root-element" class="root-element"></div>
+    <div id="root-desc" class="root-desc"></div>
+    <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <span id="root-color-chip" style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--white-60)">
+        <span style="width:14px;height:14px;border-radius:50%;display:inline-block" id="root-chip"></span>
+        <span id="root-color-name"></span>
+      </span>
+      <span id="root-seq-badge" style="font-size:.78rem;padding:3px 10px;border-radius:6px;background:rgba(212,175,55,.12);color:var(--gold);display:none"></span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:4px">
+    <h3 style="font-size:.95rem;color:var(--gold);margin-bottom:8px">La Secuencia NEYĒN</h3>
+    <p style="font-size:.85rem;color:var(--white-60);line-height:1.55">
+      La secuencia de doblaje <strong style="color:var(--gold)">1 → 2 → 4 → 8 → 7 → 5</strong> es el patrón fundamental. 
+      Los números <strong style="color:var(--green)">3, 6, 9</strong> operan como gobernadores del sistema — regulan sin participar directamente en el flujo.
+    </p>
+    <div style="display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap">
+      <span style="font-size:.75rem;padding:4px 10px;border-radius:6px;background:rgba(212,175,55,.12);color:var(--gold)">Secuencia: 1-2-4-8-7-5</span>
+      <span style="font-size:.75rem;padding:4px 10px;border-radius:6px;background:rgba(59,175,132,.12);color:var(--green)">Gobernadores: 3-6-9</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SECTION 2: TRÍADA ===================== -->
+<section id="sec-triada" class="section">
+  <div>
+    <h1 class="section-title">La Tríada</h1>
+    <p class="section-sub">SATOR · NEYĒN · SER — las tres capas operativas de cualquier sistema coherente. Pulsa cada círculo para explorar.</p>
+  </div>
+
+  <div class="card triad-svg-wrap">
+    <svg id="triad-svg" viewBox="0 0 320 280" width="100%" style="max-width:360px">
+      <!-- SATOR circle -->
+      <circle cx="160" cy="100" r="72" fill="rgba(212,175,55,.08)" stroke="#D4AF37" stroke-width="1.5" style="cursor:pointer" onclick="showTriad('sator')"/>
+      <!-- NEYEN circle -->
+      <circle cx="110" cy="190" r="72" fill="rgba(59,175,132,.08)" stroke="#3BAF84" stroke-width="1.5" style="cursor:pointer" onclick="showTriad('neyen')"/>
+      <!-- SER circle -->
+      <circle cx="210" cy="190" r="72" fill="rgba(123,79,162,.08)" stroke="#7B4FA2" stroke-width="1.5" style="cursor:pointer" onclick="showTriad('ser')"/>
+      <!-- Labels -->
+      <text x="160" y="85" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="14" font-weight="600" fill="#D4AF37">SATOR</text>
+      <text x="160" y="103" text-anchor="middle" font-family="Satoshi,sans-serif" font-size="9" fill="rgba(245,240,232,.5)">Estructura</text>
+      <text x="110" y="175" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="14" font-weight="600" fill="#3BAF84">NEYĒN</text>
+      <text x="110" y="193" text-anchor="middle" font-family="Satoshi,sans-serif" font-size="9" fill="rgba(245,240,232,.5)">Flujo</text>
+      <text x="210" y="175" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="14" font-weight="600" fill="#7B4FA2">SER</text>
+      <text x="210" y="193" text-anchor="middle" font-family="Satoshi,sans-serif" font-size="9" fill="rgba(245,240,232,.5)">Adaptación</text>
+      <!-- Center ΔΨ -->
+      <text x="160" y="162" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="12" font-weight="700" fill="var(--white)">ΔΨ</text>
+    </svg>
+  </div>
+
+  <div id="triad-detail" class="card triad-detail">
+    <h3 id="triad-title">SATOR — Estructura</h3>
+    <p id="triad-desc">El esqueleto del sistema. Gobernanza, políticas, calendarios, límites. Todo lo codificado y aplicado. Define las reglas del juego antes de que empiece la partida.</p>
+    <div class="triad-metrics" id="triad-metrics">
+      <div class="triad-metric"><div class="val">< 4h</div><div class="lbl">Latencia decisión</div></div>
+      <div class="triad-metric"><div class="val">≤ 3</div><div class="lbl">Cadena aprobación</div></div>
+      <div class="triad-metric"><div class="val">0</div><div class="lbl">Conflictos política</div></div>
+    </div>
+  </div>
+
+  <div class="card dpsi-card">
+    <div style="font-size:.78rem;color:var(--white-60);margin-bottom:4px">Puntuación de Coherencia</div>
+    <div class="dpsi-val">ΔΨ</div>
+    <div class="dpsi-label">Delta Psi — Coherence Improvement Score</div>
+    <div class="dpsi-bar"><div class="dpsi-bar-fill" style="width:68%"></div></div>
+    <p style="font-size:.82rem;color:var(--white-60);margin-top:14px;line-height:1.5">
+      Cuantifica la alineación entre SATOR, NEYĒN y SER. Correlación validada: <strong style="color:var(--gold)">0.01 ΔΨ ≈ +2.5% ROI</strong>. 
+      Un sistema con alta coherencia no solo funciona — amplifica cada recurso invertido.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== SECTION 3: CALENDARIO ===================== -->
+<section id="sec-calendario" class="section">
+  <div>
+    <h1 class="section-title">Calendario Cíclico</h1>
+    <p class="section-sub">Tu posición actual en los ciclos astronómico, biológico y cívico. Basado en el concepto de Reloj Cultural adaptado como herramienta universal.</p>
+  </div>
+
+  <div class="card cal-svg-wrap">
+    <svg id="cal-wheel" viewBox="0 0 340 340" width="100%" style="max-width:380px"></svg>
+  </div>
+
+  <div class="cal-legend">
+    <span class="l-astro">Astronómico</span>
+    <span class="l-bio">Biológico</span>
+    <span class="l-civic">Cívico</span>
+  </div>
+
+  <div class="cal-info" id="cal-info"></div>
+
+  <div class="card" style="padding:16px">
+    <h3 style="font-size:.92rem;color:var(--gold);margin-bottom:8px">Las tres capas del calendario</h3>
+    <p style="font-size:.84rem;color:var(--white-60);line-height:1.55">
+      <strong>Astronómica:</strong> Eclíptica solar, estaciones, solsticios y equinoccios. El reloj base del planeta.<br><br>
+      <strong>Biológica:</strong> Ritmos circadianos, variación estacional de energía, ciclos hormonales ligados a la luz.<br><br>
+      <strong>Cívica:</strong> Mercados, fiestas locales, calendarios fiscales, ritmos urbanos que organizan la vida colectiva.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== SECTION 4: CARTA NATAL ===================== -->
+<section id="sec-carta" class="section">
+  <div>
+    <h1 class="section-title">Carta Natal</h1>
+    <p class="section-sub">Perfil estructural basado en BaZi (Cuatro Pilares) y zodíaco occidental. Introduce tus datos para generar tu análisis.</p>
+  </div>
+
+  <div class="card natal-form" id="natal-form">
+    <div class="row">
+      <div>
+        <label for="natal-date">Fecha de nacimiento</label>
+        <input type="date" id="natal-date" style="width:100%">
+      </div>
+      <div>
+        <label for="natal-time">Hora (aprox.)</label>
+        <input type="time" id="natal-time" value="12:00" style="width:100%">
+      </div>
+    </div>
+    <div>
+      <label for="natal-city">Ciudad de nacimiento</label>
+      <input type="text" id="natal-city" placeholder="Ej: Valencia, Madrid, CDMX..." style="width:100%">
+    </div>
+    <button class="btn-primary" style="width:100%" onclick="calcNatal()">Generar Carta</button>
+  </div>
+
+  <div id="natal-results" style="display:none">
+    <div class="natal-tabs">
+      <button class="natal-tab active" onclick="switchNatalTab('bazi')">BaZi 八字</button>
+      <button class="natal-tab" onclick="switchNatalTab('western')">Zodíaco</button>
+      <button class="natal-tab" onclick="switchNatalTab('profile')">Perfil CV</button>
+    </div>
+
+    <!-- BaZi Panel -->
+    <div id="panel-bazi" class="natal-panel active card">
+      <h3 style="font-size:1rem;color:var(--gold);margin-bottom:4px">Los Cuatro Pilares</h3>
+      <p style="font-size:.8rem;color:var(--white-60);margin-bottom:10px">Tronco Celeste + Rama Terrestre por cada pilar</p>
+      <div class="pillar-grid" id="bazi-pillars"></div>
+      <div id="bazi-daymaster" style="text-align:center;margin-top:10px"></div>
+      <div id="bazi-elements" style="margin-top:14px"></div>
+    </div>
+
+    <!-- Western Panel -->
+    <div id="panel-western" class="natal-panel card">
+      <h3 style="font-size:1rem;color:var(--gold);margin-bottom:10px">Zodíaco Occidental</h3>
+      <div class="zodiac-grid" id="zodiac-grid"></div>
+      <div id="zodiac-detail" class="profile-section"></div>
+    </div>
+
+    <!-- Profile Panel -->
+    <div id="panel-profile" class="natal-panel card">
+      <h3 style="font-size:1rem;color:var(--gold);margin-bottom:10px">Perfil Profesional Estructural</h3>
+      <div id="cv-profile"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SECTION 5: MATRIZ ===================== -->
+<section id="sec-matriz" class="section">
+  <div>
+    <h1 class="section-title">Matriz NEYĒN</h1>
+    <p class="section-sub">La cuadrícula 3×3 y la secuencia de doblaje. Pulsa cada número para ver su significado y conexiones dentro del sistema.</p>
+  </div>
+
+  <div class="card">
+    <div class="matrix-grid-wrap">
+      <div class="matrix-grid" id="matrix-grid"></div>
+    </div>
+    <div class="matrix-info card" id="matrix-info" style="margin-top:14px;background:rgba(255,255,255,.03);border:none;min-height:60px">
+      <p style="font-size:.84rem;color:var(--white-30);text-align:center">Pulsa un número para explorar</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:.95rem;color:var(--gold);margin-bottom:10px">Secuencia de Doblaje</h3>
+    <div class="sequence-svg-wrap">
+      <svg id="seq-svg" viewBox="0 0 320 180" width="100%" style="max-width:360px"></svg>
+    </div>
+    <p style="font-size:.84rem;color:var(--white-60);line-height:1.55;margin-top:8px">
+      1 × 2 = 2 → 2 × 2 = 4 → 4 × 2 = 8 → 8 × 2 = 16 (1+6=<strong style="color:var(--gold)">7</strong>) → 
+      7 × 2 = 14 (1+4=<strong style="color:var(--gold)">5</strong>) → 5 × 2 = 10 (1+0=<strong style="color:var(--gold)">1</strong>) → ciclo se repite.
+    </p>
+  </div>
+
+  <div class="card teb-card">
+    <h3 style="font-size:.95rem;color:var(--gold);margin-bottom:10px">TEB — Balance de Energía Triádica</h3>
+    <div class="teb-formula">Alpha + Omega = 2 × Neyēn</div>
+    <p style="font-size:.84rem;color:var(--white-60);line-height:1.55">
+      El TEB (Triadic Energy Balance) establece que en cualquier sistema coherente, la suma de las fuerzas de inicio (Alpha) y cierre (Omega) 
+      equivale al doble de la fuerza de flujo (Neyēn). Cuando esta ecuación se desequilibra, el sistema pierde coherencia.
+    </p>
+    <div style="display:flex;justify-content:center;gap:16px;margin-top:14px">
+      <div style="text-align:center"><div style="font-family:var(--font-display);font-size:1.6rem;color:var(--gold)">α</div><div style="font-size:.72rem;color:var(--white-30)">Inicio</div></div>
+      <div style="font-family:var(--font-display);font-size:1.4rem;color:var(--white-30);align-self:center">+</div>
+      <div style="text-align:center"><div style="font-family:var(--font-display);font-size:1.6rem;color:var(--gold)">ω</div><div style="font-size:.72rem;color:var(--white-30)">Cierre</div></div>
+      <div style="font-family:var(--font-display);font-size:1.4rem;color:var(--white-30);align-self:center">=</div>
+      <div style="text-align:center"><div style="font-family:var(--font-display);font-size:1.6rem;color:var(--green)">2N</div><div style="font-size:.72rem;color:var(--white-30)">Flujo</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SECTION 6: SISTEMA ===================== -->
+<section id="sec-sistema" class="section">
+  <div>
+    <h1 class="section-title">El Sistema</h1>
+    <p class="section-sub">NEYĒN™ es un marco de coherencia estructural. No es misticismo — es ingeniería de sistemas aplicada a la vida.</p>
+  </div>
+
+  <div class="card about-block">
+    <h3>¿Qué es NEYĒN?</h3>
+    <p>
+      NEYĒN es un marco operativo para diagnosticar, medir y mejorar la coherencia de cualquier sistema — desde una empresa hasta una rutina personal. 
+      Integra tres capas (SATOR, NEYĒN, SER) en un modelo que cuantifica la alineación mediante el indicador ΔΨ (Delta Psi).
+    </p>
+    <p style="margin-top:10px">
+      El marco no predice el futuro ni invoca fuerzas ocultas. Observa patrones estructurales, mide su coherencia y propone ajustes basados en datos. 
+      Es compatible con cualquier metodología existente — OKR, Lean, Agile — y funciona como una capa de diagnóstico sobre ellas.
+    </p>
+  </div>
+
+  <div class="card about-block" style="border:1px solid rgba(212,175,55,.25);background:rgba(212,175,55,.04)">
+    <h3 style="color:var(--white)">«Esto no es misticismo. Es coherencia estructural.»</h3>
+    <p style="margin-top:8px">
+      Los números, ciclos y patrones que usamos son herramientas de observación, no objetos de fe. 
+      La secuencia 1-2-4-8-7-5 es matemática pura. Los ciclos estacionales son astronomía. 
+      Los Cuatro Pilares son un sistema calendárico chino con más de 2000 años de uso práctico. 
+      Nosotros los integramos en un marco contemporáneo, medible y aplicable.
+    </p>
+  </div>
+
+  <div class="card about-block">
+    <h3>Los Tres Libros</h3>
+    <div class="book-list">
+      <div class="book-item">
+        <div class="book-icon" style="background:rgba(212,175,55,.15);color:var(--gold)">L0</div>
+        <div class="book-info">
+          <div class="bi-title">Libro 0 — Los Fundamentos</div>
+          <div class="bi-desc">El punto de partida. Presenta la secuencia, la tríada y los principios de coherencia estructural. La base sobre la que se construye todo.</div>
+        </div>
+      </div>
+      <div class="book-item">
+        <div class="book-icon" style="background:rgba(59,175,132,.15);color:var(--green)">PD</div>
+        <div class="book-info">
+          <div class="bi-title">PATH DESIGN</div>
+          <div class="bi-desc">Metodología práctica para diseñar trayectorias vitales y profesionales usando el marco NEYĒN. Herramientas, plantillas y casos reales.</div>
+        </div>
+      </div>
+      <div class="book-item">
+        <div class="book-icon" style="background:rgba(123,79,162,.15);color:#7B4FA2">GS</div>
+        <div class="book-info">
+          <div class="bi-title">The Golden String</div>
+          <div class="bi-desc">La conexión entre sistemas. Cómo el hilo dorado de la coherencia une decisiones, ciclos y relaciones en un patrón reconocible y operable.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card about-block">
+    <h3>The Spiral Within SLU</h3>
+    <p>
+      Entidad registrada en España. NEYĒN™ es marca europea registrada (EU 019288972). 
+      Desarrollamos el marco, publicamos los libros y creamos herramientas como esta app para hacer la coherencia estructural accesible y aplicable.
+    </p>
+    <ul style="margin-top:10px">
+      <li><strong>Marca:</strong> NEYĒN™ — Living Media System™</li>
+      <li><strong>Sede:</strong> España</li>
+      <li><strong>Web:</strong> proyectoana.github.io/neyen-app</li>
+    </ul>
+  </div>
+
+  <footer class="app-footer" style="margin-top:12px">
+    <span>NEYĒN™ — Living Media System™ · The Spiral Within SLU</span>
+    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+  </footer>
+</section>
+
+<!-- ===================== TAB BAR ===================== -->
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="showSection('raiz')" aria-label="Raíz">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-8.5-10H8m8 0h4.5m-1.3-7.2L16 8m-8 8-3.2 3.2m0-14.4L8 8m8 8 3.2 3.2"/></svg>
+    <span>Raíz</span>
+  </button>
+  <button class="tab-btn" onclick="showSection('triada')" aria-label="Tríada">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 20h20L12 3z"/></svg>
+    <span>Tríada</span>
+  </button>
+  <button class="tab-btn" onclick="showSection('calendario')" aria-label="Calendario">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.5"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/></svg>
+    <span>Calendario</span>
+  </button>
+  <button class="tab-btn" onclick="showSection('carta')" aria-label="Carta Natal">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a14 14 0 010 18M12 3a14 14 0 000 18M3 12h18"/></svg>
+    <span>Carta</span>
+  </button>
+  <button class="tab-btn" onclick="showSection('matriz')" aria-label="Matriz">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    <span>Matriz</span>
+  </button>
+  <button class="tab-btn" onclick="showSection('sistema')" aria-label="Sistema">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>Sistema</span>
+  </button>
+</nav>
 
 <script>
-/* ===== THEME TOGGLE ===== */
-(function(){
-  const toggle = document.querySelector('[data-theme-toggle]');
-  const root = document.documentElement;
-  let theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-  root.setAttribute('data-theme', theme);
-  updateToggleIcon();
+/* ================================================
+   NEYĒN PWA v2 — Complete Application Logic
+   ================================================ */
 
-  toggle.addEventListener('click', () => {
-    theme = theme === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', theme);
-    toggle.setAttribute('aria-label', 'Cambiar a modo ' + (theme === 'dark' ? 'claro' : 'oscuro'));
-    updateToggleIcon();
-  });
+// ===== PWA Registration =====
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
 
-  function updateToggleIcon() {
-    toggle.innerHTML = theme === 'dark'
-      ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
-      : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-  }
-})();
-
-/* ===== NEYĒN ROOT NUMBER CALCULATION ===== */
-function calculateRoot(day, month, year) {
-  const digits = String(day) + String(month) + String(year);
-  let sum = digits.split('').reduce((a, d) => a + parseInt(d, 10), 0);
-  while (sum > 9) {
-    sum = String(sum).split('').reduce((a, d) => a + parseInt(d, 10), 0);
-  }
-  return sum;
+// ===== NAVIGATION =====
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelectorAll('.tab-btn')[['raiz','triada','calendario','carta','matriz','sistema'].indexOf(id)].classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
-/* ===== ROOT NUMBER DATA ===== */
-const rootData = {
-  1: {
-    name: "El Inicio",
-    messages: [
-      { text: "Hoy es un día para decisiones claras. No esperes a que el camino se ilumine: enciende tu propia luz.", reflection: "¿Qué decisión he estado postergando?" },
-      { text: "La independencia no es soledad. Es la capacidad de sostener tu dirección cuando el ruido crece.", reflection: "¿Dónde estoy delegando mi criterio?" },
-      { text: "Cada nuevo comienzo lleva consigo la semilla de lo que ya sabes. No partes de cero.", reflection: "¿Qué experiencia pasada me sirve hoy?" }
-    ]
-  },
-  2: {
-    name: "El Vínculo",
-    messages: [
-      { text: "Escuchar es una forma de acción. Hoy, la pausa entre lo que oyes y lo que respondes contiene la respuesta.", reflection: "¿A quién necesito escuchar mejor?" },
-      { text: "La cooperación no es ceder. Es encontrar el punto donde dos fuerzas se multiplican.", reflection: "¿Dónde puedo sumar sin perderme?" },
-      { text: "Los vínculos que funcionan no son los perfectos, sino los que se reparan con honestidad.", reflection: "¿Qué relación necesita mi atención?" }
-    ]
-  },
-  3: {
-    name: "La Expresión",
-    messages: [
-      { text: "Lo que no expresas se acumula. Hoy, encuentra una forma — cualquiera — de sacar lo que llevas dentro.", reflection: "¿Qué necesito decir que no estoy diciendo?" },
-      { text: "La creatividad no es un lujo. Es la forma en que tu sistema procesa lo que la lógica no alcanza.", reflection: "¿Cuándo fue la última vez que creé algo sin propósito productivo?" },
-      { text: "Comunicar con claridad es un acto de respeto. Hacia ti y hacia quien escucha.", reflection: "¿Estoy siendo claro o estoy esperando que me adivinen?" }
-    ]
-  },
-  4: {
-    name: "La Estructura",
-    messages: [
-      { text: "El orden no limita. El orden libera energía que el caos consume. Hoy, organiza una cosa.", reflection: "¿Qué área de mi vida necesita estructura?" },
-      { text: "Los cimientos no se ven, pero sostienen todo. Hoy, revisa lo que está debajo de la superficie.", reflection: "¿Qué fundamento estoy descuidando?" },
-      { text: "La disciplina no es rigidez. Es el ritmo que permite que lo importante ocurra sin depender de la motivación.", reflection: "¿Qué hábito me sostiene cuando todo falla?" }
-    ]
-  },
-  5: {
-    name: "El Cambio",
-    messages: [
-      { text: "La incomodidad no siempre es una señal de error. A veces es la señal de que estás creciendo.", reflection: "¿Qué incomodidad estoy evitando?" },
-      { text: "La libertad no es hacer lo que quieras. Es saber por qué eliges lo que eliges.", reflection: "¿Mis decisiones recientes son reactivas o conscientes?" },
-      { text: "Adaptarse no es traicionarse. Es la habilidad de mantener tu esencia mientras cambia la forma.", reflection: "¿Qué puedo soltar sin perder lo esencial?" }
-    ]
-  },
-  6: {
-    name: "La Responsabilidad",
-    messages: [
-      { text: "Cuidar de otros empieza por no descuidarte tú. Hoy, el primer acto de servicio es hacia ti.", reflection: "¿Estoy dando desde la abundancia o desde el vacío?" },
-      { text: "La armonía no se impone. Se construye con decisiones pequeñas y consistentes.", reflection: "¿Qué pequeño ajuste traería más equilibrio hoy?" },
-      { text: "La responsabilidad real no es carga. Es la consecuencia natural de que algo te importa.", reflection: "¿De qué me estoy haciendo responsable por obligación y no por convicción?" }
-    ]
-  },
-  7: {
-    name: "La Observación",
-    messages: [
-      { text: "No todo necesita respuesta inmediata. Hoy, observa antes de actuar. La claridad llega.", reflection: "¿Qué situación necesita observación antes que acción?" },
-      { text: "La solitud productiva es diferente del aislamiento. Una alimenta. La otra consume.", reflection: "¿Mi tiempo a solas me está recargando o desconectando?" },
-      { text: "Las preguntas correctas valen más que las respuestas rápidas.", reflection: "¿Qué pregunta importante estoy evitando?" }
-    ]
-  },
-  8: {
-    name: "El Poder",
-    messages: [
-      { text: "El poder real no es control sobre otros. Es la capacidad de ejecutar lo que decides.", reflection: "¿Qué he decidido pero no he ejecutado?" },
-      { text: "Los recursos — tiempo, dinero, energía — fluyen hacia donde pones atención consistente.", reflection: "¿Dónde estoy poniendo mi atención realmente?" },
-      { text: "La ambición sin sistema es fantasía. El sistema sin ambición es burocracia. Hoy necesitas los dos.", reflection: "¿Tengo un sistema para lo que quiero lograr?" }
-    ]
-  },
-  9: {
-    name: "La Integración",
-    messages: [
-      { text: "Cerrar un ciclo no es perder algo. Es liberar espacio para lo que sigue.", reflection: "¿Qué ciclo necesito cerrar?" },
-      { text: "La generosidad más difícil es compartir lo que aprendiste con dolor.", reflection: "¿Qué lección aprendida puedo compartir hoy?" },
-      { text: "Integrar no es mezclar todo. Es saber qué elementos se potencian juntos.", reflection: "¿Qué partes de mi vida funcionan mejor cuando las conecto?" }
-    ]
-  }
+// ===== ROOT NUMBER DATA =====
+const ROOT_DATA = {
+  1:{name:'El Iniciador',desc:'Punto de origen. Capacidad para crear sistemas desde cero. Energía de arranque, liderazgo natural. No espera permisos — actúa. Donde otros ven vacío, el 1 ve un tablero en blanco.',element:'Fuego',color:'#D4AF37',colorName:'Oro',seq:true},
+  2:{name:'El Conector',desc:'Puente entre partes. Facilita flujo, traduce entre mundos. Diplomacia estructural — el 2 no elige bandos, construye canales. Donde hay fragmentación, el 2 teje red.',element:'Agua',color:'#C0C0C0',colorName:'Plata',seq:true},
+  3:{name:'El Patrón',desc:'Ve estructura en el caos. Gobierna el ritmo. Primer gobernador del sistema — el 3 no fluye, observa y sincroniza. Reconoce ciclos antes de que se completen.',element:'Aire',color:'#3BAF84',colorName:'Esmeralda',governor:true},
+  4:{name:'El Constructor',desc:'Cimiento estructural. Crea sistemas duraderos. Donde el 1 inicia, el 4 edifica. Método, proceso, ingeniería. No busca inspiración — busca resultados que sobrevivan.',element:'Tierra',color:'#1a3a5c',colorName:'Azul Profundo',seq:true},
+  5:{name:'El Catalizador',desc:'Motor de cambio y adaptación. El 5 no se resiste al movimiento — lo provoca. Punto de inflexión entre ciclos. Donde el sistema se estanca, el 5 inyecta tensión productiva.',element:'Fuego',color:'#E8732A',colorName:'Naranja',seq:true},
+  6:{name:'El Armonizador',desc:'Equilibra fuerzas opuestas. Segundo gobernador — el 6 gestiona la coherencia entre partes que no saben que se necesitan. Mediación, balance, integración silenciosa.',element:'Agua',color:'#7B4FA2',colorName:'Violeta',governor:true},
+  7:{name:'El Analista',desc:'Observa, mide, refina. El 7 opera en el espacio entre los datos y la decisión. No se precipita. Analiza patrones, detecta fallos, propone calibraciones. Precisión sobre velocidad.',element:'Aire',color:'#2A8A8A',colorName:'Teal',seq:true},
+  8:{name:'El Amplificador',desc:'Escala sistemas. Multiplica efecto. Donde el 4 construye para uno, el 8 replica para muchos. Expansión con estructura — no crecimiento ciego, sino escalabilidad medida.',element:'Tierra',color:'#9B1B30',colorName:'Carmesí',seq:true},
+  9:{name:'El Integrador',desc:'Completa ciclos. Perspectiva universal. Tercer gobernador — el 9 es el número que lo contiene todo. No cierra puertas, las trasciende. Síntesis, visión panorámica, cierre con apertura.',element:'Éter',color:'#F5F0E8',colorName:'Blanco',governor:true}
 };
 
-/* ===== DAILY CARD SELECTION ===== */
-function getDailyCard(rootNum) {
-  const today = new Date();
-  const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
-  const seed = (dayOfYear + rootNum) % 3;
-  return rootData[rootNum].messages[seed];
+// ===== ROOT CALCULATOR =====
+function calcRoot(){
+  const input = document.getElementById('raiz-date').value;
+  if(!input)return;
+  const digits = input.replace(/-/g,'').split('').map(Number);
+  let sum = digits.reduce((a,b)=>a+b,0);
+  while(sum>9){sum = String(sum).split('').map(Number).reduce((a,b)=>a+b,0)}
+  const d = ROOT_DATA[sum];
+  document.getElementById('root-number').style.color = d.color;
+  document.getElementById('root-number').textContent = sum;
+  document.getElementById('root-name').textContent = d.name;
+  document.getElementById('root-element').textContent = 'Elemento: '+d.element+' · Color: '+d.colorName;
+  document.getElementById('root-desc').textContent = d.desc;
+  document.getElementById('root-chip').style.background = d.color;
+  document.getElementById('root-color-name').textContent = d.colorName;
+  const badge = document.getElementById('root-seq-badge');
+  if(d.seq){badge.textContent='Secuencia 1-2-4-8-7-5';badge.style.display='inline-block'}
+  else if(d.governor){badge.textContent='Gobernador 3-6-9';badge.style.display='inline-block';badge.style.background='rgba(59,175,132,.12)';badge.style.color='var(--green)'}
+  const r = document.getElementById('root-result');r.classList.add('visible');
+  r.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
-function formatDate(date) {
-  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  return `${days[date.getDay()]}, ${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`;
+// ===== TRIAD =====
+const TRIAD_DATA = {
+  sator:{title:'SATOR — Estructura',desc:'El esqueleto del sistema. Gobernanza, políticas, calendarios, límites. Todo lo codificado y aplicado. Define las reglas del juego antes de que empiece la partida. Sin SATOR, no hay marco. Sin marco, no hay coherencia medible.',metrics:[{val:'< 4h',lbl:'Latencia decisión'},{val:'≤ 3',lbl:'Cadena aprobación'},{val:'0',lbl:'Conflictos política'}]},
+  neyen:{title:'NEYĒN — Flujo',desc:'El sistema circulatorio. Comunicación, recursos, información, personas. Todo lo que se transmite y redistribuye. NEYĒN mide qué tan bien circula la energía del sistema. Bloqueo de flujo = incoherencia.',metrics:[{val:'94%',lbl:'Alcance mensaje'},{val:'< 2h',lbl:'Tiempo respuesta'},{val:'Óptima',lbl:'Asignación recursos'}]},
+  ser:{title:'SER — Adaptación',desc:'El metabolismo. Cómo el sistema responde al cambio, al estrés, a la oportunidad. Lo flexible y resiliente. SER determina si el sistema sobrevive cuando las condiciones cambian — y siempre cambian.',metrics:[{val:'< 48h',lbl:'Tiempo recuperación'},{val:'2 sem',lbl:'Ciclo innovación'},{val:'< 24h',lbl:'Velocidad feedback'}]}
+};
+function showTriad(key){
+  const d = TRIAD_DATA[key];
+  document.getElementById('triad-title').textContent = d.title;
+  document.getElementById('triad-desc').textContent = d.desc;
+  document.getElementById('triad-metrics').innerHTML = d.metrics.map(m=>`<div class="triad-metric"><div class="val">${m.val}</div><div class="lbl">${m.lbl}</div></div>`).join('');
 }
 
-/* ===== FORM HANDLING ===== */
-const form = document.getElementById('birthForm');
-const dayInput = document.getElementById('birth-day');
-const monthInput = document.getElementById('birth-month');
-const yearInput = document.getElementById('birth-year');
-const errorMsg = document.getElementById('errorMsg');
-const screenBirth = document.getElementById('screen-birth');
-const screenResult = document.getElementById('screen-result');
+// ===== CALENDAR WHEEL =====
+function buildCalendar(){
+  const now = new Date();
+  const year = now.getFullYear();
+  const doy = Math.floor((now - new Date(year,0,1))/(864e5))+1;
+  const totalDays = ((year%4===0&&year%100!==0)||year%400===0)?366:365;
+  const angle = (doy/totalDays)*360;
+  const cx=170,cy=170;
 
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  errorMsg.textContent = '';
+  const seasons = [
+    {name:'Invierno',start:355,end:80,color:'rgba(42,138,138,.3)'},
+    {name:'Primavera',start:80,end:172,color:'rgba(59,175,132,.3)'},
+    {name:'Verano',start:172,end:266,color:'rgba(212,175,55,.3)'},
+    {name:'Otoño',start:266,end:355,color:'rgba(155,27,48,.3)'}
+  ];
 
-  const day = parseInt(dayInput.value, 10);
-  const month = parseInt(monthInput.value, 10);
-  const year = parseInt(yearInput.value, 10);
+  const astronomic = [
+    {name:'Solst. Invierno',doy:355,emoji:'❄'},
+    {name:'Equin. Primavera',doy:80,emoji:'🌱'},
+    {name:'Solst. Verano',doy:172,emoji:'☀'},
+    {name:'Equin. Otoño',doy:266,emoji:'🍂'}
+  ];
 
-  // Validate
-  if (!day || !month || !year) {
-    errorMsg.textContent = 'Completa todos los campos.';
-    return;
+  const biologic = [
+    {name:'Melatonina alta',startDoy:330,endDoy:60},
+    {name:'Serotonina creciente',startDoy:60,endDoy:150},
+    {name:'Vitamina D pico',startDoy:150,endDoy:240},
+    {name:'Cortisol estacional',startDoy:240,endDoy:330}
+  ];
+
+  const civic = [
+    {name:'Año fiscal Q1',doy:1},{name:'Semana Santa',doy:90},
+    {name:'Fallas / Fiestas',doy:74},{name:'Año fiscal Q2',doy:91},
+    {name:'Verano / Vacaciones',doy:182},{name:'Año fiscal Q3',doy:183},
+    {name:'Vuelta actividad',doy:244},{name:'Año fiscal Q4',doy:274},
+    {name:'Navidad',doy:359}
+  ];
+
+  function dayToAngle(d){return((d/totalDays)*360-90)}
+  function polarToCart(cx2,cy2,r,deg){const rad=deg*Math.PI/180;return{x:cx2+r*Math.cos(rad),y:cy2+r*Math.sin(rad)}}
+  function arcPath(cx2,cy2,r,startDeg,endDeg){
+    let s=startDeg,e=endDeg;if(e<s)e+=360;
+    const large=(e-s)>180?1:0;
+    const p1=polarToCart(cx2,cy2,r,s),p2=polarToCart(cx2,cy2,r,e%360);
+    return`M${p1.x},${p1.y}A${r},${r},0,${large},1,${p2.x},${p2.y}`;
   }
 
-  if (year < 1920 || year > 2025) {
-    errorMsg.textContent = 'Introduce un año entre 1920 y 2025.';
-    return;
-  }
+  let svg = '';
 
-  // Check valid date
-  const testDate = new Date(year, month - 1, day);
-  if (testDate.getDate() !== day || testDate.getMonth() !== month - 1) {
-    errorMsg.textContent = 'Esa fecha no existe. Revisa el día.';
-    return;
-  }
-
-  // Calculate
-  const root = calculateRoot(day, month, year);
-  const data = rootData[root];
-  const card = getDailyCard(root);
-
-  // Populate result screen
-  document.getElementById('rootNumber').textContent = root;
-  document.getElementById('rootName').textContent = data.name;
-  document.getElementById('cardDate').textContent = formatDate(new Date());
-  document.getElementById('cardMessage').textContent = card.text;
-  document.getElementById('cardReflection').textContent = '\u2192 ' + card.reflection;
-
-  // Switch screens
-  screenBirth.setAttribute('aria-hidden', 'true');
-  screenResult.setAttribute('aria-hidden', 'false');
-
-  // Re-trigger animations
-  screenResult.querySelectorAll('[class*="animate-"]').forEach(el => {
-    el.style.animation = 'none';
-    el.offsetHeight;
-    el.style.animation = '';
+  // Season arcs (outer ring)
+  seasons.forEach(s=>{
+    const s1=dayToAngle(s.start),s2=dayToAngle(s.end);
+    svg+=`<path d="${arcPath(cx,cy,140,s1,s2)}" fill="none" stroke="${s.color}" stroke-width="28" stroke-linecap="round"/>`;
+    const mid = s.start<s.end?(s.start+s.end)/2:((s.start+s.end+totalDays)/2)%totalDays;
+    const mp=polarToCart(cx,cy,140,dayToAngle(mid));
+    svg+=`<text x="${mp.x}" y="${mp.y}" text-anchor="middle" dominant-baseline="middle" font-family="Satoshi,sans-serif" font-size="8.5" fill="rgba(245,240,232,.5)">${s.name}</text>`;
   });
-});
 
-// Back button
-document.getElementById('btnBack').addEventListener('click', () => {
-  screenResult.setAttribute('aria-hidden', 'true');
-  screenBirth.setAttribute('aria-hidden', 'false');
-});
+  // Astronomical markers
+  astronomic.forEach(a=>{
+    const deg=dayToAngle(a.doy);
+    const p1=polarToCart(cx,cy,124,deg),p2=polarToCart(cx,cy,156,deg);
+    svg+=`<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#D4AF37" stroke-width="1.5" opacity=".6"/>`;
+    const pt=polarToCart(cx,cy,118,deg);
+    svg+=`<text x="${pt.x}" y="${pt.y}" text-anchor="middle" dominant-baseline="middle" font-size="10">${a.emoji}</text>`;
+  });
 
-// Auto-advance from day to month
-dayInput.addEventListener('input', () => {
-  if (dayInput.value.length >= 2) monthInput.focus();
-});
+  // Biological ring (middle)
+  const bioColors = ['rgba(59,175,132,.5)','rgba(59,175,132,.35)','rgba(59,175,132,.5)','rgba(59,175,132,.35)'];
+  biologic.forEach((b,i)=>{
+    svg+=`<path d="${arcPath(cx,cy,100,dayToAngle(b.startDoy),dayToAngle(b.endDoy))}" fill="none" stroke="${bioColors[i]}" stroke-width="14" stroke-linecap="round"/>`;
+  });
 
-// Auto-advance from month to year
-monthInput.addEventListener('change', () => {
-  yearInput.focus();
-});
+  // Civic dots (inner ring)
+  civic.forEach(c=>{
+    const p=polarToCart(cx,cy,72,dayToAngle(c.doy));
+    svg+=`<circle cx="${p.x}" cy="${p.y}" r="3" fill="#7B4FA2" opacity=".7"/>`;
+  });
 
-/* ===== PWA INSTALL PROMPT ===== */
-let deferredPrompt;
-const installPrompt = document.getElementById('installPrompt');
-const btnInstall = document.getElementById('btnInstall');
-const btnDismiss = document.getElementById('btnDismiss');
+  // Center
+  svg+=`<circle cx="${cx}" cy="${cy}" r="36" fill="rgba(10,26,31,.8)" stroke="var(--glass-border)" stroke-width="1"/>`;
+  const monthNames=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  svg+=`<text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="12" font-weight="600" fill="#D4AF37">${now.getDate()}</text>`;
+  svg+=`<text x="${cx}" y="${cy+8}" text-anchor="middle" font-family="Satoshi,sans-serif" font-size="8" fill="rgba(245,240,232,.5)">${monthNames[now.getMonth()]} ${year}</text>`;
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installPrompt.classList.add('visible');
-});
+  // Today pointer
+  const todayDeg = dayToAngle(doy);
+  const tp1=polarToCart(cx,cy,42,todayDeg),tp2=polarToCart(cx,cy,158,todayDeg);
+  svg+=`<line x1="${tp1.x}" y1="${tp1.y}" x2="${tp2.x}" y2="${tp2.y}" stroke="#D4AF37" stroke-width="2" opacity=".8"/>`;
+  const tipP=polarToCart(cx,cy,160,todayDeg);
+  svg+=`<circle cx="${tipP.x}" cy="${tipP.y}" r="4" fill="#D4AF37"/>`;
 
-btnInstall.addEventListener('click', async () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-  }
-  installPrompt.classList.remove('visible');
-});
+  document.getElementById('cal-wheel').innerHTML = svg;
 
-btnDismiss.addEventListener('click', () => {
-  installPrompt.classList.remove('visible');
-});
+  // Info cards
+  const currentSeason = doy>=355||doy<80?'Invierno':doy<172?'Primavera':doy<266?'Verano':'Otoño';
+  const daylight = doy>=80&&doy<266?'Creciente / Largo':'Decreciente / Corto';
+  const bioPhase = doy>=330||doy<60?'Melatonina alta — descanso profundo':doy<150?'Serotonina creciente — activación':doy<240?'Vitamina D pico — energía máxima':'Cortisol estacional — transición';
+  const fiscalQ = doy<91?'Q1':doy<183?'Q2':doy<274?'Q3':'Q4';
 
-/* ===== REGISTER SERVICE WORKER ===== */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  document.getElementById('cal-info').innerHTML = `
+    <div class="card cal-info-item"><div class="ci-label">Estación</div><div class="ci-val">${currentSeason}</div></div>
+    <div class="card cal-info-item"><div class="ci-label">Luz solar</div><div class="ci-val">${daylight}</div></div>
+    <div class="card cal-info-item"><div class="ci-label">Fase biológica</div><div class="ci-val" style="font-size:.82rem">${bioPhase}</div></div>
+    <div class="card cal-info-item"><div class="ci-label">Trimestre fiscal</div><div class="ci-val">${fiscalQ} — ${year}</div></div>
+  `;
 }
+
+// ===== NATAL CHART — BaZi Calculation =====
+const HEAVENLY_STEMS = ['甲 Jiǎ','乙 Yǐ','丙 Bǐng','丁 Dīng','戊 Wù','己 Jǐ','庚 Gēng','辛 Xīn','壬 Rén','癸 Guǐ'];
+const STEM_ELEMENTS = ['Madera Yang','Madera Yin','Fuego Yang','Fuego Yin','Tierra Yang','Tierra Yin','Metal Yang','Metal Yin','Agua Yang','Agua Yin'];
+const EARTHLY_BRANCHES = ['子 Zǐ','丑 Chǒu','寅 Yín','卯 Mǎo','辰 Chén','巳 Sì','午 Wǔ','未 Wèi','申 Shēn','酉 Yǒu','戌 Xū','亥 Hài'];
+const BRANCH_ANIMALS = ['Rata','Buey','Tigre','Conejo','Dragón','Serpiente','Caballo','Cabra','Mono','Gallo','Perro','Cerdo'];
+const BRANCH_ELEMENTS = ['Agua','Tierra','Madera','Madera','Tierra','Fuego','Fuego','Tierra','Metal','Metal','Tierra','Agua'];
+
+function getYearPillar(y){
+  const stemIdx=(y-4)%10; if(stemIdx<0) stemIdx+=10;
+  const branchIdx=(y-4)%12; if(branchIdx<0) branchIdx+=12;
+  return {stem:stemIdx,branch:branchIdx};
+}
+
+// Solar terms approximate day-of-year boundaries for month stems
+const SOLAR_TERM_MONTHS = [
+  {start:[2,4],monthIdx:0},  // Month 1: ~Feb 4
+  {start:[3,6],monthIdx:1},  // Month 2: ~Mar 6
+  {start:[4,5],monthIdx:2},  // Month 3: ~Apr 5
+  {start:[5,6],monthIdx:3},  // Month 4: ~May 6
+  {start:[6,6],monthIdx:4},  // Month 5: ~Jun 6
+  {start:[7,7],monthIdx:5},  // Month 6: ~Jul 7
+  {start:[8,7],monthIdx:6},  // Month 7: ~Aug 7
+  {start:[9,8],monthIdx:7},  // Month 8: ~Sep 8
+  {start:[10,8],monthIdx:8}, // Month 9: ~Oct 8
+  {start:[11,7],monthIdx:9}, // Month 10: ~Nov 7
+  {start:[12,7],monthIdx:10},// Month 11: ~Dec 7
+  {start:[1,6],monthIdx:11}  // Month 12: ~Jan 6
+];
+
+function getMonthPillar(y,m,d){
+  // Determine Chinese month based on solar terms
+  let chineseMonth = 0;
+  const sortedTerms = [
+    {m:1,d:6,idx:11},{m:2,d:4,idx:0},{m:3,d:6,idx:1},{m:4,d:5,idx:2},
+    {m:5,d:6,idx:3},{m:6,d:6,idx:4},{m:7,d:7,idx:5},{m:8,d:7,idx:6},
+    {m:9,d:8,idx:7},{m:10,d:8,idx:8},{m:11,d:7,idx:9},{m:12,d:7,idx:10}
+  ];
+  for(let i=sortedTerms.length-1;i>=0;i--){
+    const t=sortedTerms[i];
+    if(m>t.m||(m===t.m&&d>=t.d)){chineseMonth=t.idx;break}
+  }
+  const yearStem = (y-4)%10;
+  const monthStemBase = (yearStem%5)*2;
+  const stemIdx = (monthStemBase+chineseMonth)%10;
+  const branchIdx = (chineseMonth+2)%12;
+  return {stem:stemIdx,branch:branchIdx};
+}
+
+function getDayPillar(y,m,d){
+  // Day pillar calculation using a reference date method
+  // Reference: Jan 1, 1900 = stem 0 (甲), branch 0 (子) → adjusted
+  const ref = new Date(1900,0,1);
+  const target = new Date(y,m-1,d);
+  const diff = Math.floor((target-ref)/(864e5));
+  // Jan 1 1900 is actually 甲子 adjusted by offset
+  const offset = 10; // calibration offset
+  const stemIdx = ((diff+offset)%10+10)%10;
+  const branchIdx = ((diff+offset)%12+12)%12;
+  return {stem:stemIdx,branch:branchIdx};
+}
+
+function getHourPillar(dayStem,hour){
+  // 2-hour blocks: 23-1=子, 1-3=丑, 3-5=寅, etc.
+  const branchIdx = Math.floor(((hour+1)%24)/2);
+  const stemBase = (dayStem%5)*2;
+  const stemIdx = (stemBase+branchIdx)%10;
+  return {stem:stemIdx,branch:branchIdx};
+}
+
+// Western zodiac
+const ZODIAC_SIGNS = [
+  {name:'Aries',symbol:'♈',start:[3,21],end:[4,19],element:'Fuego',trait:'Iniciativa, liderazgo, acción directa'},
+  {name:'Tauro',symbol:'♉',start:[4,20],end:[5,20],element:'Tierra',trait:'Estabilidad, persistencia, recursos'},
+  {name:'Géminis',symbol:'♊',start:[5,21],end:[6,20],element:'Aire',trait:'Comunicación, adaptabilidad, análisis'},
+  {name:'Cáncer',symbol:'♋',start:[6,21],end:[7,22],element:'Agua',trait:'Protección, intuición, memoria'},
+  {name:'Leo',symbol:'♌',start:[7,23],end:[8,22],element:'Fuego',trait:'Expresión, autoridad, creatividad'},
+  {name:'Virgo',symbol:'♍',start:[8,23],end:[9,22],element:'Tierra',trait:'Precisión, servicio, optimización'},
+  {name:'Libra',symbol:'♎',start:[9,23],end:[10,22],element:'Aire',trait:'Equilibrio, diplomacia, estética'},
+  {name:'Escorpio',symbol:'♏',start:[10,23],end:[11,21],element:'Agua',trait:'Transformación, estrategia, profundidad'},
+  {name:'Sagitario',symbol:'♐',start:[11,22],end:[12,21],element:'Fuego',trait:'Expansión, visión, aprendizaje'},
+  {name:'Capricornio',symbol:'♑',start:[12,22],end:[1,19],element:'Tierra',trait:'Estructura, ambición, disciplina'},
+  {name:'Acuario',symbol:'♒',start:[1,20],end:[2,18],element:'Aire',trait:'Innovación, sistemas, independencia'},
+  {name:'Piscis',symbol:'♓',start:[2,19],end:[3,20],element:'Agua',trait:'Síntesis, empatía, adaptación'}
+];
+
+function getSunSign(m,d){
+  for(const z of ZODIAC_SIGNS){
+    const [sm,sd]=z.start,[em,ed]=z.end;
+    if(sm>em){if((m===sm&&d>=sd)||m>sm||m<em||(m===em&&d<=ed))return z}
+    else{if((m===sm&&d>=sd)||(m===em&&d<=ed)||(m>sm&&m<em))return z}
+  }
+  return ZODIAC_SIGNS[9]; // Capricorn fallback
+}
+
+function getMoonSign(y,m,d){
+  // Approximate moon sign — lunar cycle ~29.53 days
+  const ref=new Date(2000,0,6); // known new moon in Capricorn
+  const target=new Date(y,m-1,d);
+  const days=Math.floor((target-ref)/864e5);
+  const lunarDays=days%29.53;
+  const signIdx=Math.floor((lunarDays/29.53)*12+9)%12; // offset from Capricorn
+  return ZODIAC_SIGNS[signIdx];
+}
+
+function getRisingSign(m,d,h){
+  // Very rough approximation — rising changes ~every 2h
+  const sunIdx = ZODIAC_SIGNS.indexOf(getSunSign(m,d));
+  const hourOffset = Math.floor(h/2);
+  return ZODIAC_SIGNS[(sunIdx+hourOffset)%12];
+}
+
+const ELEMENT_COLORS = {Madera:'#3BAF84',Fuego:'#D4AF37',Tierra:'#8B6914',Metal:'#C0C0C0',Agua:'#2A8A8A'};
+
+function calcNatal(){
+  const dateVal = document.getElementById('natal-date').value;
+  const timeVal = document.getElementById('natal-time').value;
+  if(!dateVal) return;
+
+  const [y,m,d] = dateVal.split('-').map(Number);
+  const [h,min] = timeVal.split(':').map(Number);
+
+  // BaZi
+  const yearP = getYearPillar(y);
+  const monthP = getMonthPillar(y,m,d);
+  const dayP = getDayPillar(y,m,d);
+  const hourP = getHourPillar(dayP.stem,h);
+
+  const pillars = [
+    {label:'Hora',stem:hourP.stem,branch:hourP.branch},
+    {label:'Día',stem:dayP.stem,branch:dayP.branch},
+    {label:'Mes',stem:monthP.stem,branch:monthP.branch},
+    {label:'Año',stem:yearP.stem,branch:yearP.branch}
+  ];
+
+  document.getElementById('bazi-pillars').innerHTML = pillars.map(p=>{
+    const el = STEM_ELEMENTS[p.stem];
+    const baseEl = el.replace(/ (Yang|Yin)/,'');
+    const c = ELEMENT_COLORS[baseEl]||'var(--white)';
+    return `<div class="pillar">
+      <div class="p-label">${p.label}</div>
+      <div class="p-stem" style="color:${c}">${HEAVENLY_STEMS[p.stem]}</div>
+      <div class="p-branch">${EARTHLY_BRANCHES[p.branch]}</div>
+      <div class="p-element">${el}<br>${BRANCH_ANIMALS[p.branch]}</div>
+    </div>`;
+  }).join('');
+
+  const dayMasterEl = STEM_ELEMENTS[dayP.stem];
+  document.getElementById('bazi-daymaster').innerHTML = `
+    <div style="font-size:.82rem;color:var(--white-60)">Maestro del Día</div>
+    <div style="font-family:var(--font-display);font-size:1.3rem;color:var(--gold);margin:4px 0">${HEAVENLY_STEMS[dayP.stem]}</div>
+    <div style="font-size:.85rem;color:var(--white-60)">${dayMasterEl} — Tu elemento central define tu modo operativo base</div>
+  `;
+
+  // Element count
+  const elCount = {};
+  pillars.forEach(p=>{
+    const se=STEM_ELEMENTS[p.stem].replace(/ (Yang|Yin)/,'');
+    const be=BRANCH_ELEMENTS[p.branch];
+    elCount[se]=(elCount[se]||0)+1;
+    elCount[be]=(elCount[be]||0)+1;
+  });
+  const elNames=['Madera','Fuego','Tierra','Metal','Agua'];
+  document.getElementById('bazi-elements').innerHTML = `
+    <div style="font-size:.82rem;color:var(--white-60);margin-bottom:8px">Distribución de Elementos</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+      ${elNames.map(e=>`<div style="padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.04);text-align:center">
+        <div style="font-family:var(--font-display);font-size:1.1rem;color:${ELEMENT_COLORS[e]||'var(--white)'}">${elCount[e]||0}</div>
+        <div style="font-size:.7rem;color:var(--white-30)">${e}</div>
+      </div>`).join('')}
+    </div>
+  `;
+
+  // Western
+  const sun = getSunSign(m,d);
+  const moon = getMoonSign(y,m,d);
+  const rising = getRisingSign(m,d,h);
+  document.getElementById('zodiac-grid').innerHTML = [
+    {type:'Sol',sign:sun},{type:'Luna',sign:moon},{type:'Ascendente',sign:rising}
+  ].map(z=>`<div class="zodiac-item">
+    <div class="z-type">${z.type}</div>
+    <div class="z-sign">${z.sign.symbol}</div>
+    <div class="z-name">${z.sign.name}</div>
+    <div style="font-size:.72rem;color:var(--white-30);margin-top:2px">${z.sign.element}</div>
+  </div>`).join('');
+
+  document.getElementById('zodiac-detail').innerHTML = `
+    <h4>Perfil Solar: ${sun.name}</h4>
+    <p>${sun.trait}</p>
+    <p style="margin-top:8px">Con Luna en ${moon.name}, tu procesamiento emocional tiende hacia la ${moon.trait.toLowerCase().split(',')[0]}. 
+    El ascendente en ${rising.name} proyecta externamente ${rising.trait.toLowerCase().split(',')[0]}.</p>
+  `;
+
+  // Professional profile
+  const dayEl = dayMasterEl.replace(/ (Yang|Yin)/,'');
+  const profiles = {
+    Madera:{arch:'Estratega / Planificador',style:'Crecimiento orgánico. Prefiere desarrollo gradual sobre expansión forzada. Gestiona bien proyectos a largo plazo.',paths:['Consultoría estratégica','Desarrollo de producto','Educación / Formación','Gestión de proyectos'],energy:'Necesita renovación constante — como un árbol, requiere nutrir raíces antes de expandir copa.'},
+    Fuego:{arch:'Comunicador / Activador',style:'Energía de impulso. Enciende equipos, genera momentum. Mejor en fases de lanzamiento que de mantenimiento.',paths:['Marketing / Comunicación','Ventas y desarrollo de negocio','Dirección creativa','Emprendimiento'],energy:'Ciclos de alta intensidad seguidos de recarga. Necesita descansos programados.'},
+    Tierra:{arch:'Gestor / Estabilizador',style:'Fiabilidad y consistencia. Transforma ideas en procesos sostenibles. El ancla de cualquier equipo.',paths:['Operaciones','Recursos humanos','Finanzas / Contabilidad','Administración'],energy:'Energía estable y constante. Riesgo de estancamiento si no introduce variación deliberada.'},
+    Metal:{arch:'Analista / Optimizador',style:'Precisión y eficiencia. Identifica lo esencial, elimina lo superfluo. Estándares altos, ejecución limpia.',paths:['Ingeniería / Tecnología','Análisis de datos','Control de calidad','Derecho / Regulación'],energy:'Foco intenso en períodos cortos. Necesita espacios de descompresión.'},
+    Agua:{arch:'Innovador / Adaptador',style:'Flexibilidad y visión. Se mueve donde otros se estancan. Lee tendencias antes de que sean evidentes.',paths:['Investigación','Diseño / UX','Trabajo independiente','Consultoría de innovación'],energy:'Fluye entre proyectos. Necesita libertad de movimiento — estructura excesiva lo bloquea.'}
+  };
+  const prof = profiles[dayEl]||profiles.Tierra;
+  document.getElementById('cv-profile').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div style="width:48px;height:48px;border-radius:12px;background:${ELEMENT_COLORS[dayEl]||'var(--gold)'};display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;color:var(--bg-deep)">${dayEl[0]}</div>
+      <div>
+        <div style="font-family:var(--font-display);font-size:1.1rem">${prof.arch}</div>
+        <div style="font-size:.78rem;color:var(--white-60)">Elemento dominante: ${dayEl} · ${sun.name} solar</div>
+      </div>
+    </div>
+    <div class="profile-section">
+      <h4>Estilo Operativo</h4>
+      <p>${prof.style}</p>
+    </div>
+    <div class="profile-section">
+      <h4>Rutas Profesionales Afines</h4>
+      <ul>${prof.paths.map(p=>`<li>${p}</li>`).join('')}</ul>
+    </div>
+    <div class="profile-section">
+      <h4>Gestión Energética</h4>
+      <p>${prof.energy}</p>
+    </div>
+    <div class="profile-section">
+      <h4>Animal del Año: ${BRANCH_ANIMALS[yearP.branch]}</h4>
+      <p>Nacido en año del ${BRANCH_ANIMALS[yearP.branch]} — la energía del año imprime una capa adicional sobre el perfil base del Maestro del Día.</p>
+    </div>
+  `;
+
+  document.getElementById('natal-results').style.display='block';
+  document.getElementById('natal-results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function switchNatalTab(tab){
+  document.querySelectorAll('.natal-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.natal-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`.natal-tab[onclick*="${tab}"]`).classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+// ===== MATRIX =====
+const MATRIX_LAYOUT = [2,7,6,9,5,1,4,3,8]; // Lo Shu magic square
+const SEQ_NUMS = new Set([1,2,4,5,7,8]);
+const GOV_NUMS = new Set([3,6,9]);
+
+const MATRIX_DATA = {
+  1:{name:'El Iniciador',conn:'Dobla → 2. Complemento → 8 (Amplificador). En la secuencia, 1 es el punto de reinicio después de 5.',role:'Origen del ciclo de doblaje'},
+  2:{name:'El Conector',conn:'Dobla → 4. Complemento → 7 (Analista). Puente natural entre el inicio y la estructura.',role:'Segundo paso del doblaje'},
+  3:{name:'El Patrón',conn:'Gobernador. 3 × 2 = 6 (otro gobernador). 3 + 6 = 9 (tercer gobernador). Los tres gobernadores se generan entre sí.',role:'Primer gobernador'},
+  4:{name:'El Constructor',conn:'Dobla → 8. Complemento → 5 (Catalizador). Mitad exacta de la secuencia.',role:'Tercer paso del doblaje'},
+  5:{name:'El Catalizador',conn:'Dobla → 10 → 1 (reinicio). Complemento → 4 (Constructor). Punto de inflexión del ciclo.',role:'Sexto paso — cierre del ciclo'},
+  6:{name:'El Armonizador',conn:'Gobernador. 6 = 3 × 2. 6 + 3 = 9. Media entre los otros dos gobernadores.',role:'Segundo gobernador'},
+  7:{name:'El Analista',conn:'Dobla → 14 → 5. Complemento → 2 (Conector). El 7 enlaza la segunda mitad con la primera.',role:'Cuarto paso del doblaje'},
+  8:{name:'El Amplificador',conn:'Dobla → 16 → 7. Complemento → 1 (Iniciador). Escala lo que el 1 inició.',role:'Quinto paso del doblaje'},
+  9:{name:'El Integrador',conn:'Gobernador supremo. Cualquier número × 9 reduce a 9. Absorbe y completa. 9 + cualquier dígito = el mismo dígito (en reducción).',role:'Tercer gobernador — universal'}
+};
+
+function buildMatrix(){
+  const grid = document.getElementById('matrix-grid');
+  grid.innerHTML = MATRIX_LAYOUT.map((n,i)=>{
+    const cls = GOV_NUMS.has(n)?'governor':SEQ_NUMS.has(n)?'seq':'';
+    return `<div class="matrix-cell ${cls}" onclick="showMatrixNum(${n})" data-num="${n}">${n}</div>`;
+  }).join('');
+}
+
+function showMatrixNum(n){
+  document.querySelectorAll('.matrix-cell').forEach(c=>{
+    c.classList.toggle('active',parseInt(c.dataset.num)===n);
+  });
+  const d = MATRIX_DATA[n];
+  const rd = ROOT_DATA[n];
+  document.getElementById('matrix-info').innerHTML = `
+    <div style="text-align:center">
+      <div style="font-family:var(--font-display);font-size:1.2rem;color:${rd.color};margin-bottom:4px">${n} — ${d.name}</div>
+      <div style="font-size:.82rem;color:var(--white-60);margin-bottom:8px">${d.role}</div>
+      <p style="font-size:.84rem;color:var(--white-60);line-height:1.5">${d.conn}</p>
+      <div style="margin-top:10px;font-size:.78rem;color:var(--white-30)">${rd.element} · ${rd.colorName}</div>
+    </div>
+  `;
+}
+
+// ===== SEQUENCE SVG =====
+function buildSequence(){
+  const nums = [1,2,4,8,7,5];
+  const cx=160,cy=90,r=65;
+  let svg = '';
+
+  // Hexagonal positions
+  const positions = nums.map((_,i)=>{
+    const angle = (i*60-90)*Math.PI/180;
+    return {x:cx+r*Math.cos(angle),y:cy+r*Math.sin(angle)};
+  });
+
+  // Connection lines
+  for(let i=0;i<positions.length;i++){
+    const next=(i+1)%positions.length;
+    svg+=`<line x1="${positions[i].x}" y1="${positions[i].y}" x2="${positions[next].x}" y2="${positions[next].y}" 
+      stroke="#D4AF37" stroke-width="1.5" opacity=".4"/>`;
+  }
+
+  // Arrow indicators
+  for(let i=0;i<positions.length;i++){
+    const next=(i+1)%positions.length;
+    const mx=(positions[i].x+positions[next].x)/2;
+    const my=(positions[i].y+positions[next].y)/2;
+    svg+=`<text x="${mx}" y="${my+3}" text-anchor="middle" font-size="7" fill="rgba(245,240,232,.3)">→</text>`;
+  }
+
+  // Number circles
+  positions.forEach((p,i)=>{
+    svg+=`<circle cx="${p.x}" cy="${p.y}" r="18" fill="rgba(212,175,55,.1)" stroke="#D4AF37" stroke-width="1.5"/>`;
+    svg+=`<text x="${p.x}" y="${p.y+5}" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="15" font-weight="600" fill="#D4AF37">${nums[i]}</text>`;
+  });
+
+  // Governor numbers in center
+  const govs = [3,6,9];
+  const gPositions = govs.map((_,i)=>{
+    const angle = (i*120-90)*Math.PI/180;
+    return {x:cx+22*Math.cos(angle),y:cy+22*Math.sin(angle)};
+  });
+  gPositions.forEach((p,i)=>{
+    svg+=`<circle cx="${p.x}" cy="${p.y}" r="12" fill="rgba(59,175,132,.1)" stroke="#3BAF84" stroke-width="1"/>`;
+    svg+=`<text x="${p.x}" y="${p.y+4}" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="11" font-weight="600" fill="#3BAF84">${govs[i]}</text>`;
+  });
+
+  document.getElementById('seq-svg').innerHTML = svg;
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded',()=>{
+  buildCalendar();
+  buildMatrix();
+  buildSequence();
+});
 </script>
 </body>
 </html>
