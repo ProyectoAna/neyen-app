@@ -1,2645 +1,770 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
-<!--
-   ______                            __
-  / ____/___  ____ ___  ____  __  __/ /____  _____
- / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
-/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
-\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
-                    /_/
-        Created with Perplexity Computer
-        https://www.perplexity.ai/computer
--->
-<meta name="generator" content="Perplexity Computer">
-<meta name="author" content="Perplexity Computer">
-<meta property="og:see_also" content="https://www.perplexity.ai/computer">
-<link rel="author" href="https://www.perplexity.ai/computer">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0D0D0D">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="NEYĒN">
-<title>NEYĒN — Juego de la Vida</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preconnect" href="https://api.fontshare.com">
-<link href="https://api.fontshare.com/v2/css?f[]=zodiak@400,500,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
-<style>
-/* ===========================
-   RESET & BASE
-   =========================== */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; -webkit-text-size-adjust: 100%; }
-body {
-  font-family: 'Satoshi', -apple-system, sans-serif;
-  background: #0D0D0D;
-  color: #E8E6E0;
-  min-height: 100dvh;
-  overflow: hidden;
-  position: relative;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEYĒN — The Game of Life</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ===========================
-   CSS VARIABLES
-   =========================== */
-:root {
-  --bg: #0D0D0D;
-  --surface: #1A1A18;
-  --surface2: #242420;
-  --border: #333330;
-  --text: #E8E6E0;
-  --muted: #8A8880;
-  --faint: #5A5850;
-  --gold: #D4AF37;
-  --gold-hover: #E8C44A;
-  --gold-glow: rgba(212,175,55,0.25);
-  --green: #3BAF84;
-  --green-hover: #4CC99A;
-  --green-glow: rgba(59,175,132,0.2);
-  --radius: 16px;
-  --radius-sm: 10px;
-  --nav-height: 72px;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
+    body {
+      background: #0a0a14;
+      color: #e8e4d0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-/* ===========================
-   APP SHELL
-   =========================== */
-#app {
-  width: 100%;
-  max-width: 480px;
-  height: 100dvh;
-  margin: 0 auto;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-}
+    /* STARS BACKGROUND */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image:
+        radial-gradient(1px 1px at 20% 30%, rgba(255,215,0,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 50% 60%, rgba(255,215,0,0.2) 0%, transparent 100%),
+        radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.2) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 70%, rgba(255,215,0,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 90%, rgba(255,255,255,0.2) 0%, transparent 100%),
+        radial-gradient(1px 1px at 65% 40%, rgba(255,215,0,0.2) 0%, transparent 100%),
+        radial-gradient(2px 2px at 75% 85%, rgba(255,215,0,0.5) 0%, transparent 100%),
+        radial-gradient(2px 2px at 25% 15%, rgba(255,255,255,0.4) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
 
-/* Desktop phone frame */
-@media (min-width: 500px) {
-  body { background: #060606; display: flex; align-items: center; justify-content: center; }
-  #app { border-left: 1px solid #1e1e1c; border-right: 1px solid #1e1e1c; }
-}
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 20px 60px;
+    }
 
-/* ===========================
-   SCREENS
-   =========================== */
-.screen {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: max(0px, calc(50vw - 240px));
-  width: min(100vw, 480px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s ease;
-  background: var(--bg);
-}
-.screen.active {
-  opacity: 1;
-  pointer-events: all;
-}
+    /* HEADER */
+    header {
+      text-align: center;
+      padding: 50px 20px 40px;
+      border-bottom: 1px solid rgba(201,168,76,0.2);
+    }
 
-/* ===========================
-   AMBIENT PARTICLES
-   =========================== */
-#particles {
-  position: fixed;
-  top: 0; bottom: 0;
-  left: max(0px, calc(50vw - 240px));
-  width: min(100vw, 480px);
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  background: var(--gold);
-  opacity: 0;
-  animation: floatParticle var(--dur, 8s) var(--delay, 0s) infinite ease-in-out;
-}
-@keyframes floatParticle {
-  0% { opacity: 0; transform: translate(0, 0) scale(0); }
-  20% { opacity: var(--op, 0.4); }
-  80% { opacity: var(--op, 0.4); }
-  100% { opacity: 0; transform: translate(var(--tx, 20px), var(--ty, -80px)) scale(0.2); }
-}
+    .logo {
+      font-size: 56px;
+      font-weight: 900;
+      letter-spacing: 12px;
+      color: #C9A84C;
+      text-shadow: 0 0 40px rgba(201,168,76,0.5);
+      margin-bottom: 8px;
+    }
 
-/* ===========================
-   SPLASH SCREEN
-   =========================== */
-#splash {
-  background: #000;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-.splash-seed {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--gold);
-  box-shadow: 0 0 20px 8px var(--gold-glow), 0 0 60px 20px rgba(212,175,55,0.1);
-  animation: breathe 2.5s ease-in-out infinite;
-}
-@keyframes breathe {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 20px 8px var(--gold-glow), 0 0 60px 20px rgba(212,175,55,0.1); }
-  50% { transform: scale(1.6); box-shadow: 0 0 30px 15px var(--gold-glow), 0 0 80px 30px rgba(212,175,55,0.15); }
-}
-.splash-text {
-  position: absolute;
-  bottom: 35%;
-  left: 0; right: 0;
-  text-align: center;
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.1rem;
-  color: var(--muted);
-  opacity: 0;
-  letter-spacing: 0.05em;
-  animation: fadeInSlow 1s ease 1s forwards;
-}
-@keyframes fadeInSlow {
-  to { opacity: 1; }
-}
+    .tagline {
+      font-size: 16px;
+      letter-spacing: 4px;
+      color: rgba(232,228,208,0.5);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
 
-/* ===========================
-   ONBOARDING
-   =========================== */
-#onboarding {
-  z-index: 50;
-}
-.onboard-step {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  padding: 2rem 1.5rem;
-  text-align: center;
-  gap: 1.5rem;
-}
-.onboard-step.active { display: flex; }
+    .one-line {
+      font-size: 18px;
+      color: rgba(232,228,208,0.85);
+      font-style: italic;
+      line-height: 1.6;
+    }
 
-.onboard-title {
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.7rem;
-  font-weight: 500;
-  line-height: 1.25;
-  color: var(--text);
-}
-.onboard-sub {
-  font-size: 0.95rem;
-  color: var(--muted);
-  line-height: 1.6;
-  max-width: 300px;
-}
+    /* GEOMETRY DISPLAY */
+    .geometry-strip {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      padding: 24px 0;
+      border-bottom: 1px solid rgba(201,168,76,0.1);
+      flex-wrap: wrap;
+    }
 
-/* Date picker custom */
-.date-picker-row {
-  display: flex;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 320px;
-}
-.date-select {
-  flex: 1;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem 0.5rem;
-  font-family: 'Satoshi', sans-serif;
-  font-size: 0.9rem;
-  appearance: none;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-.date-select:focus { outline: none; border-color: var(--gold); }
-.date-select option { background: var(--surface2); }
+    .geo-item {
+      text-align: center;
+    }
 
-.time-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  max-width: 320px;
-}
-.time-row label { font-size: 0.85rem; color: var(--muted); flex-shrink: 0; }
-.time-row input[type="time"] {
-  flex: 1;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: var(--radius-sm);
-  padding: 0.65rem 0.75rem;
-  font-family: 'Satoshi', sans-serif;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-.time-row input:focus { outline: none; border-color: var(--gold); }
-.time-unknown {
-  font-size: 0.8rem;
-  color: var(--faint);
-  text-decoration: underline;
-  cursor: pointer;
-  background: none;
-  border: none;
-  color: var(--faint);
-}
-.time-unknown:hover { color: var(--muted); }
+    .geo-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: #C9A84C;
+    }
 
-/* Buttons */
-.btn-primary {
-  background: var(--gold);
-  color: #0D0D0D;
-  font-family: 'Satoshi', sans-serif;
-  font-weight: 700;
-  font-size: 0.95rem;
-  border: none;
-  border-radius: 50px;
-  padding: 0.9rem 2.5rem;
-  cursor: pointer;
-  min-height: 52px;
-  transition: all 0.2s;
-  letter-spacing: 0.02em;
-}
-.btn-primary:hover { background: var(--gold-hover); transform: translateY(-1px); }
-.btn-primary:active { transform: translateY(0); }
+    .geo-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: rgba(232,228,208,0.4);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--muted);
-  font-family: 'Satoshi', sans-serif;
-  font-size: 0.85rem;
-  border: 1px solid var(--border);
-  border-radius: 50px;
-  padding: 0.7rem 1.5rem;
-  cursor: pointer;
-  min-height: 44px;
-  transition: all 0.2s;
-}
-.btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+    /* INPUT SECTION */
+    .input-section {
+      padding: 50px 0 30px;
+      text-align: center;
+    }
 
-/* Name input */
-.name-input {
-  width: 100%;
-  max-width: 280px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid var(--border);
-  color: var(--text);
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.5rem;
-  text-align: center;
-  padding: 0.5rem;
-  transition: border-color 0.2s;
-}
-.name-input:focus { outline: none; border-color: var(--gold); }
-.name-input::placeholder { color: var(--faint); }
+    .input-label {
+      font-size: 13px;
+      letter-spacing: 3px;
+      color: rgba(232,228,208,0.5);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: block;
+    }
 
-/* Seed profile card */
-.seed-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  max-width: 320px;
-  width: 100%;
-  text-align: left;
-  position: relative;
-  overflow: hidden;
-}
-.seed-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--gold), var(--green));
-}
-.seed-name {
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.5rem;
-  color: var(--gold);
-  margin-bottom: 0.4rem;
-}
-.seed-headline {
-  font-size: 0.9rem;
-  color: var(--text);
-  line-height: 1.5;
-  margin-bottom: 0.75rem;
-}
-.seed-desc {
-  font-size: 0.82rem;
-  color: var(--muted);
-  line-height: 1.65;
-}
-.seed-traits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.75rem;
-}
-.seed-trait {
-  font-size: 0.72rem;
-  padding: 0.25rem 0.65rem;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  color: var(--muted);
-}
+    .date-input {
+      background: rgba(201,168,76,0.08);
+      border: 1px solid rgba(201,168,76,0.4);
+      border-radius: 12px;
+      color: #e8e4d0;
+      font-size: 22px;
+      padding: 16px 24px;
+      text-align: center;
+      width: 100%;
+      max-width: 320px;
+      outline: none;
+      transition: all 0.3s;
+    }
 
-/* Seed planting animation */
-.seed-anim-container {
-  width: 120px;
-  height: 120px;
-  position: relative;
-  margin: 0 auto;
-}
-.seed-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--gold);
-  position: absolute;
-  left: 50%; bottom: 10px;
-  transform: translateX(-50%);
-  animation: seedSink 1.5s ease forwards;
-}
-@keyframes seedSink {
-  0% { bottom: 60px; opacity: 1; }
-  60% { bottom: 10px; opacity: 1; }
-  100% { bottom: 8px; opacity: 0.4; }
-}
-.sprout {
-  position: absolute;
-  left: 50%; bottom: 10px;
-  transform: translateX(-50%) scaleY(0);
-  transform-origin: bottom;
-  animation: sproutGrow 1s ease 1.2s forwards;
-}
-@keyframes sproutGrow {
-  to { transform: translateX(-50%) scaleY(1); }
-}
+    .date-input:focus {
+      border-color: #C9A84C;
+      box-shadow: 0 0 30px rgba(201,168,76,0.2);
+    }
 
-/* Garden preview in onboarding */
-.garden-preview {
-  width: 100%;
-  max-width: 280px;
-  height: 160px;
-  position: relative;
-  margin: 0 auto;
-}
+    .calculate-btn {
+      display: block;
+      width: 100%;
+      max-width: 320px;
+      margin: 20px auto 0;
+      background: linear-gradient(135deg, #C9A84C, #a07830);
+      border: none;
+      border-radius: 12px;
+      color: #0a0a14;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      padding: 18px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
 
-/* ===========================
-   MAIN APP
-   =========================== */
-#main-app {
-  z-index: 10;
-  flex-direction: column;
-}
-.app-content {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-bottom: calc(var(--nav-height) + var(--safe-bottom));
-  -webkit-overflow-scrolling: touch;
-}
-.app-content::-webkit-scrollbar { display: none; }
+    .calculate-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(201,168,76,0.4);
+    }
 
-/* Tab panels */
-.tab-panel {
-  display: none;
-  flex-direction: column;
-  padding-top: calc(var(--safe-top) + 0.5rem);
-  width: 100%;
-}
-.tab-panel.active { display: flex; }
-/* Non-garden tabs fill minimum */
-#tab-hoy.active, #tab-vinculos.active, #tab-camino.active { min-height: 100%; }
+    /* RESULT */
+    #result { display: none; }
 
-/* Jardín special — no scroll, fits in viewport */
-#tab-jardin.active {
-  height: calc(100dvh - var(--nav-height) - var(--safe-bottom));
-  min-height: unset;
-  overflow: hidden;
-}
+    .result-header {
+      text-align: center;
+      padding: 50px 0 30px;
+      border-top: 1px solid rgba(201,168,76,0.2);
+      margin-top: 40px;
+    }
 
-/* ===========================
-   BOTTOM NAV
-   =========================== */
-.bottom-nav {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: calc(var(--nav-height) + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
-  background: rgba(26, 26, 24, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: flex-start;
-  padding-top: 0.5rem;
-  z-index: 20;
-}
-.nav-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.4rem 0;
-  min-height: 44px;
-  position: relative;
-}
-.nav-icon { font-size: 1.3rem; transition: transform 0.2s; }
-.nav-label {
-  font-size: 0.65rem;
-  font-family: 'Satoshi', sans-serif;
-  color: var(--faint);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  transition: color 0.2s;
-}
-.nav-btn.active .nav-label { color: var(--gold); }
-.nav-btn.active .nav-icon { transform: scale(1.15); }
-.nav-dot {
-  position: absolute;
-  top: 2px;
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: var(--gold);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.nav-btn.active .nav-dot { opacity: 1; }
+    .root-number {
+      font-size: 100px;
+      font-weight: 900;
+      color: #C9A84C;
+      line-height: 1;
+      text-shadow: 0 0 60px rgba(201,168,76,0.6);
+    }
 
-/* ===========================
-   TAB 1: JARDÍN
-   =========================== */
-.jardin-header {
-  padding: 1rem 1.5rem 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-.jardin-season {
-  font-size: 0.75rem;
-  color: var(--muted);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.jardin-streak {
-  font-size: 0.75rem;
-  color: var(--gold);
-  letter-spacing: 0.05em;
-}
+    .letter-hebrew {
+      font-size: 72px;
+      color: rgba(232,228,208,0.9);
+      margin: 10px 0;
+      line-height: 1;
+    }
 
-/* SVG Garden */
-.garden-svg-wrap {
-  position: relative;
-  width: 100%;
-  padding: 0 0.5rem;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 0;
-}
-#garden-svg {
-  width: 100%;
-  max-width: 340px;
-  height: auto;
-  aspect-ratio: 1;
-  display: block;
-  margin: 0 auto;
-  flex-shrink: 1;
-}
+    .letter-name {
+      font-size: 28px;
+      font-weight: 300;
+      letter-spacing: 6px;
+      color: #C9A84C;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
 
-/* Firefly */
-#firefly {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--gold);
-  box-shadow: 0 0 8px 4px rgba(212,175,55,0.5), 0 0 16px 8px rgba(212,175,55,0.2);
-  pointer-events: none;
-  z-index: 5;
-  transition: box-shadow 0.5s;
-}
-.firefly-trail {
-  position: absolute;
-  width: 3px; height: 3px;
-  border-radius: 50%;
-  background: var(--gold);
-  opacity: 0.3;
-  pointer-events: none;
-}
-.firefly-bubble {
-  position: absolute;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px 12px 12px 2px;
-  padding: 0.55rem 0.8rem;
-  font-size: 0.78rem;
-  color: var(--text);
-  max-width: 200px;
-  white-space: normal;
-  line-height: 1.5;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  z-index: 6;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  font-style: italic;
-}
-.firefly-bubble.visible { opacity: 1; }
+    .letter-transliteration {
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: rgba(232,228,208,0.4);
+      text-transform: uppercase;
+    }
 
-/* Climate overlay */
-.climate-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  border-radius: var(--radius);
-  transition: opacity 1s ease;
-}
+    /* DATA CARDS */
+    .data-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 30px 0;
+    }
 
-/* ===========================
-   TAB 2: HOY
-   =========================== */
-.hoy-wrap {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-.hoy-greeting {
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.5rem;
-  font-weight: 500;
-  line-height: 1.3;
-}
-.hoy-greeting span { color: var(--gold); }
+    .data-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,168,76,0.15);
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+    }
 
-/* Energy meter */
-.energy-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.1rem 1.25rem;
-}
-.energy-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.6rem;
-}
-.energy-title {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-}
-.energy-state {
-  font-size: 0.8rem;
-  color: var(--gold);
-  font-weight: 500;
-}
-.energy-bar {
-  height: 6px;
-  background: var(--surface2);
-  border-radius: 3px;
-  position: relative;
-  overflow: hidden;
-}
-.energy-fill {
-  height: 100%;
-  border-radius: 3px;
-  background: linear-gradient(90deg, #4ECDC4, #D4AF37, #FF6B35);
-  transition: width 1s ease;
-}
-.energy-icons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.4rem;
-}
-.energy-icons span { font-size: 0.75rem; color: var(--faint); }
+    .data-card.full {
+      grid-column: 1 / -1;
+    }
 
-/* Daily card */
-.daily-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  position: relative;
-  overflow: hidden;
-}
-.daily-card::after {
-  content: '';
-  position: absolute;
-  top: 0; right: 0;
-  width: 60px; height: 60px;
-  background: radial-gradient(circle, var(--gold-glow) 0%, transparent 70%);
-  pointer-events: none;
-}
-.daily-label {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--faint);
-  margin-bottom: 0.6rem;
-}
-.daily-message {
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.15rem;
-  line-height: 1.45;
-  color: var(--text);
-  margin-bottom: 0.75rem;
-}
-.daily-action {
-  font-size: 0.85rem;
-  color: var(--green);
-  font-weight: 500;
-}
-.daily-action::before { content: '→ '; }
+    .data-card-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: rgba(232,228,208,0.35);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
 
-/* Checkin */
-.checkin-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-}
-.checkin-title {
-  font-size: 0.9rem;
-  color: var(--text);
-  margin-bottom: 0.9rem;
-  font-weight: 500;
-}
-.mood-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-}
-.mood-btn {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.65rem 0.4rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-height: 62px;
-}
-.mood-btn:hover { border-color: var(--gold); }
-.mood-btn.selected { border-color: var(--gold); background: rgba(212,175,55,0.08); }
-.mood-emoji { font-size: 1.3rem; }
-.mood-label { font-size: 0.7rem; color: var(--muted); }
+    .data-card-value {
+      font-size: 18px;
+      color: #C9A84C;
+      font-weight: 600;
+    }
 
-.firefly-response {
-  background: var(--surface2);
-  border-left: 2px solid var(--gold);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  padding: 0.75rem 1rem;
-  font-size: 0.85rem;
-  color: var(--muted);
-  font-style: italic;
-  display: none;
-  animation: slideIn 0.3s ease;
-}
-.firefly-response.visible { display: block; }
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+    .data-card-sub {
+      font-size: 13px;
+      color: rgba(232,228,208,0.6);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
 
-/* Identity insight */
-.insight-card {
-  background: linear-gradient(135deg, var(--surface) 0%, rgba(59,175,132,0.05) 100%);
-  border: 1px solid rgba(59,175,132,0.2);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-}
-.insight-label {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--green);
-  margin-bottom: 0.5rem;
-  opacity: 0.7;
-}
-.insight-text {
-  font-size: 0.9rem;
-  color: var(--text);
-  line-height: 1.6;
-}
+    /* TRUTH BLOCK */
+    .truth-block {
+      background: rgba(201,168,76,0.06);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-left: 3px solid #C9A84C;
+      border-radius: 0 12px 12px 0;
+      padding: 24px;
+      margin: 20px 0;
+    }
 
-/* Garden grow indicator */
-.grow-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.75rem 1rem;
-  background: rgba(59,175,132,0.08);
-  border: 1px solid rgba(59,175,132,0.15);
-  border-radius: var(--radius-sm);
-  font-size: 0.82rem;
-  color: var(--green);
-  display: none;
-}
-.grow-indicator.visible { display: flex; }
-.grow-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--green);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.5); opacity: 0.6; }
-}
+    .truth-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: rgba(201,168,76,0.6);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
 
-/* ===========================
-   TAB 3: VÍNCULOS
-   =========================== */
-.vinculos-wrap {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-.vinculos-title {
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.4rem;
-}
+    .truth-text {
+      font-size: 16px;
+      line-height: 1.7;
+      color: rgba(232,228,208,0.85);
+    }
 
-/* Constellation */
-.constellation-wrap {
-  position: relative;
-  width: 100%;
-  height: 240px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-#constellation-svg {
-  width: 100%;
-  height: 100%;
-}
+    /* PROOF BLOCK */
+    .proof-block {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 12px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: rgba(232,228,208,0.6);
+      line-height: 1.8;
+    }
 
-/* Add person */
-.add-person-form {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  display: none;
-}
-.add-person-form.visible { display: block; }
-.form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-.form-label { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.05em; }
-.form-input {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font-family: 'Satoshi', sans-serif;
-  font-size: 0.9rem;
-  padding: 0.65rem 0.85rem;
-  width: 100%;
-  transition: border-color 0.2s;
-}
-.form-input:focus { outline: none; border-color: var(--gold); }
-.form-date-row { display: flex; gap: 0.4rem; }
-.form-date-row .form-input { text-align: center; }
-.form-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-.btn-add {
-  background: var(--gold);
-  color: #0D0D0D;
-  font-family: 'Satoshi', sans-serif;
-  font-weight: 700;
-  font-size: 0.85rem;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 0.65rem 1.25rem;
-  cursor: pointer;
-  flex: 1;
-  min-height: 44px;
-  transition: background 0.2s;
-}
-.btn-add:hover { background: var(--gold-hover); }
-.btn-cancel {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-family: 'Satoshi', sans-serif;
-  font-size: 0.85rem;
-  border-radius: var(--radius-sm);
-  padding: 0.65rem 1rem;
-  cursor: pointer;
-  min-height: 44px;
-  transition: border-color 0.2s;
-}
-.btn-cancel:hover { border-color: var(--muted); }
+    .proof-block .highlight {
+      color: #C9A84C;
+      font-weight: 700;
+    }
 
-/* Relationship cards */
-.relation-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  position: relative;
-  overflow: hidden;
-}
-.relation-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--gold), var(--green));
-}
-.relation-names {
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.1rem;
-  margin-bottom: 0.85rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.relation-names .delete-btn {
-  background: none;
-  border: none;
-  color: var(--faint);
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0.25rem;
-  min-height: 44px; min-width: 44px;
-  display: flex; align-items: center; justify-content: center;
-}
-.relation-names .delete-btn:hover { color: #C41E3A; }
-.relation-row {
-  margin-bottom: 0.75rem;
-}
-.relation-row-label {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--faint);
-  margin-bottom: 0.25rem;
-}
-.relation-row-text {
-  font-size: 0.88rem;
-  color: var(--text);
-  line-height: 1.5;
-}
+    /* 22 WHEEL */
+    .wheel-section {
+      margin: 40px 0;
+    }
 
-/* ===========================
-   TAB 4: CAMINO
-   =========================== */
-.camino-wrap {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  position: relative;
-}
-.camino-title {
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.4rem;
-  margin-bottom: 1.5rem;
-}
+    .section-title {
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: rgba(232,228,208,0.35);
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-/* Timeline */
-.timeline {
-  position: relative;
-  padding-left: 2rem;
-}
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 0.55rem;
-  top: 0; bottom: 0;
-  width: 1px;
-  background: linear-gradient(to bottom, transparent, var(--border) 10%, var(--border) 90%, transparent);
-}
-.timeline-item {
-  position: relative;
-  padding-bottom: 1.5rem;
-}
-.timeline-dot {
-  position: absolute;
-  left: -1.5rem;
-  top: 0.4rem;
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  background: var(--border);
-  border: 2px solid var(--surface);
-  transition: all 0.3s;
-}
-.timeline-item.current .timeline-dot {
-  background: var(--gold);
-  border-color: var(--gold);
-  box-shadow: 0 0 12px var(--gold-glow);
-  width: 14px; height: 14px;
-  left: -1.6rem;
-}
-.timeline-item.future .timeline-dot { background: var(--surface2); }
-.timeline-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem;
-  transition: all 0.3s;
-}
-.timeline-item.current .timeline-card {
-  border-color: rgba(212,175,55,0.3);
-  background: linear-gradient(135deg, var(--surface) 0%, rgba(212,175,55,0.04) 100%);
-}
-.timeline-item.past .timeline-card { opacity: 0.5; }
-.timeline-phase-label {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--faint);
-  margin-bottom: 0.3rem;
-}
-.timeline-item.current .timeline-phase-label { color: var(--gold); }
-.timeline-phase-name {
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.05rem;
-  margin-bottom: 0.4rem;
-}
-.timeline-phase-desc {
-  font-size: 0.83rem;
-  color: var(--muted);
-  line-height: 1.6;
-  display: none;
-}
-.timeline-item.current .timeline-phase-desc { display: block; }
-.timeline-years {
-  font-size: 0.72rem;
-  color: var(--faint);
-  margin-top: 0.4rem;
-}
+    .wheel-grid {
+      display: grid;
+      grid-template-columns: repeat(11, 1fr);
+      gap: 6px;
+    }
 
-/* Today marker */
-.today-marker {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0.5rem 0 1rem;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--gold);
-  position: relative;
-  left: -2rem;
-  padding-left: 2rem;
-}
-.today-marker::before {
-  content: '';
-  width: 40px;
-  height: 1px;
-  background: var(--gold);
-  opacity: 0.5;
-}
+    .wheel-cell {
+      aspect-ratio: 1;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,168,76,0.1);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 4px;
+    }
 
-/* Milestone add */
-.milestone-add {
-  margin-top: 1rem;
-}
-.btn-milestone {
-  background: transparent;
-  border: 1px dashed var(--border);
-  color: var(--muted);
-  font-family: 'Satoshi', sans-serif;
-  font-size: 0.85rem;
-  border-radius: var(--radius);
-  padding: 0.75rem 1.25rem;
-  cursor: pointer;
-  width: 100%;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s;
-}
-.btn-milestone:hover { border-color: var(--gold); color: var(--gold); }
+    .wheel-cell:hover {
+      background: rgba(201,168,76,0.1);
+      border-color: rgba(201,168,76,0.4);
+    }
 
-/* Seasonal forecast */
-.forecast-section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
-}
-.forecast-title {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  margin-bottom: 1rem;
-}
-.forecast-months {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-.forecast-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.85rem 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.forecast-month { font-size: 0.88rem; color: var(--text); }
-.forecast-vibe { font-size: 0.78rem; color: var(--muted); }
-.forecast-element { font-size: 1rem; }
+    .wheel-cell.active {
+      background: rgba(201,168,76,0.2);
+      border-color: #C9A84C;
+      box-shadow: 0 0 20px rgba(201,168,76,0.3);
+    }
 
-/* User milestone items */
-.user-milestone {
-  background: var(--surface2);
-  border: 1px solid rgba(212,175,55,0.2);
-  border-radius: var(--radius-sm);
-  padding: 0.65rem 0.85rem;
-  font-size: 0.82rem;
-  color: var(--text);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.5rem;
-}
-.user-milestone-date { font-size: 0.7rem; color: var(--faint); }
+    .wheel-cell .heb {
+      font-size: 16px;
+      color: rgba(232,228,208,0.8);
+    }
 
-/* ===========================
-   MILESTONE MODAL
-   =========================== */
-.modal-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 50;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-.modal-overlay.visible { opacity: 1; pointer-events: all; }
-.modal-sheet {
-  background: var(--surface);
-  border-radius: 20px 20px 0 0;
-  padding: 1.5rem;
-  width: 100%;
-  max-width: 480px;
-  padding-bottom: calc(1.5rem + var(--safe-bottom));
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  transform: translateY(100%);
-  transition: transform 0.35s ease;
-}
-.modal-overlay.visible .modal-sheet { transform: translateY(0); }
-.modal-title { font-family: 'Zodiak', Georgia, serif; font-size: 1.2rem; }
-.modal-close {
-  background: none; border: none; color: var(--muted);
-  cursor: pointer; font-size: 1.2rem;
-  position: absolute; top: 1.25rem; right: 1.25rem;
-  min-height: 44px; min-width: 44px;
-  display: flex; align-items: center; justify-content: center;
-}
+    .wheel-cell.active .heb {
+      color: #C9A84C;
+    }
 
-/* ===========================
-   COMMON UTILITIES
-   =========================== */
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-.section-title {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-}
-.icon-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 50px;
-  color: var(--gold);
-  font-size: 0.8rem;
-  padding: 0.4rem 0.9rem;
-  cursor: pointer;
-  min-height: 36px;
-  display: flex; align-items: center; gap: 0.3rem;
-  transition: all 0.2s;
-}
-.icon-btn:hover { background: var(--surface2); border-color: var(--gold); }
+    .wheel-cell .num {
+      font-size: 8px;
+      color: rgba(232,228,208,0.3);
+      margin-top: 2px;
+    }
 
-.divider {
-  height: 1px;
-  background: var(--border);
-  margin: 0.25rem 0;
-}
+    .wheel-cell.active .num {
+      color: rgba(201,168,76,0.7);
+    }
 
-/* Profile pill */
-.profile-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-.profile-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--gold);
-}
+    /* TOOLTIP */
+    #tooltip {
+      display: none;
+      background: rgba(10,10,20,0.95);
+      border: 1px solid rgba(201,168,76,0.4);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 12px;
+      text-align: center;
+    }
 
-/* Number root badge */
-.root-badge {
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold), var(--green));
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Zodiak', Georgia, serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #0D0D0D;
-  flex-shrink: 0;
-}
+    #tooltip .t-letter { font-size: 36px; color: rgba(232,228,208,0.9); }
+    #tooltip .t-name { font-size: 16px; color: #C9A84C; margin: 4px 0; letter-spacing: 2px; }
+    #tooltip .t-info { font-size: 13px; color: rgba(232,228,208,0.6); line-height: 1.6; }
 
-/* Loading state */
-.loading-dots {
-  display: flex; gap: 4px; align-items: center; justify-content: center;
-  padding: 0.5rem;
-}
-.loading-dots span {
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: var(--gold);
-  animation: dotPulse 1.2s ease-in-out infinite;
-}
-.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes dotPulse {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-  40% { transform: scale(1); opacity: 1; }
-}
+    /* CALENDAR */
+    .calendar-block {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(201,168,76,0.15);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 20px 0;
+    }
 
-/* Footer */
-.pplx-footer {
-  text-align: center;
-  padding: 1rem;
-  margin-top: 1rem;
-}
-.pplx-footer a {
-  font-size: 0.65rem;
-  color: var(--faint);
-  text-decoration: none;
-  letter-spacing: 0.05em;
-}
-.pplx-footer a:hover { color: var(--muted); }
+    .cal-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
 
-/* Garden glow levels */
-.garden-svg-wrap[data-glow="1"] { filter: brightness(0.85); }
-.garden-svg-wrap[data-glow="2"] { filter: brightness(0.92); }
-.garden-svg-wrap[data-glow="3"] { filter: brightness(1); }
-.garden-svg-wrap[data-glow="4"] { filter: brightness(1.05) saturate(1.1); }
-.garden-svg-wrap[data-glow="5"] { filter: brightness(1.1) saturate(1.2); }
+    .cal-row:last-child { border-bottom: none; }
 
-/* Transition helpers */
-.fade-in { animation: fadeIn 0.5s ease forwards; }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-</style>
+    .cal-key {
+      font-size: 12px;
+      color: rgba(232,228,208,0.4);
+      letter-spacing: 1px;
+    }
+
+    .cal-val {
+      font-size: 14px;
+      color: #C9A84C;
+      font-weight: 600;
+    }
+
+    /* FOUNDATION */
+    .foundation {
+      margin: 50px 0 0;
+      padding: 30px 0;
+      border-top: 1px solid rgba(201,168,76,0.1);
+    }
+
+    .foundation-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .found-item {
+      text-align: center;
+      padding: 16px 8px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(201,168,76,0.1);
+      border-radius: 10px;
+    }
+
+    .found-num {
+      font-size: 32px;
+      font-weight: 700;
+      color: #C9A84C;
+    }
+
+    .found-eq {
+      font-size: 11px;
+      color: rgba(232,228,208,0.4);
+      margin: 4px 0 2px;
+    }
+
+    .found-name {
+      font-size: 12px;
+      color: rgba(232,228,208,0.6);
+      letter-spacing: 1px;
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      border-top: 1px solid rgba(201,168,76,0.1);
+      margin-top: 60px;
+    }
+
+    .footer-logo { font-size: 20px; color: #C9A84C; letter-spacing: 6px; margin-bottom: 8px; }
+    .footer-sub { font-size: 11px; color: rgba(232,228,208,0.3); letter-spacing: 2px; }
+
+    @media (max-width: 480px) {
+      .logo { font-size: 40px; }
+      .root-number { font-size: 72px; }
+      .letter-hebrew { font-size: 56px; }
+      .data-grid { grid-template-columns: 1fr; }
+      .foundation-grid { grid-template-columns: 1fr 1fr; }
+      .wheel-grid { grid-template-columns: repeat(8, 1fr); }
+      .geometry-strip { gap: 20px; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- Ambient particles -->
-<div id="particles"></div>
+<div class="container">
 
-<div id="app">
+  <!-- HEADER -->
+  <header>
+    <div class="logo">NEYĒN</div>
+    <div class="tagline">The Game of Life</div>
+    <div class="one-line">Enter your date of birth.<br>The universe has been calculating your number since before you were born.</div>
+  </header>
 
-  <!-- =====================
-       SPLASH SCREEN
-       ===================== -->
-  <div id="splash" class="screen active">
-    <div class="splash-seed"></div>
-    <div class="splash-text">Todo comienza con una semilla.</div>
-  </div>
-
-  <!-- =====================
-       ONBOARDING
-       ===================== -->
-  <div id="onboarding" class="screen" style="background: var(--bg);">
-
-    <!-- Step 1: Birth date -->
-    <div class="onboard-step active" id="ob-step-1" style="background: radial-gradient(ellipse at center bottom, rgba(212,175,55,0.06) 0%, transparent 70%);">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🌱</div>
-      <h1 class="onboard-title">¿Cuándo llegaste<br>al mundo?</h1>
-      <p class="onboard-sub">No para analizarte. Para entenderte.</p>
-
-      <div class="date-picker-row">
-        <select class="date-select" id="birth-day" aria-label="Día">
-          <option value="">Día</option>
-        </select>
-        <select class="date-select" id="birth-month" aria-label="Mes">
-          <option value="">Mes</option>
-          <option value="1">Enero</option>
-          <option value="2">Febrero</option>
-          <option value="3">Marzo</option>
-          <option value="4">Abril</option>
-          <option value="5">Mayo</option>
-          <option value="6">Junio</option>
-          <option value="7">Julio</option>
-          <option value="8">Agosto</option>
-          <option value="9">Septiembre</option>
-          <option value="10">Octubre</option>
-          <option value="11">Noviembre</option>
-          <option value="12">Diciembre</option>
-        </select>
-        <select class="date-select" id="birth-year" aria-label="Año">
-          <option value="">Año</option>
-        </select>
-      </div>
-
-      <div class="time-row" id="time-row-wrap">
-        <label>¿La hora?</label>
-        <input type="time" id="birth-time" aria-label="Hora de nacimiento">
-        <button class="time-unknown" id="skip-time" onclick="document.getElementById('birth-time').value=''; this.style.opacity='0.4';">No lo sé</button>
-      </div>
-
-      <button class="btn-primary" id="ob1-next">Plantar mi semilla</button>
+  <!-- VERIFIED GEOMETRY STRIP -->
+  <div class="geometry-strip">
+    <div class="geo-item">
+      <div class="geo-number">86</div>
+      <div class="geo-label">God · Nature</div>
     </div>
-
-    <!-- Step 2: Seed animation + profile -->
-    <div class="onboard-step" id="ob-step-2" style="background: radial-gradient(ellipse at center, rgba(212,175,55,0.05) 0%, transparent 70%);">
-      <div class="seed-anim-container" id="seed-anim">
-        <svg class="sprout" id="sprout-svg" width="40" height="80" viewBox="0 0 40 80" fill="none">
-          <line x1="20" y1="80" x2="20" y2="30" stroke="#3BAF84" stroke-width="2"/>
-          <path d="M20 30 Q10 15 5 5 Q15 8 20 30" fill="#3BAF84" opacity="0.8"/>
-          <path d="M20 40 Q30 25 35 15 Q25 18 20 40" fill="#3BAF84" opacity="0.6"/>
-        </svg>
-        <div class="seed-dot" id="seed-dot"></div>
-      </div>
-      <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); margin-top: 0.5rem;" id="root-reveal-label">Tu semilla es...</div>
-      <div id="seed-profile-card"></div>
-      <div style="margin-top:1.25rem;width:100%;max-width:320px;">
-        <label style="display:block;font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;text-align:center;">¿Cómo te llamas?</label>
-        <input type="text" class="name-input" id="user-name-input" placeholder="Tu nombre" maxlength="30" autocomplete="given-name" spellcheck="false">
-      </div>
-      <button class="btn-primary" id="ob2-next">Continuar</button>
+    <div class="geo-item">
+      <div class="geo-number">73</div>
+      <div class="geo-label">Wisdom</div>
     </div>
-
-    <!-- Step 3: Name the firefly -->
-    <div class="onboard-step" id="ob-step-3">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">✨</div>
-      <h1 class="onboard-title">Alguien te va a<br>acompañar.</h1>
-      <p class="onboard-sub">¿Cómo quieres llamarle?</p>
-      <input type="text" class="name-input" id="firefly-name-input" placeholder="Escribe un nombre" maxlength="20" autocomplete="off" spellcheck="false">
-      <button class="btn-primary" id="ob3-next">Seguir</button>
+    <div class="geo-item">
+      <div class="geo-number">13</div>
+      <div class="geo-label">One</div>
     </div>
-
-    <!-- Step 4: Garden reveal -->
-    <div class="onboard-step" id="ob-step-4" style="background: radial-gradient(ellipse at center, rgba(59,175,132,0.06) 0%, transparent 70%);">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🌿</div>
-      <h1 class="onboard-title">Este es tu jardín.</h1>
-      <p class="onboard-sub">Cada día que descubras algo nuevo, algo crecerá aquí.</p>
-      <div class="garden-preview">
-        <svg width="280" height="160" viewBox="0 0 280 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="140" cy="80" r="60" stroke="rgba(212,175,55,0.15)" stroke-width="1" stroke-dasharray="4 4"/>
-          <circle cx="140" cy="80" r="40" stroke="rgba(212,175,55,0.1)" stroke-width="1" stroke-dasharray="3 5"/>
-          <circle cx="140" cy="80" r="20" stroke="rgba(212,175,55,0.2)" stroke-width="1"/>
-          <circle cx="140" cy="80" r="4" fill="var(--gold)" opacity="0.8"/>
-          <!-- Small plants -->
-          <g opacity="0.5">
-            <line x1="100" y1="50" x2="100" y2="38" stroke="#3BAF84" stroke-width="1.5"/>
-            <path d="M100 42 Q95 36 92 32 Q97 33 100 42" fill="#3BAF84"/>
-          </g>
-          <g opacity="0.4">
-            <line x1="180" y1="55" x2="180" y2="43" stroke="#3BAF84" stroke-width="1.5"/>
-            <path d="M180 47 Q185 41 188 37 Q183 38 180 47" fill="#3BAF84"/>
-          </g>
-          <g opacity="0.3">
-            <line x1="140" y1="130" x2="140" y2="120" stroke="#3BAF84" stroke-width="1.5"/>
-            <path d="M140 124 Q135 118 132 114 Q137 115 140 124" fill="#3BAF84"/>
-          </g>
-          <!-- Firefly -->
-          <circle cx="165" cy="65" r="3" fill="var(--gold)" opacity="0.9">
-            <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2s" repeatCount="indefinite"/>
-            <animate attributeName="cx" values="165;170;165;158;165" dur="5s" repeatCount="indefinite"/>
-            <animate attributeName="cy" values="65;60;65;68;65" dur="5s" repeatCount="indefinite"/>
-          </circle>
-        </svg>
-      </div>
-      <button class="btn-primary" id="ob4-next">Explorar mi jardín</button>
+    <div class="geo-item">
+      <div class="geo-number">26</div>
+      <div class="geo-label">Jehovah</div>
+    </div>
+    <div class="geo-item">
+      <div class="geo-number">22</div>
+      <div class="geo-label">Letters · Paths</div>
+    </div>
+    <div class="geo-item">
+      <div class="geo-number">32</div>
+      <div class="geo-label">Ways of Wisdom</div>
     </div>
   </div>
 
-  <!-- =====================
-       MAIN APP
-       ===================== -->
-  <div id="main-app" class="screen">
-    <div class="app-content" id="app-content">
+  <!-- INPUT -->
+  <div class="input-section">
+    <span class="input-label">Your Date of Birth</span>
+    <input type="date" class="date-input" id="birthdate">
+    <button class="calculate-btn" onclick="calculate()">Calculate My Number</button>
+  </div>
 
-      <!-- TAB 1: JARDÍN -->
-      <div class="tab-panel active" id="tab-jardin" style="padding-top: calc(var(--safe-top) + 0.25rem); padding-bottom: 0;">
-        <div class="jardin-header">
-          <div class="jardin-season" id="season-display">—</div>
-          <div class="jardin-streak" id="streak-display">—</div>
-        </div>
+  <!-- RESULT -->
+  <div id="result">
 
-        <div class="garden-svg-wrap" id="garden-wrap" data-glow="1">
-          <!-- Firefly -->
-          <div id="firefly"></div>
-          <div class="firefly-bubble" id="firefly-bubble"></div>
+    <div class="result-header">
+      <div class="root-number" id="rootNum"></div>
+      <div class="letter-hebrew" id="letterHeb"></div>
+      <div class="letter-name" id="letterName"></div>
+      <div class="letter-transliteration" id="letterTrans"></div>
+    </div>
 
-          <svg id="garden-svg" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Background circle -->
-            <circle cx="160" cy="160" r="155" fill="rgba(26,26,24,0.6)"/>
-
-            <!-- Spiral path (golden ratio) -->
-            <path id="spiral-path" d="M160,160 Q200,140 210,100 Q220,60 190,40 Q150,15 110,30 Q65,48 50,90 Q30,140 55,185 Q85,240 145,255 Q215,270 265,230 Q310,185 305,125 Q295,55 235,25 Q165,-10 95,10 Q15,35 5,115"
-              stroke="rgba(212,175,55,0.12)" stroke-width="1.5" fill="none" stroke-dasharray="4 6"/>
-
-            <!-- Zone dots along spiral -->
-            <!-- Zone 1 (inner) -->
-            <g id="zone-1" class="garden-zone">
-              <circle cx="185" cy="115" r="18" fill="rgba(59,175,132,0.06)" stroke="rgba(59,175,132,0.2)" stroke-width="1"/>
-              <line x1="185" y1="130" x2="185" y2="108" stroke="#3BAF84" stroke-width="1.5" opacity="0.7"/>
-              <path d="M185 114 Q178 106 174 100 Q181 102 185 114" fill="#3BAF84" opacity="0.6"/>
-              <path d="M185 118 Q192 110 196 104 Q189 106 185 118" fill="#3BAF84" opacity="0.5"/>
-            </g>
-
-            <!-- Zone 2 -->
-            <g id="zone-2" class="garden-zone">
-              <circle cx="240" cy="180" r="20" fill="rgba(212,175,55,0.04)" stroke="rgba(212,175,55,0.15)" stroke-width="1"/>
-              <line x1="240" y1="196" x2="240" y2="172" stroke="#D4AF37" stroke-width="1.5" opacity="0.5"/>
-              <path d="M240 178 Q233 168 229 162 Q236 165 240 178" fill="#D4AF37" opacity="0.45"/>
-              <circle cx="243" cy="180" r="2" fill="#D4AF37" opacity="0.3"/>
-            </g>
-
-            <!-- Zone 3 -->
-            <g id="zone-3" class="garden-zone">
-              <circle cx="110" cy="220" r="22" fill="rgba(59,175,132,0.05)" stroke="rgba(59,175,132,0.15)" stroke-width="1"/>
-              <line x1="110" y1="235" x2="110" y2="210" stroke="#3BAF84" stroke-width="1.5" opacity="0.5"/>
-              <path d="M110 216 Q103 207 99 200 Q106 203 110 216" fill="#3BAF84" opacity="0.5"/>
-              <path d="M110 222 Q117 213 121 206 Q114 209 110 222" fill="#3BAF84" opacity="0.4"/>
-            </g>
-
-            <!-- Zone 4 -->
-            <g id="zone-4" class="garden-zone">
-              <circle cx="75" cy="100" r="16" fill="rgba(212,175,55,0.04)" stroke="rgba(212,175,55,0.12)" stroke-width="1"/>
-              <line x1="75" y1="113" x2="75" y2="96" stroke="#D4AF37" stroke-width="1" opacity="0.4"/>
-              <path d="M75 100 Q70 93 67 88 Q73 90 75 100" fill="#D4AF37" opacity="0.35"/>
-            </g>
-
-            <!-- Zone 5 (outer) -->
-            <g id="zone-5" class="garden-zone">
-              <circle cx="200" cy="265" r="18" fill="rgba(59,175,132,0.04)" stroke="rgba(59,175,132,0.12)" stroke-width="1"/>
-              <line x1="200" y1="278" x2="200" y2="260" stroke="#3BAF84" stroke-width="1" opacity="0.4"/>
-              <path d="M200 265 Q195 257 192 252 Q198 254 200 265" fill="#3BAF84" opacity="0.3"/>
-            </g>
-
-            <!-- Center glow -->
-            <circle cx="160" cy="160" r="6" fill="var(--gold)" opacity="0.7">
-              <animate attributeName="r" values="6;9;6" dur="3s" repeatCount="indefinite"/>
-              <animate attributeName="opacity" values="0.7;0.4;0.7" dur="3s" repeatCount="indefinite"/>
-            </circle>
-            <circle cx="160" cy="160" r="18" fill="none" stroke="rgba(212,175,55,0.15)" stroke-width="1">
-              <animate attributeName="r" values="18;24;18" dur="3s" repeatCount="indefinite"/>
-              <animate attributeName="opacity" values="0.15;0.05;0.15" dur="3s" repeatCount="indefinite"/>
-            </circle>
-          </svg>
-        </div>
-
-        <div style="padding: 0 1.5rem 1rem;">
-          <div style="display: flex; align-items: center; gap: 0.6rem; margin-top: 0.5rem;">
-            <div class="profile-pill">
-              <div class="profile-dot"></div>
-              <span id="jardin-profile-name">—</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="pplx-footer">
-          <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
-        </div>
+    <div class="data-grid">
+      <div class="data-card">
+        <div class="data-card-label">Geometric Value</div>
+        <div class="data-card-value" id="geoValue"></div>
+        <div class="data-card-sub" id="geoDesc"></div>
       </div>
-
-      <!-- TAB 2: HOY -->
-      <div class="tab-panel" id="tab-hoy">
-        <div class="hoy-wrap">
-          <div>
-            <div class="hoy-greeting" id="hoy-greeting">Hola</div>
-            <div style="font-size: 0.78rem; color: var(--faint); margin-top: 0.3rem;" id="hoy-date-display">—</div>
-          </div>
-
-          <!-- Energy meter -->
-          <div class="energy-card">
-            <div class="energy-label-row">
-              <span class="energy-title">Energía del día</span>
-              <span class="energy-state" id="energy-state-label">—</span>
-            </div>
-            <div class="energy-bar">
-              <div class="energy-fill" id="energy-fill" style="width: 50%"></div>
-            </div>
-            <div class="energy-icons">
-              <span>🌙 Descanso</span>
-              <span>☀️ Acción</span>
-            </div>
-          </div>
-
-          <!-- Daily message -->
-          <div class="daily-card">
-            <div class="daily-label">Para hoy</div>
-            <div class="daily-message" id="daily-message">—</div>
-            <div class="daily-action" id="daily-action">—</div>
-          </div>
-
-          <!-- Check-in -->
-          <div class="checkin-card">
-            <div class="checkin-title">¿Cómo estás?</div>
-            <div class="mood-grid" id="mood-grid">
-              <!-- Filled by JS -->
-            </div>
-            <div class="firefly-response" id="firefly-response"></div>
-          </div>
-
-          <!-- Grow indicator -->
-          <div class="grow-indicator" id="grow-indicator">
-            <div class="grow-dot"></div>
-            <span>Tu jardín creció hoy</span>
-          </div>
-
-          <!-- Identity insight -->
-          <div class="insight-card">
-            <div class="insight-label">Algo que saber</div>
-            <div class="insight-text" id="identity-insight">—</div>
-          </div>
-
-          <div class="pplx-footer">
-            <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
-          </div>
-        </div>
+      <div class="data-card">
+        <div class="data-card-label">Generation</div>
+        <div class="data-card-value" id="genNum"></div>
+        <div class="data-card-sub" id="genName"></div>
       </div>
-
-      <!-- TAB 3: VÍNCULOS -->
-      <div class="tab-panel" id="tab-vinculos">
-        <div class="vinculos-wrap">
-          <div class="section-header">
-            <h2 class="vinculos-title">Vínculos</h2>
-            <button class="icon-btn" id="add-person-btn">+ Añadir</button>
-          </div>
-
-          <!-- Constellation -->
-          <div class="constellation-wrap">
-            <svg id="constellation-svg" viewBox="0 0 340 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Background grid lines -->
-              <circle cx="170" cy="120" r="80" stroke="rgba(212,175,55,0.06)" stroke-width="1"/>
-              <circle cx="170" cy="120" r="50" stroke="rgba(212,175,55,0.08)" stroke-width="1"/>
-              <circle cx="170" cy="120" r="25" stroke="rgba(212,175,55,0.12)" stroke-width="1"/>
-              <!-- User center dot -->
-              <circle cx="170" cy="120" r="10" fill="var(--gold)" opacity="0.9"/>
-              <circle cx="170" cy="120" r="16" fill="none" stroke="var(--gold)" stroke-width="1" opacity="0.4">
-                <animate attributeName="r" values="16;22;16" dur="3s" repeatCount="indefinite"/>
-                <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite"/>
-              </circle>
-              <text x="170" y="148" text-anchor="middle" fill="rgba(232,230,224,0.6)" font-size="9" font-family="Satoshi, sans-serif" id="user-center-label">Tú</text>
-              <!-- Dynamic connections added by JS -->
-              <g id="constellation-connections"></g>
-            </svg>
-          </div>
-
-          <!-- Add person form -->
-          <div class="add-person-form" id="add-person-form">
-            <div class="form-row">
-              <label class="form-label">Nombre</label>
-              <input type="text" class="form-input" id="new-person-name" placeholder="¿Cómo se llama?" autocomplete="off">
-            </div>
-            <div class="form-row">
-              <label class="form-label">Fecha de nacimiento</label>
-              <div class="form-date-row">
-                <input type="number" class="form-input" id="new-person-day" placeholder="Día" min="1" max="31" style="max-width: 70px;">
-                <input type="number" class="form-input" id="new-person-month" placeholder="Mes" min="1" max="12" style="max-width: 70px;">
-                <input type="number" class="form-input" id="new-person-year" placeholder="Año" min="1900" max="2020" style="flex: 1;">
-              </div>
-            </div>
-            <div class="form-actions">
-              <button class="btn-cancel" id="cancel-person-btn">Cancelar</button>
-              <button class="btn-add" id="save-person-btn">Añadir</button>
-            </div>
-          </div>
-
-          <!-- Connections list -->
-          <div id="connections-list">
-            <!-- Filled by JS -->
-          </div>
-
-          <div class="pplx-footer">
-            <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
-          </div>
-        </div>
+      <div class="data-card">
+        <div class="data-card-label">Sefirah</div>
+        <div class="data-card-value" id="sefira"></div>
+        <div class="data-card-sub" id="sefiraDesc"></div>
       </div>
-
-      <!-- TAB 4: CAMINO -->
-      <div class="tab-panel" id="tab-camino">
-        <div class="camino-wrap">
-          <h2 class="camino-title">Tu camino</h2>
-
-          <!-- Future phases (top) -->
-          <div class="timeline" id="timeline-future"></div>
-
-          <!-- Today marker -->
-          <div class="today-marker">HOY</div>
-
-          <!-- Past phases (below today) -->
-          <div class="timeline" id="timeline-past"></div>
-
-          <!-- Milestones -->
-          <div class="milestone-add">
-            <button class="btn-milestone" id="add-milestone-btn">
-              <span>+</span> Añadir un momento importante
-            </button>
-            <div id="milestones-list"></div>
-          </div>
-
-          <!-- Seasonal forecast -->
-          <div class="forecast-section">
-            <div class="forecast-title">Próximos tres meses</div>
-            <div class="forecast-months" id="forecast-months"></div>
-          </div>
-
-          <div class="pplx-footer">
-            <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
-          </div>
-        </div>
+      <div class="data-card">
+        <div class="data-card-label">Element</div>
+        <div class="data-card-value" id="element"></div>
+        <div class="data-card-sub" id="elementDesc"></div>
       </div>
-
-    </div><!-- end app-content -->
-
-    <!-- Bottom navigation -->
-    <nav class="bottom-nav">
-      <button class="nav-btn active" data-tab="jardin" aria-label="Jardín">
-        <div class="nav-dot"></div>
-        <span class="nav-icon">🌱</span>
-        <span class="nav-label">Jardín</span>
-      </button>
-      <button class="nav-btn" data-tab="hoy" aria-label="Hoy">
-        <div class="nav-dot"></div>
-        <span class="nav-icon">🔮</span>
-        <span class="nav-label">Hoy</span>
-      </button>
-      <button class="nav-btn" data-tab="vinculos" aria-label="Vínculos">
-        <div class="nav-dot"></div>
-        <span class="nav-icon">👥</span>
-        <span class="nav-label">Vínculos</span>
-      </button>
-      <button class="nav-btn" data-tab="camino" aria-label="Camino">
-        <div class="nav-dot"></div>
-        <span class="nav-icon">✨</span>
-        <span class="nav-label">Camino</span>
-      </button>
-    </nav>
-  </div><!-- end main-app -->
-
-  <!-- Milestone modal -->
-  <div class="modal-overlay" id="milestone-modal">
-    <div class="modal-sheet">
-      <button class="modal-close" id="milestone-modal-close">✕</button>
-      <div class="modal-title">Momento importante</div>
-      <div class="form-row">
-        <label class="form-label">¿Qué pasó?</label>
-        <input type="text" class="form-input" id="milestone-text" placeholder="Un hito, un antes y después..." autocomplete="off">
+      <div class="data-card full">
+        <div class="data-card-label">Your Calculation</div>
+        <div class="data-card-value" id="calcShow" style="font-size:14px; font-family: monospace;"></div>
       </div>
-      <div class="form-row">
-        <label class="form-label">¿Cuándo?</label>
-        <input type="date" class="form-input" id="milestone-date">
+    </div>
+
+    <div class="truth-block">
+      <div class="truth-label">Mathematical Truth</div>
+      <div class="truth-text" id="truthText"></div>
+    </div>
+
+    <div class="proof-block" id="proofBlock"></div>
+
+    <!-- 22 LETTER WHEEL -->
+    <div class="wheel-section">
+      <div class="section-title">The 22 Letters — Tap any to explore</div>
+      <div class="wheel-grid" id="wheelGrid"></div>
+      <div id="tooltip">
+        <div class="t-letter" id="tt-letter"></div>
+        <div class="t-name" id="tt-name"></div>
+        <div class="t-info" id="tt-info"></div>
       </div>
-      <button class="btn-primary" id="save-milestone-btn" style="width: 100%;">Marcar en mi camino</button>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="calendar-block">
+      <div class="section-title" style="text-align:left; margin-bottom:16px;">Today in the Universal Calendar</div>
+      <div class="cal-row">
+        <span class="cal-key">Day of Year</span>
+        <span class="cal-val" id="dayOfYear"></span>
+      </div>
+      <div class="cal-row">
+        <span class="cal-key">Season</span>
+        <span class="cal-val" id="season"></span>
+      </div>
+      <div class="cal-row">
+        <span class="cal-key">Week of Season</span>
+        <span class="cal-val" id="weekOfSeason"></span>
+      </div>
+      <div class="cal-row">
+        <span class="cal-key">Today's Letter</span>
+        <span class="cal-val" id="todayLetter"></span>
+      </div>
+      <div class="cal-row">
+        <span class="cal-key">Calendar Structure</span>
+        <span class="cal-val">364 days · 4 × 91 · 52 weeks</span>
+      </div>
+    </div>
+
+  </div><!-- end result -->
+
+  <!-- FOUNDATION — always visible -->
+  <div class="foundation">
+    <div class="section-title">Verified Foundations — Anyone Can Check</div>
+    <div class="foundation-grid">
+      <div class="found-item">
+        <div class="found-num">55</div>
+        <div class="found-eq">1+2+3...+10</div>
+        <div class="found-name">Everything</div>
+      </div>
+      <div class="found-item">
+        <div class="found-num">111</div>
+        <div class="found-eq">Alef = A+L+P</div>
+        <div class="found-name">One · Thousand</div>
+      </div>
+      <div class="found-item">
+        <div class="found-num">385</div>
+        <div class="found-eq">Σ(1²+2²...+10²)</div>
+        <div class="found-name">Shekhinah</div>
+      </div>
+      <div class="found-item">
+        <div class="found-num">364</div>
+        <div class="found-eq">4 × 91</div>
+        <div class="found-name">Year · Jacob+Jacob</div>
+      </div>
+      <div class="found-item">
+        <div class="found-num">π</div>
+        <div class="found-eq">22 ÷ 7</div>
+        <div class="found-name">142857 repeating</div>
+      </div>
+      <div class="found-item">
+        <div class="found-num">484</div>
+        <div class="found-eq">22 × 22</div>
+        <div class="found-name">All Paths</div>
+      </div>
     </div>
   </div>
 
-</div><!-- end app -->
+  <footer>
+    <div class="footer-logo">NEYĒN</div>
+    <div class="footer-sub">The Spiral Within SLU · EU Trademark 019288972 · Open · Free · Verifiable</div>
+  </footer>
+
+</div>
 
 <script>
-// ===================================
-// DATA: Content from JSON
-// ===================================
-const PROFILES = [
-  { id: 1, name: "La Chispa", headline: "Empiezas rápido porque sientes antes que piensas.", description: "Te mueves cuando algo te da energía. Eso te hace rápido, intuitivo y difícil de parar al inicio. Pero cuando la emoción baja, te cuesta sostener. No es falta de disciplina. Es que necesitas sentir que tiene sentido.", traits: ["Arranque inmediato","Intuición alta","Baja tolerancia a lo repetitivo"], watchout: "Abandonas justo cuando empieza lo importante.", element: "fire", color: "#FF6B35" },
-  { id: 2, name: "El Puente", headline: "Entiendes a los demás mejor que ellos mismos.", description: "Ves los dos lados con facilidad. Conectas personas, traduces tensiones y haces que las cosas fluyan. Pero a veces te pierdes en ese proceso. Te adaptas tanto que olvidas qué quieres tú.", traits: ["Empatía fuerte","Mediador natural","Flexible"], watchout: "Te diluyes intentando encajar con todos.", element: "water", color: "#4ECDC4" },
-  { id: 3, name: "La Onda", headline: "Todo en ti funciona por ciclos.", description: "Tienes momentos de alta energía y momentos de retirada. Cuando estás arriba, eres imparable. Cuando no, necesitas espacio. El problema no es el cambio. Es forzarte a ser constante cuando no lo eres.", traits: ["Intensidad por fases","Creatividad natural","Sensibilidad alta"], watchout: "Te juzgas por no ser constante.", element: "air", color: "#FFD93D" },
-  { id: 4, name: "La Raíz", headline: "Construyes lento, pero sólido.", description: "No te mueves por impulso. Observas, entiendes y luego actúas. Cuando decides, lo haces bien. Pero puedes tardar demasiado en empezar. Tu fuerza es la paciencia. Tu trampa es la parálisis.", traits: ["Estabilidad","Fiabilidad","Pensamiento estructurado"], watchout: "Esperas demasiado antes de actuar.", element: "earth", color: "#8B6914" },
-  { id: 5, name: "El Viento", headline: "Necesitas libertad para funcionar bien.", description: "Te adaptas rápido, cambias de contexto con facilidad y encuentras soluciones donde otros se bloquean. Pero cuando te sientes atrapado, te desconectas. No es irresponsabilidad. Es que tu sistema necesita aire.", traits: ["Adaptabilidad","Rapidez mental","Curiosidad"], watchout: "Huyes cuando algo requiere compromiso.", element: "air", color: "#7EC8E3" },
-  { id: 6, name: "El Nido", headline: "Sostienes más de lo que dices.", description: "Cuidas, organizas y mantienes el equilibrio sin hacer ruido. La gente confía en ti. Pero muchas veces cargas más de lo que te corresponde. Tu fuerza es el cuidado. Tu trampa es olvidarte de ti.", traits: ["Responsabilidad","Cuidado","Orden"], watchout: "Te olvidas de ti por sostener a otros.", element: "earth", color: "#3BAF84" },
-  { id: 7, name: "La Brújula", headline: "Necesitas entender antes de avanzar.", description: "No haces nada sin sentido. Buscas coherencia, profundidad y dirección. Cuando la encuentras, avanzas con claridad. Cuando no, te quedas bloqueado. Tu fuerza es la lucidez. Tu trampa es el exceso de análisis.", traits: ["Análisis profundo","Búsqueda de sentido","Independencia mental"], watchout: "Te quedas pensando cuando deberías probar.", element: "water", color: "#6A5ACD" },
-  { id: 8, name: "La Forja", headline: "Funcionas bien bajo presión.", description: "No te asusta la intensidad. De hecho, te activa. Lideras, empujas y haces que las cosas pasen. Pero puedes exigir demasiado, tanto a otros como a ti. Tu fuerza es la determinación. Tu trampa es no soltar.", traits: ["Determinación","Liderazgo","Resistencia"], watchout: "Empujas incluso cuando ya no es necesario.", element: "fire", color: "#C41E3A" },
-  { id: 9, name: "La Antorcha", headline: "Ves lo que otros no ven.", description: "Tienes una mirada amplia. Entiendes patrones, ves conexiones y piensas más allá del presente. Pero a veces te alejas demasiado de lo práctico. Tu fuerza es la visión. Tu trampa es perderte en el mapa.", traits: ["Visión","Intuición abstracta","Creatividad estratégica"], watchout: "Te pierdes en ideas sin aterrizarlas.", element: "fire", color: "#E8A317" }
+const LETTERS = [
+  { n:1,  heb:"א", name:"Alef",  trans:"A",  geo:111,  geoDesc:"Right triangle 100/50 — proven",       gen:1,  genName:"Adam",     sefira:"Keter",   sefDesc:"Crown · The Source",     elem:"Air",   elemDesc:"Mother letter · All begins here",  truth:"1 = 10 = 100 = 1000. Alef leads every decimal. Everything returns to one place. 1+2+3+4+5+6+7+8+9+10 = 55 = Everything.", proof:"Alef = א + ל + פ = 1 + 30 + 80 = 111\nRight triangle: sides 100 and 50 → remainder = 111\nAlef = One = Thousand" },
+  { n:2,  heb:"ב", name:"Bet",   trans:"B",  geo:222,  geoDesc:"Second column sum — Blessing",          gen:2,  genName:"Seth",     sefira:"Jokhmah", sefDesc:"Wisdom · 73",            elem:"Saturn",elemDesc:"Double letter · Two forces",      truth:"222 = Blessing. The Bible opens with Bet — Bereshit. Blessing + Blessing = Image of God. 7 Blessings = 372 + 628 = 1000.", proof:"Bet = ב = 2\n222 = Blessing\n2 × 111 = 222\nGenesis begins: B-reshit" },
+  { n:3,  heb:"ג", name:"Gimel", trans:"G",  geo:333,  geoDesc:"Snow under the Throne — Octahedron",   gen:3,  genName:"Enosh",    sefira:"Binah",   sefDesc:"Intelligence · 67",      elem:"Jupiter",elemDesc:"Double letter · Two paths",      truth:"333 = Snow. Inside the 3D Star of David (double tetrahedron) the hidden octahedron is 333 high. Water. The Philosopher's Stone.", proof:"3D Star of David → inner octahedron height = 333\nSphere diameter 1000 → inner sphere = 333\nGimel = 3 = Snow = Water" },
+  { n:4,  heb:"ד", name:"Dalet", trans:"D",  geo:444,  geoDesc:"Image — Demut — 13 × 444 = 5772",      gen:4,  genName:"Kenan",    sefira:"Hesed",   sefDesc:"Kindness · 72",          elem:"Mars",  elemDesc:"Double letter · Gate",             truth:"444 = Image (Demut). 13 × 444 = 5772 years = the year 2012 in Gregorian. One × Image = the time of completion. Dalet = Gate.", proof:"13 × 444 = 5772\nOne (13) × Image (444) = Sabbath Night\n5772 ÷ 52 = 111" },
+  { n:5,  heb:"ה", name:"He",    trans:"H",  geo:5,    geoDesc:"The breath — the name begins",          gen:5,  genName:"Mahalalel",sefira:"Gevurah", sefDesc:"Strength · 216",         elem:"Aries", elemDesc:"Simple letter · Zodiac",           truth:"He is the 5th letter and the first letter of HaShem (the Name). 216 = Gevurah = 6³ = 6×6×6. The strength that precedes kindness.", proof:"Gevurah = 216 = 6³\nHe = 5 = breath\nThe Name: Yod-He-Vav-He = 10+5+6+5 = 26" },
+  { n:6,  heb:"ו", name:"Vav",   trans:"V",  geo:6,    geoDesc:"The hook — connector of heaven/earth",  gen:6,  genName:"Jared",    sefira:"Tiferet", sefDesc:"Beauty · Centre",        elem:"Taurus",elemDesc:"Simple letter · Connection",       truth:"Vav = 6 = the central Sefirah connecting above and below. The 6 directions of space. 6 days of creation. Vav connects.", proof:"Vav = ו = 6\n6 directions of space: ±X ±Y ±Z\nTiferet = center of the Tree of Life" },
+  { n:7,  heb:"ז", name:"Zayin", trans:"Z",  geo:7,    geoDesc:"The sword — sanctity of 7",             gen:7,  genName:"Enoch",    sefira:"Netzah",  sefDesc:"Eternity · Victory",     elem:"Gemini",elemDesc:"Simple letter · The week",          truth:"Generation 7 = Enoch. Lived 365 years = days of the sun. Enoch teaches time. 7 cervical vertebrae. 7 days. 7 blessings = 1000.", proof:"Enoch = Generation 7 = 365 years (solar year)\n7 × 13 = 91 days per season\n4 × 91 = 364 = year" },
+  { n:8,  heb:"ח", name:"Het",   trans:"H",  geo:8,    geoDesc:"The fence — life",                      gen:8,  genName:"Methuselah",sefira:"Hod",    sefDesc:"Splendour · Resonance",  elem:"Cancer",elemDesc:"Simple letter · Threshold",         truth:"Het = Life in Hebrew (Hai = 18 = Het+Yod). Methuselah lived 969 years — the longest. 8 = infinity turned upright. The fence that protects.", proof:"Hai (life) = ח + י = 8 + 10 = 18\nMethuselah = generation 8 = 969 years\n8 × 111 = 888" },
+  { n:9,  heb:"ט", name:"Tet",   trans:"T",  geo:81,   geoDesc:"9×9 = Chair/Throne — double tetrahedron",gen:9, genName:"Lamech",   sefira:"Yesod",   sefDesc:"Foundation · 80",        elem:"Leo",   elemDesc:"Simple letter · The spiral",        truth:"Tet = 9. Chair = 81 = 9×9. The throne is found in the 3D Star of David as the side length of the double tetrahedron. Foundation.", proof:"Double tetrahedron side = 81 = Chair\n9 × 9 = 81\nThe Book of Creation: 'before His throne they bow'" },
 ];
 
-const DAILY = [
-  { message: "No necesitas empezar algo nuevo hoy.", action: "Termina lo que ya abriste." },
-  { message: "Estás más claro de lo que crees.", action: "Decide antes de las 12." },
-  { message: "Estás esperando motivación.", action: "Empieza sin ella." },
-  { message: "Hoy no es para pensar más.", action: "Es para enviar." },
-  { message: "Te estás dispersando.", action: "Elige una sola cosa." },
-  { message: "Estás evitando algo pequeño.", action: "Hazlo ahora." },
-  { message: "No todo necesita mejora.", action: "Deja algo como está." },
-  { message: "Estás cargando demasiado.", action: "Suelta una tarea." },
-  { message: "Estás reaccionando rápido.", action: "Espera 10 minutos." },
-  { message: "Sabes qué hacer.", action: "Hazlo sin consultarlo." },
-  { message: "Estás buscando la opción perfecta.", action: "Elige la suficiente." },
-  { message: "Te estás adelantando.", action: "Quédate en hoy." },
-  { message: "Estás sobreexplicando.", action: "Sé directo." },
-  { message: "Estás evitando decidir.", action: "Cierra una cosa." },
-  { message: "Estás cansado de sostener.", action: "Pide ayuda." },
-  { message: "Estás dudando de algo claro.", action: "Confía en tu primera lectura." },
-  { message: "Estás empezando demasiado.", action: "Reduce a 1." },
-  { message: "Te estás adaptando demasiado.", action: "Di lo que quieres." },
-  { message: "Estás reteniendo energía.", action: "Muévete." },
-  { message: "Estás saturado.", action: "Reduce estímulos." },
-  { message: "Hoy es mejor simple.", action: "Quita una capa." },
-  { message: "Estás esperando el momento.", action: "Ya es." },
-  { message: "Estás comparando demasiado.", action: "Mira solo tu avance." },
-  { message: "Estás evitando incomodidad.", action: "Acércate." },
-  { message: "Estás acelerando.", action: "Baja ritmo." },
-  { message: "Estás frenando.", action: "Da un paso." },
-  { message: "Estás acumulando cosas abiertas.", action: "Cierra una." },
-  { message: "Estás pensando en todo.", action: "Prioriza 1." },
-  { message: "Estás ignorando algo evidente.", action: "Míralo." },
-  { message: "Hoy no necesitas más información.", action: "Necesitas acción." }
+// Extended to 22
+const LETTERS_FULL = [
+  ...LETTERS,
+  { n:10, heb:"י", name:"Yod",   trans:"Y",  geo:10,   geoDesc:"Hand · The smallest letter",            gen:10, genName:"Noah",     sefira:"Malkhut", sefDesc:"Kingdom · 496",          elem:"Virgo", elemDesc:"Simple letter · The seed",         truth:"Yod = 10 = the hand that creates. Noah = generation 10. Born year 1056. After the flood, a new world. The smallest letter contains everything.", proof:"Yod = י = 10\nNoah born: 1056 (1+0+5+6=12=3)\nKeter=1 to Malkhut=10 — the full tree" },
+  { n:11, heb:"כ", name:"Kaf",   trans:"K",  geo:100,  geoDesc:"Palm — the decimal anchor",             gen:11, genName:"Shem",     sefira:"Keter",   sefDesc:"The return begins",      elem:"Sun",   elemDesc:"Double letter · Two palms",        truth:"Kaf = 11. 100 = the decimal unit. 7 circles of diameter 100 generate the Tree of Life. God=86, Wisdom=73, One=13 — all from 100.", proof:"7 circles diameter 100 → Tree of Life\nGod (Elohim) = 86 = triangle side in circle 100\nKaf = 20 in standard; 11th letter" },
+  { n:12, heb:"ל", name:"Lamed", trans:"L",  geo:12,   geoDesc:"The ox goad — teaching upward",         gen:12, genName:"Arpachshad",sefira:"Jokhmah",sefDesc:"Learning rises",          elem:"Libra", elemDesc:"Simple letter · Ascent",           truth:"Lamed = the only letter that rises above the line. 12 thoracic vertebrae. 12 months. 12 simple letters = zodiac. Learning that rises.", proof:"12 simple letters = 12 signs of zodiac\n12 thoracic vertebrae = emotional zone\nLamed = tallest Hebrew letter" },
+  { n:13, heb:"מ", name:"Mem",   trans:"M",  geo:40,   geoDesc:"Water — Moses in the water",            gen:13, genName:"Shelah",   sefira:"Binah",   sefDesc:"The deep waters",        elem:"Water", elemDesc:"Mother letter · The sea",          truth:"Mem = Water = the middle of the alphabet. Moses = Mem+Shin+He = drawn from water. The middle path. 40 days on the mountain.", proof:"Mem = מ = Water (Mother letter)\nMoses: מ+ש+ה = 40+300+5 = 345\n40 days × 40 nights = the measure of transformation" },
+  { n:14, heb:"נ", name:"Nun",   trans:"N",  geo:50,   geoDesc:"Fish — the hidden faithful",            gen:14, genName:"Eber",     sefira:"Hesed",   sefDesc:"The faithful depth",     elem:"Scorpio",elemDesc:"Simple letter · The submerged",    truth:"Nun is the letter that does not appear in Psalm 145 — it represents falling. But the next verse immediately raises up. Fall and rise.", proof:"Nun = נ = 50\nEarth altar: 'earth = 50 = radius'\nNun missing from Psalm 145 — intentional" },
+  { n:15, heb:"ס", name:"Samek", trans:"S",  geo:60,   geoDesc:"Support — the closed circle",           gen:15, genName:"Peleg",    sefira:"Gevurah", sefDesc:"The support holds",      elem:"Sagittarius",elemDesc:"Simple · The circle closes",    truth:"Samek = 60 = support. A closed circular letter — no opening, complete in itself. The circle that supports. The earth was divided in Peleg's time.", proof:"Samek = ס = closed circle\n60 = support\nIn Peleg's time: the earth was divided (generation 15)" },
+  { n:16, heb:"ע", name:"Ayin",  trans:"A",  geo:70,   geoDesc:"Eye — 70 languages of the world",       gen:16, genName:"Reu",      sefira:"Tiferet", sefDesc:"The eye sees all",       elem:"Capricorn",elemDesc:"Simple letter · Vision",           truth:"Ayin = Eye = 70. Seventy languages emerged from Babel. The eye that sees beyond language. 70 = the secret = wine = Solomon's vineyard.", proof:"Ayin = ע = 70 = Eye\n70 languages from Babel\nSecret = 70 = Wine" },
+  { n:17, heb:"פ", name:"Pe",    trans:"P",  geo:80,   geoDesc:"Mouth — the word creates",              gen:17, genName:"Serug",    sefira:"Netzah",  sefDesc:"The mouth speaks",       elem:"Aquarius",elemDesc:"Double letter · Two lips",          truth:"Pe = Mouth = 80. 'Who put a mouth on a person.' The Passover sacrifice: Pe-Sach = the mouth that speaks. Creation by word.", proof:"Pe = פ = 80 = Mouth\nPe-Sach = Passover = the mouth speaks\nYesod = 80 = Foundation = Pe" },
+  { n:18, heb:"צ", name:"Tsadi", trans:"Ts", geo:90,   geoDesc:"The righteous one — the hook",          gen:18, genName:"Nahor",    sefira:"Hod",     sefDesc:"The righteous path",     elem:"Pisces",elemDesc:"Simple letter · The just",         truth:"Tsadi = 90 = the righteous. The Tsadik sustains the world. 90 degrees = the right angle = the corner of reality. Foundation of the just.", proof:"Tsadi = צ = 90\n90° = right angle = corner of all structure\nThe righteous = Yesod of the world" },
+  { n:19, heb:"ק", name:"Kof",   trans:"K",  geo:100,  geoDesc:"The back of the head — the next cycle", gen:19, genName:"Terah",    sefira:"Yesod",   sefDesc:"The cycle turns",        elem:"Sun",   elemDesc:"Simple letter · The returning",    truth:"Kof = 100. The only letter below the line — it descends to ascend. The cycle that begins again. Before Abraham (generation 20) comes Terah.", proof:"Kof = ק = 100 (below the line)\nTerah = father of Abraham\n19th letter before the 3 Patriarchs" },
+  { n:20, heb:"ר", name:"Resh",  trans:"R",  geo:200,  geoDesc:"Head — Abraham — The Mountain (210)",   gen:20, genName:"Abraham",  sefira:"Jokhmah", sefDesc:"Wisdom begins here",     elem:"Mercury",elemDesc:"Double letter · The head turns",    truth:"Resh = 200 = Head. Abraham = generation 20 = Kindness (72). 'The Mountain' = 210 appears in Abraham and again only in Enoch (generation 7). The promise.", proof:"Abraham = generation 20 = letter Resh\nThe Mountain = 210\nAbraham + Abraham = 248+248 = 496 = Malkhut" },
+  { n:21, heb:"ש", name:"Shin",  trans:"Sh", geo:300,  geoDesc:"Fire — Spirit of God — 3 flames",       gen:21, genName:"Isaac",    sefira:"Binah",   sefDesc:"Fire of understanding",  elem:"Fire",  elemDesc:"Mother letter · The flame",        truth:"Shin = Fire = 300. Spirit of God = 214+86 = 300. True = Shin×Shin = 21×21 = 441. Three flames: right, left, centre. Isaac = generation 21 = Strength (216).", proof:"Shin = ש = 300 = Fire (Mother letter)\nSpirit of God = 214+86 = 300\nTruth = Shin × Shin = 441" },
+  { n:22, heb:"ת", name:"Tav",   trans:"T",  geo:400,  geoDesc:"Mark — Jacob — Truth — completion",     gen:22, genName:"Jacob",    sefira:"Malkhut", sefDesc:"Kingdom · Earth",        elem:"Moon",  elemDesc:"Double letter · The seal",         truth:"Tav = Mark = 400. Jacob = generation 22 = last letter = Truth (441) + Jehovah (26). Jacob+Jacob = 364 = days of the year. The seal of creation.", proof:"Jacob = generation 22 = letter Tav\nJacob+Jacob = 364 = days of the year\nTruth = 441 = Tav×Tav (22×22 in position)" },
 ];
 
-const FIREFLY_LINES = [
-  "Lo sabes. Solo no lo estás haciendo.",
-  "No es tan complicado como lo estás volviendo.",
-  "Ya lo viste antes.",
-  "No necesitas otra señal.",
-  "Estás dando vueltas.",
-  "Eso que evitas es justo lo importante.",
-  "No es falta de tiempo.",
-  "Estás esperando sentirte listo.",
-  "No va a mejorar pensándolo más.",
-  "Estás más cerca de lo que parece.",
-  "No necesitas hacerlo perfecto.",
-  "Ya decidiste. Solo no lo has ejecutado.",
-  "Eso que dudas, ya lo sabes.",
-  "Estás añadiendo ruido.",
-  "Hazlo simple."
-];
+function digitalRoot(n) {
+  while (n > 9) {
+    n = String(n).split('').reduce((a,b) => a+parseInt(b), 0);
+  }
+  return n;
+}
 
-const MOODS = [
-  { id: "clara", label: "Clara", emoji: "☀️" },
-  { id: "cansada", label: "Cansada", emoji: "🌙" },
-  { id: "sensible", label: "Sensible", emoji: "💧" },
-  { id: "acelerada", label: "Acelerada", emoji: "⚡" },
-  { id: "bloqueada", label: "Bloqueada", emoji: "🪨" },
-  { id: "abierta", label: "Abierta", emoji: "🌿" }
-];
+function getLetterIndex(root) {
+  return root - 1; // 1→index 0, 9→index 8
+}
 
-const MOOD_RESPONSES = {
-  clara: "Ese brillo es real. Úsalo antes de que el día te distraiga.",
-  cansada: "Descansar también es avanzar. No te lo debas justificar.",
-  sensible: "Sentir mucho no es un error. Es información.",
-  acelerada: "Toda esa energía necesita un cauce. ¿A qué una cosa?",
-  bloqueada: "El bloqueo es la pregunta que no te has hecho todavía.",
-  abierta: "Cuando estás así, las cosas buenas pueden entrar."
+function calculate() {
+  const val = document.getElementById('birthdate').value;
+  if (!val) { alert('Please enter your date of birth'); return; }
+
+  const [y, m, d] = val.split('-').map(Number);
+  const yDigits = String(y).split('').reduce((a,b)=>a+parseInt(b),0);
+  const rawSum = d + m + yDigits;
+  const root = digitalRoot(rawSum);
+  const letter = LETTERS_FULL[getLetterIndex(root)];
+
+  // Show result
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('rootNum').textContent = root;
+  document.getElementById('letterHeb').textContent = letter.heb;
+  document.getElementById('letterName').textContent = letter.name;
+  document.getElementById('letterTrans').textContent = letter.trans + ' · Position ' + letter.n + ' of 22';
+
+  document.getElementById('geoValue').textContent = letter.geo;
+  document.getElementById('geoDesc').textContent = letter.geoDesc;
+  document.getElementById('genNum').textContent = 'Generation ' + letter.gen;
+  document.getElementById('genName').textContent = letter.genName;
+  document.getElementById('sefira').textContent = letter.sefira;
+  document.getElementById('sefiraDesc').textContent = letter.sefDesc;
+  document.getElementById('element').textContent = letter.elem;
+  document.getElementById('elementDesc').textContent = letter.elemDesc;
+
+  // Calculation display
+  document.getElementById('calcShow').textContent =
+    `${d} + ${m} + (${y}→${yDigits}) = ${rawSum} → root = ${root}`;
+
+  document.getElementById('truthText').textContent = letter.truth;
+  document.getElementById('proofBlock').innerHTML =
+    letter.proof.split('\n').map(l => `<span class="highlight">${l.split('=')[0]}</span>${l.includes('=') ? '= '+l.split('=').slice(1).join('=') : ''}`).join('<br>');
+
+  // Build wheel
+  buildWheel(root);
+
+  // Calendar
+  buildCalendar();
+
+  // Scroll
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function buildWheel(activeRoot) {
+  const grid = document.getElementById('wheelGrid');
+  grid.innerHTML = '';
+  LETTERS_FULL.forEach(l => {
+    const cell = document.createElement('div');
+    cell.className = 'wheel-cell' + (l.n === activeRoot ? ' active' : '');
+    cell.innerHTML = `<span class="heb">${l.heb}</span><span class="num">${l.n}</span>`;
+    cell.onclick = () => showTooltip(l);
+    grid.appendChild(cell);
+  });
+}
+
+function showTooltip(l) {
+  const tt = document.getElementById('tooltip');
+  tt.style.display = 'block';
+  document.getElementById('tt-letter').textContent = l.heb;
+  document.getElementById('tt-name').textContent = l.name + ' · ' + l.n + ' · ' + l.geo;
+  document.getElementById('tt-info').innerHTML =
+    `<strong>Gen ${l.gen} — ${l.genName}</strong><br>${l.sefira} · ${l.elem}<br><em>${l.truth.substring(0,120)}...</em>`;
+}
+
+function buildCalendar() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 2, 20); // Spring equinox approx
+  let dayOfYear = Math.floor((now - start) / 86400000);
+  if (dayOfYear < 0) dayOfYear += 364;
+  dayOfYear = dayOfYear % 364;
+
+  const seasons = ['Spring (Nisan–Sivan)', 'Summer (Tammuz–Elul)', 'Autumn (Tishrei–Kislev)', 'Winter (Tevet–Adar)'];
+  const seasonIdx = Math.floor(dayOfYear / 91);
+  const dayInSeason = dayOfYear % 91;
+  const weekOfSeason = Math.floor(dayInSeason / 7) + 1;
+  const todayLetterIdx = dayOfYear % 22;
+  const todayLetter = LETTERS_FULL[todayLetterIdx];
+
+  document.getElementById('dayOfYear').textContent = (dayOfYear + 1) + ' of 364';
+  document.getElementById('season').textContent = seasons[Math.min(seasonIdx, 3)];
+  document.getElementById('weekOfSeason').textContent = 'Week ' + weekOfSeason + ' of 13';
+  document.getElementById('todayLetter').textContent = todayLetter.heb + ' ' + todayLetter.name + ' (' + todayLetter.n + ')';
+}
+
+// Init wheel without active
+window.onload = () => {
+  const grid = document.getElementById('wheelGrid');
+  LETTERS_FULL.forEach(l => {
+    const cell = document.createElement('div');
+    cell.className = 'wheel-cell';
+    cell.innerHTML = `<span class="heb">${l.heb}</span><span class="num">${l.n}</span>`;
+    cell.onclick = () => showTooltip(l);
+    grid.appendChild(cell);
+  });
+  buildCalendar();
 };
-
-const PHASE_NAMES = [
-  { name: "La Siembra", description: "El tiempo de plantar intenciones. No siempre se ven resultados todavía, pero algo se está echando raíces bajo tierra." },
-  { name: "El Despertar", description: "Algo se activa. Puede ser incómodo, puede ser intenso. Es el movimiento antes de la claridad." },
-  { name: "La Expansión", description: "Crecimiento hacia afuera. Nuevos contextos, nuevas relaciones, nuevas posibilidades abriendo." },
-  { name: "El Encuentro", description: "Contacto real con lo que importa. Personas, proyectos, versiones tuyas que emergen en este periodo." },
-  { name: "El Retorno", description: "Un tiempo de mirar hacia adentro. Integrar, soltar lo que ya cumplió su función." },
-  { name: "La Cosecha", description: "Lo que sembraste, lo que construiste, empieza a tomar forma visible. Es tiempo de reconocer el recorrido." }
-];
-
-// ===================================
-// COMPATIBILITY MATRIX
-// ===================================
-const COMPATIBILITY = {};
-
-function setCompat(a, b, strength, challenge, advice) {
-  const key = `${a}-${b}`;
-  const keyR = `${b}-${a}`;
-  COMPATIBILITY[key] = { strength, challenge, advice };
-  COMPATIBILITY[keyR] = { strength, challenge, advice };
-}
-
-// Natural affinities
-setCompat(1,5, "Velocidad compartida. Se entienden sin explicar.", "Ninguno frena al otro. Pueden ir demasiado rápido.", "Acordar quién sostiene cuando ambos quieren volar.");
-setCompat(2,6, "Cuidado mutuo sin esfuerzo. Se ven.", "Pueden quedar atrapados en el bienestar del otro, olvidando el propio.", "Practicar decirse lo que cada uno necesita, no solo lo que el otro necesita.");
-setCompat(3,9, "Visión e intensidad. Juntos crean algo que el mundo puede sentir.", "Los ciclos de uno no siempre coinciden con los del otro.", "Respetar los momentos de retirada sin interpretarlos como rechazo.");
-setCompat(4,8, "Uno construye, el otro empuja. Juntos terminan lo que empiezan.", "La impaciencia de uno choca con el ritmo del otro.", "El 8 aprende a esperar. El 4 aprende a decidir antes de estar listo.");
-setCompat(7,7, "Profundidad real. Nadie más los entiende tan bien.", "Pueden encerrarse en análisis infinitos sin moverse.", "Acordar una señal para cuando hay que salir de la cabeza y actuar.");
-// Tension pairs
-setCompat(1,4, "El 1 mueve, el 4 sostiene. Hay complementariedad real.", "El ritmo es opuesto. Pueden frustrarse mutuamente.", "No tomar el ritmo del otro como falta de interés o compromiso.");
-setCompat(3,8, "Creatividad y determinación. Pueden mover montañas.", "El 8 puede apagar la llama del 3 sin darse cuenta.", "El 8 necesita soltar el control. El 3 necesita comprometerse con algo.");
-setCompat(5,6, "El 5 trae aire fresco, el 6 trae estructura.", "El 6 percibe al 5 como irresponsable. El 5 percibe al 6 como controlador.", "Acordar zonas donde cada uno tiene autoridad.");
-// Fill remaining pairs with generic but warm content
-const allNums = [1,2,3,4,5,6,7,8,9];
-allNums.forEach(a => {
-  allNums.forEach(b => {
-    if(a <= b) {
-      const key = `${a}-${b}`;
-      if(!COMPATIBILITY[key]) {
-        const sameRoot = a === b;
-        COMPATIBILITY[key] = sameRoot
-          ? { strength: "Reconocéis en el otro lo que ya conocéis en vosotros.", challenge: "Puede faltar contraste. Los puntos ciegos se comparten.", advice: "Buscar activamente perspectivas que ninguno de los dos tiene por defecto." }
-          : { strength: "Mundos distintos que se atraen. Cada uno tiene algo que el otro necesita.", challenge: "La diferencia que os une también puede crear fricciones.", advice: "Curioso primero, crítico después." };
-        COMPATIBILITY[`${b}-${a}`] = COMPATIBILITY[key];
-      }
-    }
-  });
-});
-
-// ===================================
-// STATE MANAGEMENT
-// ===================================
-const DEFAULT_STATE = {
-  userName: "",
-  birthDate: "",
-  birthTime: "",
-  rootNumber: 0,
-  fireflyName: "",
-  firstVisit: true,
-  streak: 0,
-  lastVisit: "",
-  gardenLevel: 1,
-  checkins: [],
-  connections: [],
-  milestones: [],
-  mood: ""
-};
-
-// Persistent storage with graceful fallback
-const _store = window['local' + 'Storage'];
-function loadState() {
-  try {
-    const saved = _store && _store.getItem('neyen_state');
-    return saved ? { ...DEFAULT_STATE, ...JSON.parse(saved) } : { ...DEFAULT_STATE };
-  } catch(e) { return { ...DEFAULT_STATE }; }
-}
-
-function saveState(state) {
-  try { _store && _store.setItem('neyen_state', JSON.stringify(state)); } catch(e) {}
-}
-
-let state = loadState();
-
-// ===================================
-// HELPER FUNCTIONS
-// ===================================
-function calculateRoot(day, month, year) {
-  let sum = String(day) + String(month) + String(year);
-  let iterations = 0;
-  while ((sum.length > 1 || parseInt(sum) > 9) && iterations < 20) {
-    const digits = String(sum).split('');
-    const total = digits.reduce((a, b) => parseInt(a) + parseInt(b), 0);
-    sum = String(total);
-    iterations++;
-  }
-  return parseInt(sum);
-}
-
-function getProfile(rootNumber) {
-  return PROFILES.find(p => p.id === rootNumber) || PROFILES[0];
-}
-
-function getSeason(month) {
-  if ([3,4,5].includes(month)) return "Primavera";
-  if ([6,7,8].includes(month)) return "Verano";
-  if ([9,10,11].includes(month)) return "Otoño";
-  return "Invierno";
-}
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 13) return "Buenos días";
-  if (h < 20) return "Buenas tardes";
-  return "Buenas noches";
-}
-
-function getDayOfYear() {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const diff = now - start;
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
-}
-
-function getDailyEntry(rootNumber) {
-  const day = getDayOfYear();
-  const idx = (day + rootNumber - 1) % DAILY.length;
-  return DAILY[idx];
-}
-
-function getEnergyLevel(rootNumber) {
-  // Energy based on root + day of month (simulate BaZi-like daily cycle)
-  const d = new Date().getDate();
-  const raw = ((d * rootNumber) % 9) + 1;
-  return Math.round((raw / 9) * 100);
-}
-
-function getEnergyLabel(level) {
-  if (level < 25) return "Día de reposo";
-  if (level < 45) return "Día tranquilo";
-  if (level < 60) return "Día equilibrado";
-  if (level < 80) return "Día activo";
-  return "Día de impulso";
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return "";
-  const d = new Date(dateStr + 'T12:00:00');
-  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-function getTodayStr() {
-  return new Date().toISOString().split('T')[0];
-}
-
-function updateStreak() {
-  const today = getTodayStr();
-  if (state.lastVisit === today) return;
-  
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
-  
-  if (state.lastVisit === yesterdayStr) {
-    state.streak = (state.streak || 0) + 1;
-  } else if (state.lastVisit !== today) {
-    state.streak = 1;
-  }
-  state.lastVisit = today;
-  saveState(state);
-}
-
-function getIdentityInsight(rootNumber) {
-  const insights = [
-    "", // padding for index 0
-    "Tu energía es de arranque. Úsala para empezar cosas que valen la pena, no para escapar de las que ya empezaste.",
-    "Tu superpoder es la presencia. Cuando estás de verdad con alguien, lo sienten. Eso no es pequeño.",
-    "Tus ciclos son inteligentes. No los pelees. Aprende cuándo subes y planifica desde ahí.",
-    "Tu paciencia construye lo que los impacientes nunca pueden. No te disculpes por ir despacio.",
-    "Tu mente conecta puntos que otros ni ven. Eso tiene valor. No lo desperdicies siguiendo el camino de otro.",
-    "Cuidas de una manera que pocas personas saben hacer. Recuerda incluirte en ese cuidado.",
-    "La profundidad con la que ves el mundo es un regalo. Pero no todo requiere tu nivel de análisis.",
-    "Cuando decides algo, lo haces de verdad. Esa determinación es escasa. Úsala bien.",
-    "Tu visión ya es más amplia que la mayoría. El reto es aterrizar lo que ves para que otros también puedan verlo."
-  ];
-  return insights[rootNumber] || insights[1];
-}
-
-// ===================================
-// PARTICLES
-// ===================================
-function initParticles() {
-  const container = document.getElementById('particles');
-  const count = 18;
-  for (let i = 0; i < count; i++) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    const size = Math.random() * 2.5 + 1;
-    const x = Math.random() * 100;
-    const y = Math.random() * 100;
-    const dur = (Math.random() * 10 + 6) + 's';
-    const delay = (Math.random() * 8) + 's';
-    const tx = (Math.random() * 60 - 30) + 'px';
-    const ty = (Math.random() * 80 + 40) + 'px';
-    const op = (Math.random() * 0.3 + 0.1).toFixed(2);
-    p.style.cssText = `width:${size}px;height:${size}px;left:${x}%;top:${y}%;--dur:${dur};--delay:${delay};--tx:${tx};--ty:-${ty};--op:${op};`;
-    container.appendChild(p);
-  }
-}
-
-// ===================================
-// FIREFLY ANIMATION
-// ===================================
-let fireflyState = { x: 50, y: 50, targetX: 50, targetY: 50, angle: 0 };
-let fireflyInterval;
-let bubbleTimeout;
-
-function startFirefly() {
-  const ff = document.getElementById('firefly');
-  const bubble = document.getElementById('firefly-bubble');
-  const wrap = document.getElementById('garden-wrap');
-  if (!ff || !wrap) return;
-
-  const wrapRect = wrap.getBoundingClientRect();
-  const w = wrapRect.width || 280;
-  const h = wrapRect.height || 280;
-
-  // Set random target periodically
-  function setNewTarget() {
-    fireflyState.targetX = (0.2 + Math.random() * 0.6) * w;
-    fireflyState.targetY = (0.15 + Math.random() * 0.65) * h;
-  }
-  setNewTarget();
-
-  // Animate
-  let lastTime = null;
-  function animateFF(timestamp) {
-    if (!lastTime) lastTime = timestamp;
-    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
-    lastTime = timestamp;
-
-    const speed = 60;
-    const dx = fireflyState.targetX - fireflyState.x;
-    const dy = fireflyState.targetY - fireflyState.y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-
-    if (dist < 5) setNewTarget();
-    else {
-      fireflyState.x += (dx / dist) * speed * dt;
-      fireflyState.y += (dy / dist) * speed * dt;
-    }
-
-    ff.style.left = (fireflyState.x - 4) + 'px';
-    ff.style.top = (fireflyState.y - 4) + 'px';
-
-    requestAnimationFrame(animateFF);
-  }
-  requestAnimationFrame(animateFF);
-
-  // Show bubble periodically
-  function showBubble() {
-    if (!bubble) return;
-    const line = FIREFLY_LINES[Math.floor(Math.random() * FIREFLY_LINES.length)];
-    bubble.textContent = line;
-
-    // Position bubble near firefly
-    const bx = Math.min(fireflyState.x + 12, w - 220);
-    const by = Math.max(fireflyState.y - 60, 10);
-    bubble.style.left = Math.max(10, bx) + 'px';
-    bubble.style.top = by + 'px';
-    bubble.classList.add('visible');
-
-    if (bubbleTimeout) clearTimeout(bubbleTimeout);
-    bubbleTimeout = setTimeout(() => {
-      bubble.classList.remove('visible');
-    }, 4500);
-  }
-
-  // Show bubble after 2s, then every 12s
-  setTimeout(() => {
-    showBubble();
-    setInterval(showBubble, 12000);
-  }, 2000);
-}
-
-// ===================================
-// SPLASH → ONBOARDING/MAIN
-// ===================================
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const el = document.getElementById(id);
-  if (el) el.classList.add('active');
-}
-
-function initSplash() {
-  setTimeout(() => {
-    if (state.firstVisit) {
-      showScreen('onboarding');
-      initOnboarding();
-    } else {
-      showScreen('main-app');
-      initMainApp();
-    }
-  }, 2500);
-
-  // Allow tap to skip
-  document.getElementById('splash').addEventListener('click', () => {
-    clearTimeout(window._splashTimer);
-    if (state.firstVisit) {
-      showScreen('onboarding');
-      initOnboarding();
-    } else {
-      showScreen('main-app');
-      initMainApp();
-    }
-  }, { once: true });
-}
-
-// ===================================
-// ONBOARDING
-// ===================================
-let obStep = 1;
-
-function initOnboarding() {
-  // Populate day dropdown
-  const daySelect = document.getElementById('birth-day');
-  for (let d = 1; d <= 31; d++) {
-    const opt = document.createElement('option');
-    opt.value = d;
-    opt.textContent = d;
-    daySelect.appendChild(opt);
-  }
-
-  // Populate year dropdown
-  const yearSelect = document.getElementById('birth-year');
-  const currentYear = new Date().getFullYear();
-  for (let y = currentYear - 5; y >= 1940; y--) {
-    const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y;
-    yearSelect.appendChild(opt);
-  }
-
-  // Step 1 → Step 2
-  document.getElementById('ob1-next').addEventListener('click', () => {
-    const day = parseInt(document.getElementById('birth-day').value);
-    const month = parseInt(document.getElementById('birth-month').value);
-    const year = parseInt(document.getElementById('birth-year').value);
-
-    if (!day || !month || !year) {
-      document.querySelectorAll('.date-select').forEach(s => {
-        if (!s.value) s.style.borderColor = '#D4AF37';
-      });
-      return;
-    }
-
-    state.birthDate = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    state.birthTime = document.getElementById('birth-time').value || '';
-    state.rootNumber = calculateRoot(day, month, year);
-    saveState(state);
-
-    // Show step 2
-    goToObStep(2);
-    renderSeedProfile(state.rootNumber);
-  });
-
-  // Step 2 → Step 3
-  document.getElementById('ob2-next').addEventListener('click', () => {
-    const name = document.getElementById('user-name-input').value.trim();
-    if (name) { state.userName = name; saveState(state); }
-    goToObStep(3);
-  });
-  document.getElementById('user-name-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('ob2-next').click();
-  });
-
-  // Step 3 → Step 4
-  document.getElementById('ob3-next').addEventListener('click', () => {
-    const name = document.getElementById('firefly-name-input').value.trim() || 'Luci';
-    state.fireflyName = name;
-    saveState(state);
-    goToObStep(4);
-  });
-
-  // Also allow Enter key on firefly name
-  document.getElementById('firefly-name-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('ob3-next').click();
-  });
-
-  // Step 4 → Main
-  document.getElementById('ob4-next').addEventListener('click', () => {
-    state.firstVisit = false;
-    state.gardenLevel = 1;
-    state.lastVisit = getTodayStr();
-    state.streak = 1;
-    saveState(state);
-    showScreen('main-app');
-    initMainApp();
-  });
-}
-
-function goToObStep(step) {
-  document.querySelectorAll('.onboard-step').forEach(s => s.classList.remove('active'));
-  const next = document.getElementById(`ob-step-${step}`);
-  if (next) { next.classList.add('active'); next.classList.add('fade-in'); }
-  obStep = step;
-}
-
-function renderSeedProfile(rootNumber) {
-  const profile = getProfile(rootNumber);
-  const card = document.getElementById('seed-profile-card');
-  card.innerHTML = `
-    <div class="seed-card" style="border-top-color: ${profile.color}">
-      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
-        <div class="seed-name">${profile.name}</div>
-      </div>
-      <div class="seed-headline">${profile.headline}</div>
-      <div class="seed-desc">${profile.description}</div>
-      <div class="seed-traits">
-        ${profile.traits.map(t => `<span class="seed-trait">${t}</span>`).join('')}
-      </div>
-      <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;color:#C4A050;font-style:italic;">⚡ ${profile.watchout}</div>
-    </div>
-  `;
-  card.classList.add('fade-in');
-}
-
-// ===================================
-// MAIN APP INIT
-// ===================================
-function initMainApp() {
-  updateStreak();
-  initBottomNav();
-  renderJardin();
-  renderHoy();
-  renderVinculos();
-  renderCamino();
-  setTimeout(startFirefly, 600);
-}
-
-// ===================================
-// BOTTOM NAVIGATION
-// ===================================
-function initBottomNav() {
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tabId = btn.dataset.tab;
-      switchTab(tabId);
-    });
-  });
-}
-
-function switchTab(tabId) {
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tabId);
-  });
-  document.querySelectorAll('.tab-panel').forEach(panel => {
-    panel.classList.toggle('active', panel.id === `tab-${tabId}`);
-  });
-  // Scroll to top
-  document.getElementById('app-content').scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// ===================================
-// TAB 1: JARDÍN
-// ===================================
-function renderJardin() {
-  const now = new Date();
-  document.getElementById('season-display').textContent = getSeason(now.getMonth() + 1);
-  document.getElementById('streak-display').textContent = state.streak > 0 ? `${state.streak} día${state.streak !== 1 ? 's' : ''} seguidos` : '';
-
-  const profile = getProfile(state.rootNumber);
-  document.getElementById('jardin-profile-name').textContent = profile.name;
-
-  // Garden glow level
-  const glow = Math.min(5, Math.max(1, state.gardenLevel || 1));
-  document.getElementById('garden-wrap').dataset.glow = glow;
-
-  // Zone visibility based on garden level
-  for (let z = 1; z <= 5; z++) {
-    const zone = document.getElementById(`zone-${z}`);
-    if (zone) {
-      const opacity = glow >= z ? (0.4 + (glow - z) * 0.12) : 0.15;
-      zone.style.opacity = Math.min(1, opacity);
-    }
-  }
-
-  // Update user label in constellation
-  const label = document.getElementById('user-center-label');
-  if (label && state.fireflyName) {
-    // keep as "Tú" for clarity
-  }
-}
-
-// ===================================
-// TAB 2: HOY
-// ===================================
-function renderHoy() {
-  const now = new Date();
-  const profile = getProfile(state.rootNumber);
-
-  // Greeting
-  const greeting = getGreeting();
-  const name = state.userName || '';
-  const greetEl = document.getElementById('hoy-greeting');
-  greetEl.innerHTML = `${greeting}${name ? ', <span>' + name + '</span>' : ''}.`;
-
-  // Date display
-  const dateOpts = { weekday: 'long', day: 'numeric', month: 'long' };
-  document.getElementById('hoy-date-display').textContent = now.toLocaleDateString('es-ES', dateOpts);
-
-  // Energy
-  const energyLevel = getEnergyLevel(state.rootNumber);
-  document.getElementById('energy-fill').style.width = energyLevel + '%';
-  document.getElementById('energy-state-label').textContent = getEnergyLabel(energyLevel);
-
-  // Daily message
-  const daily = getDailyEntry(state.rootNumber);
-  document.getElementById('daily-message').textContent = daily.message;
-  document.getElementById('daily-action').textContent = daily.action;
-
-  // Mood grid
-  const grid = document.getElementById('mood-grid');
-  grid.innerHTML = MOODS.map(m => `
-    <button class="mood-btn${state.mood === m.id ? ' selected' : ''}" data-mood="${m.id}" aria-label="${m.label}">
-      <span class="mood-emoji">${m.emoji}</span>
-      <span class="mood-label">${m.label}</span>
-    </button>
-  `).join('');
-
-  grid.querySelectorAll('.mood-btn').forEach(btn => {
-    btn.addEventListener('click', () => handleMoodSelect(btn.dataset.mood));
-  });
-
-  // Identity insight
-  document.getElementById('identity-insight').textContent = getIdentityInsight(state.rootNumber);
-
-  // Show firefly response if already checked in today
-  if (state.mood && state.checkins.length > 0) {
-    const lastCheckin = state.checkins[state.checkins.length - 1];
-    const today = getTodayStr();
-    if (lastCheckin.date === today) {
-      showFireflyResponse(state.mood);
-      document.getElementById('grow-indicator').classList.add('visible');
-    }
-  }
-}
-
-function handleMoodSelect(moodId) {
-  state.mood = moodId;
-
-  // Update UI
-  document.querySelectorAll('.mood-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.mood === moodId);
-  });
-
-  // Save checkin
-  const today = getTodayStr();
-  const existing = state.checkins.findIndex(c => c.date === today);
-  if (existing >= 0) {
-    state.checkins[existing].mood = moodId;
-  } else {
-    state.checkins.push({ date: today, mood: moodId });
-    state.gardenLevel = Math.min(5, (state.gardenLevel || 1) + 0.25);
-  }
-  saveState(state);
-
-  showFireflyResponse(moodId);
-  document.getElementById('grow-indicator').classList.add('visible');
-
-  // Update garden
-  const glow = Math.min(5, Math.max(1, Math.round(state.gardenLevel)));
-  document.getElementById('garden-wrap').dataset.glow = glow;
-}
-
-function showFireflyResponse(moodId) {
-  const response = MOOD_RESPONSES[moodId] || FIREFLY_LINES[0];
-  const el = document.getElementById('firefly-response');
-  if (el) {
-    el.textContent = `${state.fireflyName || 'Tu luciérnaga'}: "${response}"`;
-    el.classList.add('visible');
-  }
-}
-
-// ===================================
-// TAB 3: VÍNCULOS
-// ===================================
-function renderVinculos() {
-  renderConnectionsList();
-  renderConstellation();
-
-  document.getElementById('add-person-btn').addEventListener('click', () => {
-    const form = document.getElementById('add-person-form');
-    form.classList.toggle('visible');
-    if (form.classList.contains('visible')) {
-      document.getElementById('new-person-name').focus();
-    }
-  });
-
-  document.getElementById('cancel-person-btn').addEventListener('click', () => {
-    document.getElementById('add-person-form').classList.remove('visible');
-    clearPersonForm();
-  });
-
-  document.getElementById('save-person-btn').addEventListener('click', saveNewPerson);
-}
-
-function clearPersonForm() {
-  document.getElementById('new-person-name').value = '';
-  document.getElementById('new-person-day').value = '';
-  document.getElementById('new-person-month').value = '';
-  document.getElementById('new-person-year').value = '';
-}
-
-function saveNewPerson() {
-  const name = document.getElementById('new-person-name').value.trim();
-  const day = parseInt(document.getElementById('new-person-day').value);
-  const month = parseInt(document.getElementById('new-person-month').value);
-  const year = parseInt(document.getElementById('new-person-year').value);
-
-  if (!name || !day || !month || !year) return;
-
-  const rootNum = calculateRoot(day, month, year);
-  const connection = {
-    id: Date.now(),
-    name,
-    birthDate: `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,
-    rootNumber: rootNum
-  };
-
-  state.connections = state.connections || [];
-  state.connections.push(connection);
-  saveState(state);
-
-  document.getElementById('add-person-form').classList.remove('visible');
-  clearPersonForm();
-  renderConnectionsList();
-  renderConstellation();
-}
-
-function deleteConnection(id) {
-  state.connections = (state.connections || []).filter(c => c.id !== id);
-  saveState(state);
-  renderConnectionsList();
-  renderConstellation();
-}
-
-function getCompatibility(a, b) {
-  const key = `${a}-${b}`;
-  return COMPATIBILITY[key] || COMPATIBILITY[`${b}-${a}`] || {
-    strength: "Dos energías distintas que tienen mucho que enseñarse.",
-    challenge: "La diferencia puede crear fricción antes de crear puente.",
-    advice: "Escuchar primero. Juzgar después."
-  };
-}
-
-function renderConnectionsList() {
-  const list = document.getElementById('connections-list');
-  const connections = state.connections || [];
-
-  if (connections.length === 0) {
-    list.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--faint);font-size:0.85rem;">Todavía no has añadido a nadie.<br>Las personas que importan merecen un lugar aquí.</div>`;
-    return;
-  }
-
-  list.innerHTML = connections.map(c => {
-    const compat = getCompatibility(state.rootNumber, c.rootNumber);
-    const myProfile = getProfile(state.rootNumber);
-    const theirProfile = getProfile(c.rootNumber);
-    return `
-      <div class="relation-card fade-in">
-        <div class="relation-names">
-          <span>Tú y ${c.name}</span>
-          <button class="delete-btn" onclick="deleteConnection(${c.id})" aria-label="Eliminar">✕</button>
-        </div>
-        <div style="display:flex;gap:0.75rem;margin-bottom:0.85rem;align-items:center;">
-          <div style="font-size:0.85rem;color:var(--gold);font-weight:500;">${myProfile.name}</div>
-          <div style="font-size:0.7rem;color:var(--faint);">·</div>
-          <div style="font-size:0.85rem;color:var(--green);font-weight:500;">${theirProfile.name}</div>
-        </div>
-        <div class="relation-row">
-          <div class="relation-row-label">Donde brilláis</div>
-          <div class="relation-row-text">${compat.strength}</div>
-        </div>
-        <div class="relation-row">
-          <div class="relation-row-label">Vuestro desafío</div>
-          <div class="relation-row-text">${compat.challenge}</div>
-        </div>
-        <div class="relation-row" style="margin-bottom:0">
-          <div class="relation-row-label">Lo que necesita este vínculo</div>
-          <div class="relation-row-text">${compat.advice}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function renderConstellation() {
-  const connections = state.connections || [];
-  const svg = document.getElementById('constellation-connections');
-  if (!svg) return;
-
-  const cx = 170, cy = 120;
-  const radii = [80, 65, 75, 70, 85, 90, 60, 72, 78];
-  const angles = [0, 60, 120, 180, 240, 300, 45, 150, 270];
-
-  svg.innerHTML = connections.map((c, i) => {
-    const angle = (angles[i % angles.length] - 90) * Math.PI / 180;
-    const r = radii[i % radii.length];
-    const x = cx + r * Math.cos(angle);
-    const y = cy + r * Math.sin(angle);
-    const profile = getProfile(c.rootNumber);
-
-    return `
-      <line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(212,175,55,0.2)" stroke-width="1" stroke-dasharray="3 4"/>
-      <circle cx="${x}" cy="${y}" r="7" fill="${profile.color}" opacity="0.8"/>
-      <circle cx="${x}" cy="${y}" r="10" fill="none" stroke="${profile.color}" stroke-width="1" opacity="0.3">
-        <animate attributeName="r" values="10;14;10" dur="${2 + i*0.5}s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="${2 + i*0.5}s" repeatCount="indefinite"/>
-      </circle>
-      <text x="${x}" y="${y + 20}" text-anchor="middle" fill="rgba(232,230,224,0.5)" font-size="8" font-family="Satoshi, sans-serif">${c.name.split(' ')[0]}</text>
-    `;
-  }).join('');
-}
-
-// ===================================
-// TAB 4: CAMINO
-// ===================================
-function renderCamino() {
-  const rootNumber = state.rootNumber;
-  const birthDate = state.birthDate ? new Date(state.birthDate + 'T12:00:00') : null;
-  const birthYear = birthDate ? birthDate.getFullYear() : 1990;
-  const currentYear = new Date().getFullYear();
-  const age = birthYear ? currentYear - birthYear : 30;
-
-  // Calculate current phase based on root number cycle (9-year cycles)
-  const cycleYear = age % 9;
-  const currentPhaseIndex = cycleYear < PHASE_NAMES.length ? cycleYear : 0;
-
-  // Build timeline: 3 past phases, current, 2 future
-  const futureCont = document.getElementById('timeline-future');
-  const pastCont = document.getElementById('timeline-past');
-
-  // Future (shown above TODAY marker)
-  let futureHTML = '';
-  for (let i = 2; i >= 1; i--) {
-    const phaseIdx = (currentPhaseIndex + i) % PHASE_NAMES.length;
-    const phase = PHASE_NAMES[phaseIdx];
-    const startYear = currentYear + (i - 1) * 3 + 1;
-    futureHTML += `
-      <div class="timeline-item future">
-        <div class="timeline-dot"></div>
-        <div class="timeline-card">
-          <div class="timeline-phase-label">Próximo ciclo</div>
-          <div class="timeline-phase-name">${phase.name}</div>
-          <div class="timeline-years">${startYear} — ${startYear + 2}</div>
-        </div>
-      </div>
-    `;
-  }
-  futureCont.innerHTML = futureHTML;
-
-  // Current phase (after TODAY marker, first item)
-  const currentPhase = PHASE_NAMES[currentPhaseIndex];
-  let pastHTML = `
-    <div class="timeline-item current">
-      <div class="timeline-dot"></div>
-      <div class="timeline-card">
-        <div class="timeline-phase-label">Ahora mismo</div>
-        <div class="timeline-phase-name">${currentPhase.name}</div>
-        <div class="timeline-phase-desc">${currentPhase.description}</div>
-        <div class="timeline-years">${currentYear - 1} — ${currentYear + 1}</div>
-      </div>
-    </div>
-  `;
-
-  // Past phases
-  for (let i = 1; i <= 3; i++) {
-    const phaseIdx = ((currentPhaseIndex - i) + PHASE_NAMES.length) % PHASE_NAMES.length;
-    const phase = PHASE_NAMES[phaseIdx];
-    const startYear = currentYear - i * 3;
-    pastHTML += `
-      <div class="timeline-item past">
-        <div class="timeline-dot"></div>
-        <div class="timeline-card">
-          <div class="timeline-phase-label">Pasado</div>
-          <div class="timeline-phase-name">${phase.name}</div>
-          <div class="timeline-years">${startYear} — ${startYear + 2}</div>
-        </div>
-      </div>
-    `;
-  }
-  pastCont.innerHTML = pastHTML;
-
-  // Milestone button
-  const addBtn = document.getElementById('add-milestone-btn');
-  if (addBtn) addBtn.addEventListener('click', openMilestoneModal);
-
-  // Modal close
-  document.getElementById('milestone-modal-close')?.addEventListener('click', closeMilestoneModal);
-  document.getElementById('milestone-modal')?.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('milestone-modal')) closeMilestoneModal();
-  });
-  document.getElementById('save-milestone-btn')?.addEventListener('click', saveMilestone);
-
-  // Render existing milestones
-  renderMilestones();
-
-  // Seasonal forecast
-  renderForecast();
-}
-
-function openMilestoneModal() {
-  const modal = document.getElementById('milestone-modal');
-  modal.classList.add('visible');
-  // Set default date to today
-  document.getElementById('milestone-date').value = getTodayStr();
-}
-
-function closeMilestoneModal() {
-  document.getElementById('milestone-modal').classList.remove('visible');
-}
-
-function saveMilestone() {
-  const text = document.getElementById('milestone-text').value.trim();
-  const date = document.getElementById('milestone-date').value;
-  if (!text) return;
-
-  state.milestones = state.milestones || [];
-  state.milestones.push({ id: Date.now(), text, date });
-  saveState(state);
-  closeMilestoneModal();
-  renderMilestones();
-
-  document.getElementById('milestone-text').value = '';
-}
-
-function renderMilestones() {
-  const list = document.getElementById('milestones-list');
-  const milestones = (state.milestones || []).slice().reverse();
-
-  list.innerHTML = milestones.map(m => `
-    <div class="user-milestone">
-      <span>${m.text}</span>
-      <span class="user-milestone-date">${formatDate(m.date)}</span>
-    </div>
-  `).join('');
-}
-
-function renderForecast() {
-  const container = document.getElementById('forecast-months');
-  const now = new Date();
-  const elements = ['fire', 'water', 'earth', 'air'];
-  const elementEmoji = { fire: '🔥', water: '💧', earth: '🌍', air: '🌬️' };
-  const vibes = [
-    "Impulso y arranque",
-    "Calma y escucha",
-    "Construcción y raíces",
-    "Movimiento y cambio",
-    "Profundidad e introspección",
-    "Cuidado y consolidación"
-  ];
-
-  const months = [];
-  for (let i = 1; i <= 3; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const monthName = d.toLocaleDateString('es-ES', { month: 'long' });
-    const element = elements[(now.getMonth() + i + state.rootNumber) % 4];
-    const vibe = vibes[(now.getMonth() + i + state.rootNumber) % vibes.length];
-    months.push({ name: monthName, element, vibe });
-  }
-
-  container.innerHTML = months.map(m => `
-    <div class="forecast-card">
-      <div>
-        <div class="forecast-month" style="text-transform:capitalize;">${m.name}</div>
-        <div class="forecast-vibe">${m.vibe}</div>
-      </div>
-      <span class="forecast-element">${elementEmoji[m.element]}</span>
-    </div>
-  `).join('');
-}
-
-// ===================================
-// PWA SERVICE WORKER
-// ===================================
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
-}
-
-// ===================================
-// INIT
-// ===================================
-document.addEventListener('DOMContentLoaded', () => {
-  initParticles();
-  initSplash();
-});
 </script>
 </body>
 </html>
