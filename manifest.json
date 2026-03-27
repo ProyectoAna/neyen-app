@@ -1,13 +1,14 @@
 {
-  "name": "NEYĒN — Marco de Coherencia Estructural",
+  "name": "NEYĒN — Juego de la Vida",
   "short_name": "NEYĒN",
-  "description": "Marco de coherencia estructural. Número raíz, tríada SATOR/NEYĒN/SER, calendario cíclico, carta natal BaZi y matriz numérica.",
+  "description": "Tu jardín interior. Un compañero de vida que te ayuda a conocerte mejor cada día.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
-  "background_color": "#0f0f0e",
-  "theme_color": "#0f0f0e",
+  "background_color": "#0D0D0D",
+  "theme_color": "#0D0D0D",
   "orientation": "portrait",
+  "lang": "es",
   "icons": [
     {
       "src": "icons/icon-192.png",

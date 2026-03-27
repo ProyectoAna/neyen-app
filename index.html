@@ -11,1058 +11,2634 @@
         Created with Perplexity Computer
         https://www.perplexity.ai/computer
 -->
-
-<!-- Perplexity Computer Attribution — SEO Meta Tags -->
 <meta name="generator" content="Perplexity Computer">
 <meta name="author" content="Perplexity Computer">
 <meta property="og:see_also" content="https://www.perplexity.ai/computer">
 <link rel="author" href="https://www.perplexity.ai/computer">
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEYĒN — Structural Coherence Framework</title>
-<meta name="description" content="NEYĒN: Marco de Coherencia Estructural. Calculadora de número raíz, tríada SATOR/NEYĒN/SER, calendario cíclico, carta natal y matriz numérica.">
-<meta name="theme-color" content="#0a1a1f">
+<meta name="theme-color" content="#0D0D0D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NEYĒN">
+<title>NEYĒN — Juego de la Vida</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=zodiak@400,500,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
 <style>
-/* ===== RESET & BASE ===== */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --gold:#D4AF37;--green:#3BAF84;--bg-deep:#0a1a1f;--bg-card:#0d2926;
-  --white:#F5F0E8;--white-60:rgba(245,240,232,.6);--white-30:rgba(245,240,232,.3);
-  --glass:rgba(13,41,38,.55);--glass-border:rgba(212,175,55,.15);
-  --font-display:'Clash Display',sans-serif;--font-body:'Satoshi',sans-serif;
-  --radius:14px;--tab-h:64px;
+/* ===========================
+   RESET & BASE
+   =========================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Satoshi', -apple-system, sans-serif;
+  background: #0D0D0D;
+  color: #E8E6E0;
+  min-height: 100dvh;
+  overflow: hidden;
+  position: relative;
 }
-html{font-size:16px;-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{
-  font-family:var(--font-body);color:var(--white);
-  background:linear-gradient(160deg,var(--bg-deep) 0%,#071612 40%,var(--bg-card) 100%);
-  min-height:100vh;min-height:100dvh;overflow-x:hidden;
-  padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0px));
+
+/* ===========================
+   CSS VARIABLES
+   =========================== */
+:root {
+  --bg: #0D0D0D;
+  --surface: #1A1A18;
+  --surface2: #242420;
+  --border: #333330;
+  --text: #E8E6E0;
+  --muted: #8A8880;
+  --faint: #5A5850;
+  --gold: #D4AF37;
+  --gold-hover: #E8C44A;
+  --gold-glow: rgba(212,175,55,0.25);
+  --green: #3BAF84;
+  --green-hover: #4CC99A;
+  --green-glow: rgba(59,175,132,0.2);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --nav-height: 72px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
-a{color:var(--green);text-decoration:none}
-a:hover{text-decoration:underline}
-button{font-family:var(--font-body);cursor:pointer;border:none;background:none;color:inherit}
-input,select{font-family:var(--font-body);color:var(--white);background:rgba(255,255,255,.07);
-  border:1px solid var(--glass-border);border-radius:10px;padding:10px 14px;font-size:.95rem;
-  outline:none;transition:border-color .2s}
-input:focus,select:focus{border-color:var(--gold)}
-select option{background:var(--bg-deep);color:var(--white)}
-h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;line-height:1.15}
 
-/* ===== GLASS CARD ===== */
-.card{
-  background:var(--glass);border:1px solid var(--glass-border);
-  border-radius:var(--radius);padding:20px;
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-  transition:transform .2s,box-shadow .2s;
+/* ===========================
+   APP SHELL
+   =========================== */
+#app {
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
 }
-.card:hover{transform:translateY(-1px);box-shadow:0 8px 32px rgba(0,0,0,.25)}
 
-/* ===== SECTIONS ===== */
-.section{
-  display:none;flex-direction:column;gap:20px;
-  padding:20px 16px 32px;max-width:540px;margin:0 auto;
-  animation:fadeUp .35s ease-out both;
+/* Desktop phone frame */
+@media (min-width: 500px) {
+  body { background: #060606; display: flex; align-items: center; justify-content: center; }
+  #app { border-left: 1px solid #1e1e1c; border-right: 1px solid #1e1e1c; }
 }
-.section.active{display:flex}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-.section-title{font-size:1.65rem;color:var(--gold);margin-bottom:2px;letter-spacing:.02em}
-.section-sub{font-size:.88rem;color:var(--white-60);line-height:1.5}
-
-/* ===== TOP BAR ===== */
-.top-bar{
-  position:sticky;top:0;z-index:90;
-  display:flex;align-items:center;justify-content:center;
-  padding:14px 16px 10px;
-  background:linear-gradient(180deg,var(--bg-deep) 60%,transparent);
+/* ===========================
+   SCREENS
+   =========================== */
+.screen {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: max(0px, calc(50vw - 240px));
+  width: min(100vw, 480px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  background: var(--bg);
 }
-.top-bar .logo{font-family:var(--font-display);font-size:1.25rem;font-weight:700;letter-spacing:.12em;color:var(--gold)}
-.top-bar .logo span{color:var(--white)}
-
-/* ===== BOTTOM TABS ===== */
-.tab-bar{
-  position:fixed;bottom:0;left:0;right:0;z-index:100;
-  display:flex;justify-content:space-around;align-items:center;
-  height:var(--tab-h);
-  padding-bottom:env(safe-area-inset-bottom,0px);
-  background:rgba(10,26,31,.92);border-top:1px solid var(--glass-border);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+.screen.active {
+  opacity: 1;
+  pointer-events: all;
 }
-.tab-btn{
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:6px 0;min-width:52px;font-size:.62rem;font-weight:500;
-  color:var(--white-30);transition:color .2s;letter-spacing:.04em;
+
+/* ===========================
+   AMBIENT PARTICLES
+   =========================== */
+#particles {
+  position: fixed;
+  top: 0; bottom: 0;
+  left: max(0px, calc(50vw - 240px));
+  width: min(100vw, 480px);
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
 }
-.tab-btn svg{width:22px;height:22px;transition:color .2s}
-.tab-btn.active{color:var(--gold)}
-.tab-btn.active svg{color:var(--gold)}
-
-/* ===== BUTTONS ===== */
-.btn-primary{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  padding:12px 24px;border-radius:10px;font-weight:600;font-size:.95rem;
-  background:linear-gradient(135deg,var(--gold),#b8942e);color:var(--bg-deep);
-  transition:transform .15s,box-shadow .15s;
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0;
+  animation: floatParticle var(--dur, 8s) var(--delay, 0s) infinite ease-in-out;
 }
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,175,55,.3);text-decoration:none}
-.btn-secondary{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  padding:10px 20px;border-radius:10px;font-weight:500;font-size:.88rem;
-  border:1px solid var(--glass-border);color:var(--white-60);transition:all .2s;
+@keyframes floatParticle {
+  0% { opacity: 0; transform: translate(0, 0) scale(0); }
+  20% { opacity: var(--op, 0.4); }
+  80% { opacity: var(--op, 0.4); }
+  100% { opacity: 0; transform: translate(var(--tx, 20px), var(--ty, -80px)) scale(0.2); }
 }
-.btn-secondary:hover{border-color:var(--gold);color:var(--gold)}
 
-/* ===== ROOT NUMBER RESULT ===== */
-.root-result{display:none;text-align:center}
-.root-result.visible{display:block}
-.root-big{font-family:var(--font-display);font-size:5rem;font-weight:700;line-height:1}
-.root-name{font-family:var(--font-display);font-size:1.4rem;margin:8px 0 4px}
-.root-element{font-size:.82rem;color:var(--white-60);margin-bottom:12px}
-.root-desc{font-size:.92rem;line-height:1.6;color:var(--white-60)}
-
-/* ===== TRIAD ===== */
-.triad-svg-wrap{display:flex;justify-content:center;padding:10px 0}
-.triad-detail{text-align:center}
-.triad-detail h3{font-size:1.15rem;margin-bottom:6px}
-.triad-detail p{font-size:.88rem;color:var(--white-60);line-height:1.55}
-.triad-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:6px}
-.triad-metric{text-align:center;padding:10px 6px;background:rgba(255,255,255,.04);border-radius:10px}
-.triad-metric .val{font-family:var(--font-display);font-size:1.1rem;color:var(--gold)}
-.triad-metric .lbl{font-size:.7rem;color:var(--white-30);margin-top:2px}
-.dpsi-card{text-align:center;padding:24px 20px}
-.dpsi-val{font-family:var(--font-display);font-size:3rem;font-weight:700;color:var(--gold)}
-.dpsi-label{font-size:.8rem;color:var(--white-60);margin-top:4px}
-.dpsi-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:14px;overflow:hidden}
-.dpsi-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),var(--gold));transition:width .8s ease}
-
-/* ===== CALENDAR ===== */
-.cal-svg-wrap{display:flex;justify-content:center;padding:0}
-.cal-info{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.cal-info-item{padding:14px;text-align:center}
-.cal-info-item .ci-label{font-size:.7rem;color:var(--white-30);text-transform:uppercase;letter-spacing:.06em}
-.cal-info-item .ci-val{font-family:var(--font-display);font-size:1rem;color:var(--white);margin-top:4px}
-.cal-legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:6px}
-.cal-legend span{font-size:.72rem;display:flex;align-items:center;gap:5px;color:var(--white-60)}
-.cal-legend span::before{content:'';width:10px;height:10px;border-radius:50%;display:inline-block}
-.cal-legend .l-astro::before{background:#D4AF37}
-.cal-legend .l-bio::before{background:#3BAF84}
-.cal-legend .l-civic::before{background:#7B4FA2}
-
-/* ===== NATAL CHART ===== */
-.natal-tabs{display:flex;gap:6px;margin-bottom:4px}
-.natal-tab{flex:1;padding:10px;text-align:center;border-radius:10px;font-size:.85rem;font-weight:500;
-  background:rgba(255,255,255,.04);color:var(--white-30);transition:all .2s}
-.natal-tab.active{background:rgba(212,175,55,.15);color:var(--gold)}
-.natal-panel{display:none}
-.natal-panel.active{display:block}
-.natal-form{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
-.natal-form .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.natal-form label{font-size:.78rem;color:var(--white-60);margin-bottom:3px;display:block}
-.pillar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
-.pillar{text-align:center;padding:14px 6px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--glass-border)}
-.pillar .p-label{font-size:.68rem;color:var(--white-30);text-transform:uppercase;letter-spacing:.05em}
-.pillar .p-stem{font-family:var(--font-display);font-size:1.3rem;margin:6px 0 2px}
-.pillar .p-branch{font-size:1.1rem}
-.pillar .p-element{font-size:.72rem;color:var(--white-60);margin-top:4px}
-.zodiac-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0}
-.zodiac-item{text-align:center;padding:14px 8px;border-radius:12px;background:rgba(255,255,255,.04)}
-.zodiac-item .z-type{font-size:.68rem;color:var(--white-30);text-transform:uppercase}
-.zodiac-item .z-sign{font-size:1.8rem;margin:4px 0}
-.zodiac-item .z-name{font-size:.85rem;font-weight:500}
-.profile-section{margin-top:12px}
-.profile-section h4{font-size:.95rem;color:var(--gold);margin-bottom:8px}
-.profile-section p,.profile-section li{font-size:.88rem;color:var(--white-60);line-height:1.55}
-.profile-section ul{padding-left:18px;display:flex;flex-direction:column;gap:4px}
-
-/* ===== MATRIX ===== */
-.matrix-grid-wrap{display:flex;justify-content:center;padding:10px 0}
-.matrix-grid{display:grid;grid-template-columns:repeat(3,80px);grid-template-rows:repeat(3,80px);gap:8px}
-.matrix-cell{
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-display);font-size:1.8rem;font-weight:600;
-  border-radius:14px;cursor:pointer;transition:all .25s;
-  background:rgba(255,255,255,.04);border:1px solid var(--glass-border);
+/* ===========================
+   SPLASH SCREEN
+   =========================== */
+#splash {
+  background: #000;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
 }
-.matrix-cell:hover{border-color:var(--gold);background:rgba(212,175,55,.08)}
-.matrix-cell.active{background:rgba(212,175,55,.18);border-color:var(--gold);color:var(--gold);transform:scale(1.08)}
-.matrix-cell.governor{color:var(--green)}
-.matrix-cell.seq{color:var(--gold)}
-.matrix-info{min-height:80px;transition:opacity .2s}
-.sequence-svg-wrap{display:flex;justify-content:center;padding:10px 0}
-.teb-card{text-align:center;padding:20px}
-.teb-formula{font-family:var(--font-display);font-size:1.3rem;color:var(--gold);margin-bottom:8px}
-
-/* ===== ABOUT ===== */
-.about-block{padding:18px}
-.about-block h3{font-size:1.05rem;color:var(--gold);margin-bottom:8px}
-.about-block p,.about-block li{font-size:.88rem;color:var(--white-60);line-height:1.6}
-.about-block ul{padding-left:18px;display:flex;flex-direction:column;gap:6px;margin-top:6px}
-.about-cta{font-size:.82rem;color:var(--white-30);text-align:center;margin-top:8px;font-style:italic}
-.book-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-.book-item{display:flex;gap:14px;align-items:flex-start;padding:14px;border-radius:12px;background:rgba(255,255,255,.03)}
-.book-icon{width:40px;height:50px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:.85rem;font-weight:700}
-.book-info .bi-title{font-size:.92rem;font-weight:600;color:var(--white)}
-.book-info .bi-desc{font-size:.8rem;color:var(--white-60);margin-top:3px;line-height:1.45}
-
-/* ===== FOOTER ===== */
-.app-footer{
-  text-align:center;padding:20px 16px 12px;font-size:.72rem;color:var(--white-30);
-  display:flex;flex-direction:column;gap:6px;align-items:center;
+.splash-seed {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 20px 8px var(--gold-glow), 0 0 60px 20px rgba(212,175,55,0.1);
+  animation: breathe 2.5s ease-in-out infinite;
 }
-.app-footer a{color:var(--white-30);transition:color .2s}
-.app-footer a:hover{color:var(--gold)}
-
-/* ===== DESKTOP ===== */
-@media(min-width:768px){
-  .section{max-width:620px;padding:28px 24px 40px}
-  .tab-bar{left:50%;transform:translateX(-50%);max-width:480px;border-radius:16px 16px 0 0}
-  .matrix-grid{grid-template-columns:repeat(3,96px);grid-template-rows:repeat(3,96px);gap:10px}
-  .matrix-cell{font-size:2.1rem}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px 8px var(--gold-glow), 0 0 60px 20px rgba(212,175,55,0.1); }
+  50% { transform: scale(1.6); box-shadow: 0 0 30px 15px var(--gold-glow), 0 0 80px 30px rgba(212,175,55,0.15); }
 }
-@media(min-width:1024px){
-  .section{max-width:700px}
+.splash-text {
+  position: absolute;
+  bottom: 35%;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.1rem;
+  color: var(--muted);
+  opacity: 0;
+  letter-spacing: 0.05em;
+  animation: fadeInSlow 1s ease 1s forwards;
+}
+@keyframes fadeInSlow {
+  to { opacity: 1; }
+}
+
+/* ===========================
+   ONBOARDING
+   =========================== */
+#onboarding {
+  z-index: 50;
+}
+.onboard-step {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  gap: 1.5rem;
+}
+.onboard-step.active { display: flex; }
+
+.onboard-title {
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--text);
+}
+.onboard-sub {
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 300px;
+}
+
+/* Date picker custom */
+.date-picker-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 320px;
+}
+.date-select {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.5rem;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 0.9rem;
+  appearance: none;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.date-select:focus { outline: none; border-color: var(--gold); }
+.date-select option { background: var(--surface2); }
+
+.time-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 320px;
+}
+.time-row label { font-size: 0.85rem; color: var(--muted); flex-shrink: 0; }
+.time-row input[type="time"] {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.75rem;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.time-row input:focus { outline: none; border-color: var(--gold); }
+.time-unknown {
+  font-size: 0.8rem;
+  color: var(--faint);
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--faint);
+}
+.time-unknown:hover { color: var(--muted); }
+
+/* Buttons */
+.btn-primary {
+  background: var(--gold);
+  color: #0D0D0D;
+  font-family: 'Satoshi', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 50px;
+  padding: 0.9rem 2.5rem;
+  cursor: pointer;
+  min-height: 52px;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+}
+.btn-primary:hover { background: var(--gold-hover); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 0.7rem 1.5rem;
+  cursor: pointer;
+  min-height: 44px;
+  transition: all 0.2s;
+}
+.btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Name input */
+.name-input {
+  width: 100%;
+  max-width: 280px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--border);
+  color: var(--text);
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.5rem;
+  text-align: center;
+  padding: 0.5rem;
+  transition: border-color 0.2s;
+}
+.name-input:focus { outline: none; border-color: var(--gold); }
+.name-input::placeholder { color: var(--faint); }
+
+/* Seed profile card */
+.seed-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  max-width: 320px;
+  width: 100%;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+.seed-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--green));
+}
+.seed-name {
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.5rem;
+  color: var(--gold);
+  margin-bottom: 0.4rem;
+}
+.seed-headline {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+.seed-desc {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.seed-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+.seed-trait {
+  font-size: 0.72rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--muted);
+}
+
+/* Seed planting animation */
+.seed-anim-container {
+  width: 120px;
+  height: 120px;
+  position: relative;
+  margin: 0 auto;
+}
+.seed-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gold);
+  position: absolute;
+  left: 50%; bottom: 10px;
+  transform: translateX(-50%);
+  animation: seedSink 1.5s ease forwards;
+}
+@keyframes seedSink {
+  0% { bottom: 60px; opacity: 1; }
+  60% { bottom: 10px; opacity: 1; }
+  100% { bottom: 8px; opacity: 0.4; }
+}
+.sprout {
+  position: absolute;
+  left: 50%; bottom: 10px;
+  transform: translateX(-50%) scaleY(0);
+  transform-origin: bottom;
+  animation: sproutGrow 1s ease 1.2s forwards;
+}
+@keyframes sproutGrow {
+  to { transform: translateX(-50%) scaleY(1); }
+}
+
+/* Garden preview in onboarding */
+.garden-preview {
+  width: 100%;
+  max-width: 280px;
+  height: 160px;
+  position: relative;
+  margin: 0 auto;
+}
+
+/* ===========================
+   MAIN APP
+   =========================== */
+#main-app {
+  z-index: 10;
+  flex-direction: column;
+}
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+.app-content::-webkit-scrollbar { display: none; }
+
+/* Tab panels */
+.tab-panel {
+  display: none;
+  flex-direction: column;
+  padding-top: calc(var(--safe-top) + 0.5rem);
+  width: 100%;
+}
+.tab-panel.active { display: flex; }
+/* Non-garden tabs fill minimum */
+#tab-hoy.active, #tab-vinculos.active, #tab-camino.active { min-height: 100%; }
+
+/* Jardín special — no scroll, fits in viewport */
+#tab-jardin.active {
+  height: calc(100dvh - var(--nav-height) - var(--safe-bottom));
+  min-height: unset;
+  overflow: hidden;
+}
+
+/* ===========================
+   BOTTOM NAV
+   =========================== */
+.bottom-nav {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: calc(var(--nav-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: rgba(26, 26, 24, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  padding-top: 0.5rem;
+  z-index: 20;
+}
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem 0;
+  min-height: 44px;
+  position: relative;
+}
+.nav-icon { font-size: 1.3rem; transition: transform 0.2s; }
+.nav-label {
+  font-size: 0.65rem;
+  font-family: 'Satoshi', sans-serif;
+  color: var(--faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.nav-btn.active .nav-label { color: var(--gold); }
+.nav-btn.active .nav-icon { transform: scale(1.15); }
+.nav-dot {
+  position: absolute;
+  top: 2px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.nav-btn.active .nav-dot { opacity: 1; }
+
+/* ===========================
+   TAB 1: JARDÍN
+   =========================== */
+.jardin-header {
+  padding: 1rem 1.5rem 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.jardin-season {
+  font-size: 0.75rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.jardin-streak {
+  font-size: 0.75rem;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+}
+
+/* SVG Garden */
+.garden-svg-wrap {
+  position: relative;
+  width: 100%;
+  padding: 0 0.5rem;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+#garden-svg {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  aspect-ratio: 1;
+  display: block;
+  margin: 0 auto;
+  flex-shrink: 1;
+}
+
+/* Firefly */
+#firefly {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px 4px rgba(212,175,55,0.5), 0 0 16px 8px rgba(212,175,55,0.2);
+  pointer-events: none;
+  z-index: 5;
+  transition: box-shadow 0.5s;
+}
+.firefly-trail {
+  position: absolute;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0.3;
+  pointer-events: none;
+}
+.firefly-bubble {
+  position: absolute;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px 12px 12px 2px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.78rem;
+  color: var(--text);
+  max-width: 200px;
+  white-space: normal;
+  line-height: 1.5;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  font-style: italic;
+}
+.firefly-bubble.visible { opacity: 1; }
+
+/* Climate overlay */
+.climate-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: var(--radius);
+  transition: opacity 1s ease;
+}
+
+/* ===========================
+   TAB 2: HOY
+   =========================== */
+.hoy-wrap {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.hoy-greeting {
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.hoy-greeting span { color: var(--gold); }
+
+/* Energy meter */
+.energy-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+}
+.energy-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+.energy-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.energy-state {
+  font-size: 0.8rem;
+  color: var(--gold);
+  font-weight: 500;
+}
+.energy-bar {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+.energy-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #4ECDC4, #D4AF37, #FF6B35);
+  transition: width 1s ease;
+}
+.energy-icons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+}
+.energy-icons span { font-size: 0.75rem; color: var(--faint); }
+
+/* Daily card */
+.daily-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+.daily-card::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 60px; height: 60px;
+  background: radial-gradient(circle, var(--gold-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+.daily-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  margin-bottom: 0.6rem;
+}
+.daily-message {
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.15rem;
+  line-height: 1.45;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+.daily-action {
+  font-size: 0.85rem;
+  color: var(--green);
+  font-weight: 500;
+}
+.daily-action::before { content: '→ '; }
+
+/* Checkin */
+.checkin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.checkin-title {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 0.9rem;
+  font-weight: 500;
+}
+.mood-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+.mood-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 62px;
+}
+.mood-btn:hover { border-color: var(--gold); }
+.mood-btn.selected { border-color: var(--gold); background: rgba(212,175,55,0.08); }
+.mood-emoji { font-size: 1.3rem; }
+.mood-label { font-size: 0.7rem; color: var(--muted); }
+
+.firefly-response {
+  background: var(--surface2);
+  border-left: 2px solid var(--gold);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-style: italic;
+  display: none;
+  animation: slideIn 0.3s ease;
+}
+.firefly-response.visible { display: block; }
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Identity insight */
+.insight-card {
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(59,175,132,0.05) 100%);
+  border: 1px solid rgba(59,175,132,0.2);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.insight-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--green);
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+.insight-text {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* Garden grow indicator */
+.grow-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: rgba(59,175,132,0.08);
+  border: 1px solid rgba(59,175,132,0.15);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  color: var(--green);
+  display: none;
+}
+.grow-indicator.visible { display: flex; }
+.grow-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.6; }
+}
+
+/* ===========================
+   TAB 3: VÍNCULOS
+   =========================== */
+.vinculos-wrap {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.vinculos-title {
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.4rem;
+}
+
+/* Constellation */
+.constellation-wrap {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+#constellation-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Add person */
+.add-person-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: none;
+}
+.add-person-form.visible { display: block; }
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.form-label { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.05em; }
+.form-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 0.9rem;
+  padding: 0.65rem 0.85rem;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+.form-input:focus { outline: none; border-color: var(--gold); }
+.form-date-row { display: flex; gap: 0.4rem; }
+.form-date-row .form-input { text-align: center; }
+.form-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+.btn-add {
+  background: var(--gold);
+  color: #0D0D0D;
+  font-family: 'Satoshi', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+  flex: 1;
+  min-height: 44px;
+  transition: background 0.2s;
+}
+.btn-add:hover { background: var(--gold-hover); }
+.btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  min-height: 44px;
+  transition: border-color 0.2s;
+}
+.btn-cancel:hover { border-color: var(--muted); }
+
+/* Relationship cards */
+.relation-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+.relation-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--green));
+}
+.relation-names {
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.1rem;
+  margin-bottom: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.relation-names .delete-btn {
+  background: none;
+  border: none;
+  color: var(--faint);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem;
+  min-height: 44px; min-width: 44px;
+  display: flex; align-items: center; justify-content: center;
+}
+.relation-names .delete-btn:hover { color: #C41E3A; }
+.relation-row {
+  margin-bottom: 0.75rem;
+}
+.relation-row-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  margin-bottom: 0.25rem;
+}
+.relation-row-text {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* ===========================
+   TAB 4: CAMINO
+   =========================== */
+.camino-wrap {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+.camino-title {
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.55rem;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--border) 10%, var(--border) 90%, transparent);
+}
+.timeline-item {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+.timeline-dot {
+  position: absolute;
+  left: -1.5rem;
+  top: 0.4rem;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 2px solid var(--surface);
+  transition: all 0.3s;
+}
+.timeline-item.current .timeline-dot {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 12px var(--gold-glow);
+  width: 14px; height: 14px;
+  left: -1.6rem;
+}
+.timeline-item.future .timeline-dot { background: var(--surface2); }
+.timeline-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  transition: all 0.3s;
+}
+.timeline-item.current .timeline-card {
+  border-color: rgba(212,175,55,0.3);
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(212,175,55,0.04) 100%);
+}
+.timeline-item.past .timeline-card { opacity: 0.5; }
+.timeline-phase-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  margin-bottom: 0.3rem;
+}
+.timeline-item.current .timeline-phase-label { color: var(--gold); }
+.timeline-phase-name {
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.05rem;
+  margin-bottom: 0.4rem;
+}
+.timeline-phase-desc {
+  font-size: 0.83rem;
+  color: var(--muted);
+  line-height: 1.6;
+  display: none;
+}
+.timeline-item.current .timeline-phase-desc { display: block; }
+.timeline-years {
+  font-size: 0.72rem;
+  color: var(--faint);
+  margin-top: 0.4rem;
+}
+
+/* Today marker */
+.today-marker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  position: relative;
+  left: -2rem;
+  padding-left: 2rem;
+}
+.today-marker::before {
+  content: '';
+  width: 40px;
+  height: 1px;
+  background: var(--gold);
+  opacity: 0.5;
+}
+
+/* Milestone add */
+.milestone-add {
+  margin-top: 1rem;
+}
+.btn-milestone {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 0.85rem;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+.btn-milestone:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Seasonal forecast */
+.forecast-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.forecast-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.forecast-months {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.forecast-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.forecast-month { font-size: 0.88rem; color: var(--text); }
+.forecast-vibe { font-size: 0.78rem; color: var(--muted); }
+.forecast-element { font-size: 1rem; }
+
+/* User milestone items */
+.user-milestone {
+  background: var(--surface2);
+  border: 1px solid rgba(212,175,55,0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.82rem;
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+.user-milestone-date { font-size: 0.7rem; color: var(--faint); }
+
+/* ===========================
+   MILESTONE MODAL
+   =========================== */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.modal-overlay.visible { opacity: 1; pointer-events: all; }
+.modal-sheet {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 480px;
+  padding-bottom: calc(1.5rem + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transform: translateY(100%);
+  transition: transform 0.35s ease;
+}
+.modal-overlay.visible .modal-sheet { transform: translateY(0); }
+.modal-title { font-family: 'Zodiak', Georgia, serif; font-size: 1.2rem; }
+.modal-close {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 1.2rem;
+  position: absolute; top: 1.25rem; right: 1.25rem;
+  min-height: 44px; min-width: 44px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ===========================
+   COMMON UTILITIES
+   =========================== */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.section-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.icon-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  color: var(--gold);
+  font-size: 0.8rem;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  min-height: 36px;
+  display: flex; align-items: center; gap: 0.3rem;
+  transition: all 0.2s;
+}
+.icon-btn:hover { background: var(--surface2); border-color: var(--gold); }
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.25rem 0;
+}
+
+/* Profile pill */
+.profile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.profile-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+/* Number root badge */
+.root-badge {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--green));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Zodiak', Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0D0D0D;
+  flex-shrink: 0;
+}
+
+/* Loading state */
+.loading-dots {
+  display: flex; gap: 4px; align-items: center; justify-content: center;
+  padding: 0.5rem;
+}
+.loading-dots span {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: dotPulse 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotPulse {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* Footer */
+.pplx-footer {
+  text-align: center;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+.pplx-footer a {
+  font-size: 0.65rem;
+  color: var(--faint);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+.pplx-footer a:hover { color: var(--muted); }
+
+/* Garden glow levels */
+.garden-svg-wrap[data-glow="1"] { filter: brightness(0.85); }
+.garden-svg-wrap[data-glow="2"] { filter: brightness(0.92); }
+.garden-svg-wrap[data-glow="3"] { filter: brightness(1); }
+.garden-svg-wrap[data-glow="4"] { filter: brightness(1.05) saturate(1.1); }
+.garden-svg-wrap[data-glow="5"] { filter: brightness(1.1) saturate(1.2); }
+
+/* Transition helpers */
+.fade-in { animation: fadeIn 0.5s ease forwards; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
-<header class="top-bar">
-  <div class="logo">NEYĒN<span>™</span></div>
-</header>
+<!-- Ambient particles -->
+<div id="particles"></div>
 
-<!-- ===================== SECTION 1: RAÍZ ===================== -->
-<section id="sec-raiz" class="section active">
-  <div>
-    <h1 class="section-title">Tu Número Raíz</h1>
-    <p class="section-sub">Introduce tu fecha de nacimiento. La reducción digital revela la frecuencia estructural base de tu perfil dentro del marco NEYĒN.</p>
+<div id="app">
+
+  <!-- =====================
+       SPLASH SCREEN
+       ===================== -->
+  <div id="splash" class="screen active">
+    <div class="splash-seed"></div>
+    <div class="splash-text">Todo comienza con una semilla.</div>
   </div>
 
-  <div class="card">
-    <label for="raiz-date" style="font-size:.82rem;color:var(--white-60);margin-bottom:8px;display:block">Fecha de nacimiento</label>
-    <input type="date" id="raiz-date" style="width:100%;font-size:1rem">
-    <button class="btn-primary" style="width:100%;margin-top:14px" onclick="calcRoot()">Calcular número raíz</button>
-  </div>
+  <!-- =====================
+       ONBOARDING
+       ===================== -->
+  <div id="onboarding" class="screen" style="background: var(--bg);">
 
-  <div id="root-result" class="root-result card">
-    <div id="root-number" class="root-big"></div>
-    <div id="root-name" class="root-name"></div>
-    <div id="root-element" class="root-element"></div>
-    <div id="root-desc" class="root-desc"></div>
-    <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <span id="root-color-chip" style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--white-60)">
-        <span style="width:14px;height:14px;border-radius:50%;display:inline-block" id="root-chip"></span>
-        <span id="root-color-name"></span>
-      </span>
-      <span id="root-seq-badge" style="font-size:.78rem;padding:3px 10px;border-radius:6px;background:rgba(212,175,55,.12);color:var(--gold);display:none"></span>
-    </div>
-  </div>
+    <!-- Step 1: Birth date -->
+    <div class="onboard-step active" id="ob-step-1" style="background: radial-gradient(ellipse at center bottom, rgba(212,175,55,0.06) 0%, transparent 70%);">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🌱</div>
+      <h1 class="onboard-title">¿Cuándo llegaste<br>al mundo?</h1>
+      <p class="onboard-sub">No para analizarte. Para entenderte.</p>
 
-  <div class="card" style="margin-top:4px">
-    <h3 style="font-size:.95rem;color:var(--gold);margin-bottom:8px">La Secuencia NEYĒN</h3>
-    <p style="font-size:.85rem;color:var(--white-60);line-height:1.55">
-      La secuencia de doblaje <strong style="color:var(--gold)">1 → 2 → 4 → 8 → 7 → 5</strong> es el patrón fundamental. 
-      Los números <strong style="color:var(--green)">3, 6, 9</strong> operan como gobernadores del sistema — regulan sin participar directamente en el flujo.
-    </p>
-    <div style="display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap">
-      <span style="font-size:.75rem;padding:4px 10px;border-radius:6px;background:rgba(212,175,55,.12);color:var(--gold)">Secuencia: 1-2-4-8-7-5</span>
-      <span style="font-size:.75rem;padding:4px 10px;border-radius:6px;background:rgba(59,175,132,.12);color:var(--green)">Gobernadores: 3-6-9</span>
-    </div>
-  </div>
-</section>
-
-<!-- ===================== SECTION 2: TRÍADA ===================== -->
-<section id="sec-triada" class="section">
-  <div>
-    <h1 class="section-title">La Tríada</h1>
-    <p class="section-sub">SATOR · NEYĒN · SER — las tres capas operativas de cualquier sistema coherente. Pulsa cada círculo para explorar.</p>
-  </div>
-
-  <div class="card triad-svg-wrap">
-    <svg id="triad-svg" viewBox="0 0 320 280" width="100%" style="max-width:360px">
-      <!-- SATOR circle -->
-      <circle cx="160" cy="100" r="72" fill="rgba(212,175,55,.08)" stroke="#D4AF37" stroke-width="1.5" style="cursor:pointer" onclick="showTriad('sator')"/>
-      <!-- NEYEN circle -->
-      <circle cx="110" cy="190" r="72" fill="rgba(59,175,132,.08)" stroke="#3BAF84" stroke-width="1.5" style="cursor:pointer" onclick="showTriad('neyen')"/>
-      <!-- SER circle -->
-      <circle cx="210" cy="190" r="72" fill="rgba(123,79,162,.08)" stroke="#7B4FA2" stroke-width="1.5" style="cursor:pointer" onclick="showTriad('ser')"/>
-      <!-- Labels -->
-      <text x="160" y="85" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="14" font-weight="600" fill="#D4AF37">SATOR</text>
-      <text x="160" y="103" text-anchor="middle" font-family="Satoshi,sans-serif" font-size="9" fill="rgba(245,240,232,.5)">Estructura</text>
-      <text x="110" y="175" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="14" font-weight="600" fill="#3BAF84">NEYĒN</text>
-      <text x="110" y="193" text-anchor="middle" font-family="Satoshi,sans-serif" font-size="9" fill="rgba(245,240,232,.5)">Flujo</text>
-      <text x="210" y="175" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="14" font-weight="600" fill="#7B4FA2">SER</text>
-      <text x="210" y="193" text-anchor="middle" font-family="Satoshi,sans-serif" font-size="9" fill="rgba(245,240,232,.5)">Adaptación</text>
-      <!-- Center ΔΨ -->
-      <text x="160" y="162" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="12" font-weight="700" fill="var(--white)">ΔΨ</text>
-    </svg>
-  </div>
-
-  <div id="triad-detail" class="card triad-detail">
-    <h3 id="triad-title">SATOR — Estructura</h3>
-    <p id="triad-desc">El esqueleto del sistema. Gobernanza, políticas, calendarios, límites. Todo lo codificado y aplicado. Define las reglas del juego antes de que empiece la partida.</p>
-    <div class="triad-metrics" id="triad-metrics">
-      <div class="triad-metric"><div class="val">< 4h</div><div class="lbl">Latencia decisión</div></div>
-      <div class="triad-metric"><div class="val">≤ 3</div><div class="lbl">Cadena aprobación</div></div>
-      <div class="triad-metric"><div class="val">0</div><div class="lbl">Conflictos política</div></div>
-    </div>
-  </div>
-
-  <div class="card dpsi-card">
-    <div style="font-size:.78rem;color:var(--white-60);margin-bottom:4px">Puntuación de Coherencia</div>
-    <div class="dpsi-val">ΔΨ</div>
-    <div class="dpsi-label">Delta Psi — Coherence Improvement Score</div>
-    <div class="dpsi-bar"><div class="dpsi-bar-fill" style="width:68%"></div></div>
-    <p style="font-size:.82rem;color:var(--white-60);margin-top:14px;line-height:1.5">
-      Cuantifica la alineación entre SATOR, NEYĒN y SER. Correlación validada: <strong style="color:var(--gold)">0.01 ΔΨ ≈ +2.5% ROI</strong>. 
-      Un sistema con alta coherencia no solo funciona — amplifica cada recurso invertido.
-    </p>
-  </div>
-</section>
-
-<!-- ===================== SECTION 3: CALENDARIO ===================== -->
-<section id="sec-calendario" class="section">
-  <div>
-    <h1 class="section-title">Calendario Cíclico</h1>
-    <p class="section-sub">Tu posición actual en los ciclos astronómico, biológico y cívico. Basado en el concepto de Reloj Cultural adaptado como herramienta universal.</p>
-  </div>
-
-  <div class="card cal-svg-wrap">
-    <svg id="cal-wheel" viewBox="0 0 340 340" width="100%" style="max-width:380px"></svg>
-  </div>
-
-  <div class="cal-legend">
-    <span class="l-astro">Astronómico</span>
-    <span class="l-bio">Biológico</span>
-    <span class="l-civic">Cívico</span>
-  </div>
-
-  <div class="cal-info" id="cal-info"></div>
-
-  <div class="card" style="padding:16px">
-    <h3 style="font-size:.92rem;color:var(--gold);margin-bottom:8px">Las tres capas del calendario</h3>
-    <p style="font-size:.84rem;color:var(--white-60);line-height:1.55">
-      <strong>Astronómica:</strong> Eclíptica solar, estaciones, solsticios y equinoccios. El reloj base del planeta.<br><br>
-      <strong>Biológica:</strong> Ritmos circadianos, variación estacional de energía, ciclos hormonales ligados a la luz.<br><br>
-      <strong>Cívica:</strong> Mercados, fiestas locales, calendarios fiscales, ritmos urbanos que organizan la vida colectiva.
-    </p>
-  </div>
-</section>
-
-<!-- ===================== SECTION 4: CARTA NATAL ===================== -->
-<section id="sec-carta" class="section">
-  <div>
-    <h1 class="section-title">Carta Natal</h1>
-    <p class="section-sub">Perfil estructural basado en BaZi (Cuatro Pilares) y zodíaco occidental. Introduce tus datos para generar tu análisis.</p>
-  </div>
-
-  <div class="card natal-form" id="natal-form">
-    <div class="row">
-      <div>
-        <label for="natal-date">Fecha de nacimiento</label>
-        <input type="date" id="natal-date" style="width:100%">
+      <div class="date-picker-row">
+        <select class="date-select" id="birth-day" aria-label="Día">
+          <option value="">Día</option>
+        </select>
+        <select class="date-select" id="birth-month" aria-label="Mes">
+          <option value="">Mes</option>
+          <option value="1">Enero</option>
+          <option value="2">Febrero</option>
+          <option value="3">Marzo</option>
+          <option value="4">Abril</option>
+          <option value="5">Mayo</option>
+          <option value="6">Junio</option>
+          <option value="7">Julio</option>
+          <option value="8">Agosto</option>
+          <option value="9">Septiembre</option>
+          <option value="10">Octubre</option>
+          <option value="11">Noviembre</option>
+          <option value="12">Diciembre</option>
+        </select>
+        <select class="date-select" id="birth-year" aria-label="Año">
+          <option value="">Año</option>
+        </select>
       </div>
-      <div>
-        <label for="natal-time">Hora (aprox.)</label>
-        <input type="time" id="natal-time" value="12:00" style="width:100%">
+
+      <div class="time-row" id="time-row-wrap">
+        <label>¿La hora?</label>
+        <input type="time" id="birth-time" aria-label="Hora de nacimiento">
+        <button class="time-unknown" id="skip-time" onclick="document.getElementById('birth-time').value=''; this.style.opacity='0.4';">No lo sé</button>
       </div>
-    </div>
-    <div>
-      <label for="natal-city">Ciudad de nacimiento</label>
-      <input type="text" id="natal-city" placeholder="Ej: Valencia, Madrid, CDMX..." style="width:100%">
-    </div>
-    <button class="btn-primary" style="width:100%" onclick="calcNatal()">Generar Carta</button>
-  </div>
 
-  <div id="natal-results" style="display:none">
-    <div class="natal-tabs">
-      <button class="natal-tab active" onclick="switchNatalTab('bazi')">BaZi 八字</button>
-      <button class="natal-tab" onclick="switchNatalTab('western')">Zodíaco</button>
-      <button class="natal-tab" onclick="switchNatalTab('profile')">Perfil CV</button>
+      <button class="btn-primary" id="ob1-next">Plantar mi semilla</button>
     </div>
 
-    <!-- BaZi Panel -->
-    <div id="panel-bazi" class="natal-panel active card">
-      <h3 style="font-size:1rem;color:var(--gold);margin-bottom:4px">Los Cuatro Pilares</h3>
-      <p style="font-size:.8rem;color:var(--white-60);margin-bottom:10px">Tronco Celeste + Rama Terrestre por cada pilar</p>
-      <div class="pillar-grid" id="bazi-pillars"></div>
-      <div id="bazi-daymaster" style="text-align:center;margin-top:10px"></div>
-      <div id="bazi-elements" style="margin-top:14px"></div>
+    <!-- Step 2: Seed animation + profile -->
+    <div class="onboard-step" id="ob-step-2" style="background: radial-gradient(ellipse at center, rgba(212,175,55,0.05) 0%, transparent 70%);">
+      <div class="seed-anim-container" id="seed-anim">
+        <svg class="sprout" id="sprout-svg" width="40" height="80" viewBox="0 0 40 80" fill="none">
+          <line x1="20" y1="80" x2="20" y2="30" stroke="#3BAF84" stroke-width="2"/>
+          <path d="M20 30 Q10 15 5 5 Q15 8 20 30" fill="#3BAF84" opacity="0.8"/>
+          <path d="M20 40 Q30 25 35 15 Q25 18 20 40" fill="#3BAF84" opacity="0.6"/>
+        </svg>
+        <div class="seed-dot" id="seed-dot"></div>
+      </div>
+      <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); margin-top: 0.5rem;" id="root-reveal-label">Tu semilla es...</div>
+      <div id="seed-profile-card"></div>
+      <div style="margin-top:1.25rem;width:100%;max-width:320px;">
+        <label style="display:block;font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;text-align:center;">¿Cómo te llamas?</label>
+        <input type="text" class="name-input" id="user-name-input" placeholder="Tu nombre" maxlength="30" autocomplete="given-name" spellcheck="false">
+      </div>
+      <button class="btn-primary" id="ob2-next">Continuar</button>
     </div>
 
-    <!-- Western Panel -->
-    <div id="panel-western" class="natal-panel card">
-      <h3 style="font-size:1rem;color:var(--gold);margin-bottom:10px">Zodíaco Occidental</h3>
-      <div class="zodiac-grid" id="zodiac-grid"></div>
-      <div id="zodiac-detail" class="profile-section"></div>
+    <!-- Step 3: Name the firefly -->
+    <div class="onboard-step" id="ob-step-3">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem;">✨</div>
+      <h1 class="onboard-title">Alguien te va a<br>acompañar.</h1>
+      <p class="onboard-sub">¿Cómo quieres llamarle?</p>
+      <input type="text" class="name-input" id="firefly-name-input" placeholder="Escribe un nombre" maxlength="20" autocomplete="off" spellcheck="false">
+      <button class="btn-primary" id="ob3-next">Seguir</button>
     </div>
 
-    <!-- Profile Panel -->
-    <div id="panel-profile" class="natal-panel card">
-      <h3 style="font-size:1rem;color:var(--gold);margin-bottom:10px">Perfil Profesional Estructural</h3>
-      <div id="cv-profile"></div>
-    </div>
-  </div>
-</section>
-
-<!-- ===================== SECTION 5: MATRIZ ===================== -->
-<section id="sec-matriz" class="section">
-  <div>
-    <h1 class="section-title">Matriz NEYĒN</h1>
-    <p class="section-sub">La cuadrícula 3×3 y la secuencia de doblaje. Pulsa cada número para ver su significado y conexiones dentro del sistema.</p>
-  </div>
-
-  <div class="card">
-    <div class="matrix-grid-wrap">
-      <div class="matrix-grid" id="matrix-grid"></div>
-    </div>
-    <div class="matrix-info card" id="matrix-info" style="margin-top:14px;background:rgba(255,255,255,.03);border:none;min-height:60px">
-      <p style="font-size:.84rem;color:var(--white-30);text-align:center">Pulsa un número para explorar</p>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3 style="font-size:.95rem;color:var(--gold);margin-bottom:10px">Secuencia de Doblaje</h3>
-    <div class="sequence-svg-wrap">
-      <svg id="seq-svg" viewBox="0 0 320 180" width="100%" style="max-width:360px"></svg>
-    </div>
-    <p style="font-size:.84rem;color:var(--white-60);line-height:1.55;margin-top:8px">
-      1 × 2 = 2 → 2 × 2 = 4 → 4 × 2 = 8 → 8 × 2 = 16 (1+6=<strong style="color:var(--gold)">7</strong>) → 
-      7 × 2 = 14 (1+4=<strong style="color:var(--gold)">5</strong>) → 5 × 2 = 10 (1+0=<strong style="color:var(--gold)">1</strong>) → ciclo se repite.
-    </p>
-  </div>
-
-  <div class="card teb-card">
-    <h3 style="font-size:.95rem;color:var(--gold);margin-bottom:10px">TEB — Balance de Energía Triádica</h3>
-    <div class="teb-formula">Alpha + Omega = 2 × Neyēn</div>
-    <p style="font-size:.84rem;color:var(--white-60);line-height:1.55">
-      El TEB (Triadic Energy Balance) establece que en cualquier sistema coherente, la suma de las fuerzas de inicio (Alpha) y cierre (Omega) 
-      equivale al doble de la fuerza de flujo (Neyēn). Cuando esta ecuación se desequilibra, el sistema pierde coherencia.
-    </p>
-    <div style="display:flex;justify-content:center;gap:16px;margin-top:14px">
-      <div style="text-align:center"><div style="font-family:var(--font-display);font-size:1.6rem;color:var(--gold)">α</div><div style="font-size:.72rem;color:var(--white-30)">Inicio</div></div>
-      <div style="font-family:var(--font-display);font-size:1.4rem;color:var(--white-30);align-self:center">+</div>
-      <div style="text-align:center"><div style="font-family:var(--font-display);font-size:1.6rem;color:var(--gold)">ω</div><div style="font-size:.72rem;color:var(--white-30)">Cierre</div></div>
-      <div style="font-family:var(--font-display);font-size:1.4rem;color:var(--white-30);align-self:center">=</div>
-      <div style="text-align:center"><div style="font-family:var(--font-display);font-size:1.6rem;color:var(--green)">2N</div><div style="font-size:.72rem;color:var(--white-30)">Flujo</div></div>
+    <!-- Step 4: Garden reveal -->
+    <div class="onboard-step" id="ob-step-4" style="background: radial-gradient(ellipse at center, rgba(59,175,132,0.06) 0%, transparent 70%);">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🌿</div>
+      <h1 class="onboard-title">Este es tu jardín.</h1>
+      <p class="onboard-sub">Cada día que descubras algo nuevo, algo crecerá aquí.</p>
+      <div class="garden-preview">
+        <svg width="280" height="160" viewBox="0 0 280 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="140" cy="80" r="60" stroke="rgba(212,175,55,0.15)" stroke-width="1" stroke-dasharray="4 4"/>
+          <circle cx="140" cy="80" r="40" stroke="rgba(212,175,55,0.1)" stroke-width="1" stroke-dasharray="3 5"/>
+          <circle cx="140" cy="80" r="20" stroke="rgba(212,175,55,0.2)" stroke-width="1"/>
+          <circle cx="140" cy="80" r="4" fill="var(--gold)" opacity="0.8"/>
+          <!-- Small plants -->
+          <g opacity="0.5">
+            <line x1="100" y1="50" x2="100" y2="38" stroke="#3BAF84" stroke-width="1.5"/>
+            <path d="M100 42 Q95 36 92 32 Q97 33 100 42" fill="#3BAF84"/>
+          </g>
+          <g opacity="0.4">
+            <line x1="180" y1="55" x2="180" y2="43" stroke="#3BAF84" stroke-width="1.5"/>
+            <path d="M180 47 Q185 41 188 37 Q183 38 180 47" fill="#3BAF84"/>
+          </g>
+          <g opacity="0.3">
+            <line x1="140" y1="130" x2="140" y2="120" stroke="#3BAF84" stroke-width="1.5"/>
+            <path d="M140 124 Q135 118 132 114 Q137 115 140 124" fill="#3BAF84"/>
+          </g>
+          <!-- Firefly -->
+          <circle cx="165" cy="65" r="3" fill="var(--gold)" opacity="0.9">
+            <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="cx" values="165;170;165;158;165" dur="5s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="65;60;65;68;65" dur="5s" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+      </div>
+      <button class="btn-primary" id="ob4-next">Explorar mi jardín</button>
     </div>
   </div>
-</section>
 
-<!-- ===================== SECTION 6: SISTEMA ===================== -->
-<section id="sec-sistema" class="section">
-  <div>
-    <h1 class="section-title">El Sistema</h1>
-    <p class="section-sub">NEYĒN™ es un marco de coherencia estructural. No es misticismo — es ingeniería de sistemas aplicada a la vida.</p>
-  </div>
+  <!-- =====================
+       MAIN APP
+       ===================== -->
+  <div id="main-app" class="screen">
+    <div class="app-content" id="app-content">
 
-  <div class="card about-block">
-    <h3>¿Qué es NEYĒN?</h3>
-    <p>
-      NEYĒN es un marco operativo para diagnosticar, medir y mejorar la coherencia de cualquier sistema — desde una empresa hasta una rutina personal. 
-      Integra tres capas (SATOR, NEYĒN, SER) en un modelo que cuantifica la alineación mediante el indicador ΔΨ (Delta Psi).
-    </p>
-    <p style="margin-top:10px">
-      El marco no predice el futuro ni invoca fuerzas ocultas. Observa patrones estructurales, mide su coherencia y propone ajustes basados en datos. 
-      Es compatible con cualquier metodología existente — OKR, Lean, Agile — y funciona como una capa de diagnóstico sobre ellas.
-    </p>
-  </div>
+      <!-- TAB 1: JARDÍN -->
+      <div class="tab-panel active" id="tab-jardin" style="padding-top: calc(var(--safe-top) + 0.25rem); padding-bottom: 0;">
+        <div class="jardin-header">
+          <div class="jardin-season" id="season-display">—</div>
+          <div class="jardin-streak" id="streak-display">—</div>
+        </div>
 
-  <div class="card about-block" style="border:1px solid rgba(212,175,55,.25);background:rgba(212,175,55,.04)">
-    <h3 style="color:var(--white)">«Esto no es misticismo. Es coherencia estructural.»</h3>
-    <p style="margin-top:8px">
-      Los números, ciclos y patrones que usamos son herramientas de observación, no objetos de fe. 
-      La secuencia 1-2-4-8-7-5 es matemática pura. Los ciclos estacionales son astronomía. 
-      Los Cuatro Pilares son un sistema calendárico chino con más de 2000 años de uso práctico. 
-      Nosotros los integramos en un marco contemporáneo, medible y aplicable.
-    </p>
-  </div>
+        <div class="garden-svg-wrap" id="garden-wrap" data-glow="1">
+          <!-- Firefly -->
+          <div id="firefly"></div>
+          <div class="firefly-bubble" id="firefly-bubble"></div>
 
-  <div class="card about-block">
-    <h3>Los Tres Libros</h3>
-    <div class="book-list">
-      <div class="book-item">
-        <div class="book-icon" style="background:rgba(212,175,55,.15);color:var(--gold)">L0</div>
-        <div class="book-info">
-          <div class="bi-title">Libro 0 — Los Fundamentos</div>
-          <div class="bi-desc">El punto de partida. Presenta la secuencia, la tríada y los principios de coherencia estructural. La base sobre la que se construye todo.</div>
+          <svg id="garden-svg" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background circle -->
+            <circle cx="160" cy="160" r="155" fill="rgba(26,26,24,0.6)"/>
+
+            <!-- Spiral path (golden ratio) -->
+            <path id="spiral-path" d="M160,160 Q200,140 210,100 Q220,60 190,40 Q150,15 110,30 Q65,48 50,90 Q30,140 55,185 Q85,240 145,255 Q215,270 265,230 Q310,185 305,125 Q295,55 235,25 Q165,-10 95,10 Q15,35 5,115"
+              stroke="rgba(212,175,55,0.12)" stroke-width="1.5" fill="none" stroke-dasharray="4 6"/>
+
+            <!-- Zone dots along spiral -->
+            <!-- Zone 1 (inner) -->
+            <g id="zone-1" class="garden-zone">
+              <circle cx="185" cy="115" r="18" fill="rgba(59,175,132,0.06)" stroke="rgba(59,175,132,0.2)" stroke-width="1"/>
+              <line x1="185" y1="130" x2="185" y2="108" stroke="#3BAF84" stroke-width="1.5" opacity="0.7"/>
+              <path d="M185 114 Q178 106 174 100 Q181 102 185 114" fill="#3BAF84" opacity="0.6"/>
+              <path d="M185 118 Q192 110 196 104 Q189 106 185 118" fill="#3BAF84" opacity="0.5"/>
+            </g>
+
+            <!-- Zone 2 -->
+            <g id="zone-2" class="garden-zone">
+              <circle cx="240" cy="180" r="20" fill="rgba(212,175,55,0.04)" stroke="rgba(212,175,55,0.15)" stroke-width="1"/>
+              <line x1="240" y1="196" x2="240" y2="172" stroke="#D4AF37" stroke-width="1.5" opacity="0.5"/>
+              <path d="M240 178 Q233 168 229 162 Q236 165 240 178" fill="#D4AF37" opacity="0.45"/>
+              <circle cx="243" cy="180" r="2" fill="#D4AF37" opacity="0.3"/>
+            </g>
+
+            <!-- Zone 3 -->
+            <g id="zone-3" class="garden-zone">
+              <circle cx="110" cy="220" r="22" fill="rgba(59,175,132,0.05)" stroke="rgba(59,175,132,0.15)" stroke-width="1"/>
+              <line x1="110" y1="235" x2="110" y2="210" stroke="#3BAF84" stroke-width="1.5" opacity="0.5"/>
+              <path d="M110 216 Q103 207 99 200 Q106 203 110 216" fill="#3BAF84" opacity="0.5"/>
+              <path d="M110 222 Q117 213 121 206 Q114 209 110 222" fill="#3BAF84" opacity="0.4"/>
+            </g>
+
+            <!-- Zone 4 -->
+            <g id="zone-4" class="garden-zone">
+              <circle cx="75" cy="100" r="16" fill="rgba(212,175,55,0.04)" stroke="rgba(212,175,55,0.12)" stroke-width="1"/>
+              <line x1="75" y1="113" x2="75" y2="96" stroke="#D4AF37" stroke-width="1" opacity="0.4"/>
+              <path d="M75 100 Q70 93 67 88 Q73 90 75 100" fill="#D4AF37" opacity="0.35"/>
+            </g>
+
+            <!-- Zone 5 (outer) -->
+            <g id="zone-5" class="garden-zone">
+              <circle cx="200" cy="265" r="18" fill="rgba(59,175,132,0.04)" stroke="rgba(59,175,132,0.12)" stroke-width="1"/>
+              <line x1="200" y1="278" x2="200" y2="260" stroke="#3BAF84" stroke-width="1" opacity="0.4"/>
+              <path d="M200 265 Q195 257 192 252 Q198 254 200 265" fill="#3BAF84" opacity="0.3"/>
+            </g>
+
+            <!-- Center glow -->
+            <circle cx="160" cy="160" r="6" fill="var(--gold)" opacity="0.7">
+              <animate attributeName="r" values="6;9;6" dur="3s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.7;0.4;0.7" dur="3s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="160" cy="160" r="18" fill="none" stroke="rgba(212,175,55,0.15)" stroke-width="1">
+              <animate attributeName="r" values="18;24;18" dur="3s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.15;0.05;0.15" dur="3s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+        </div>
+
+        <div style="padding: 0 1.5rem 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-top: 0.5rem;">
+            <div class="profile-pill">
+              <div class="profile-dot"></div>
+              <span id="jardin-profile-name">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pplx-footer">
+          <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
         </div>
       </div>
-      <div class="book-item">
-        <div class="book-icon" style="background:rgba(59,175,132,.15);color:var(--green)">PD</div>
-        <div class="book-info">
-          <div class="bi-title">PATH DESIGN</div>
-          <div class="bi-desc">Metodología práctica para diseñar trayectorias vitales y profesionales usando el marco NEYĒN. Herramientas, plantillas y casos reales.</div>
+
+      <!-- TAB 2: HOY -->
+      <div class="tab-panel" id="tab-hoy">
+        <div class="hoy-wrap">
+          <div>
+            <div class="hoy-greeting" id="hoy-greeting">Hola</div>
+            <div style="font-size: 0.78rem; color: var(--faint); margin-top: 0.3rem;" id="hoy-date-display">—</div>
+          </div>
+
+          <!-- Energy meter -->
+          <div class="energy-card">
+            <div class="energy-label-row">
+              <span class="energy-title">Energía del día</span>
+              <span class="energy-state" id="energy-state-label">—</span>
+            </div>
+            <div class="energy-bar">
+              <div class="energy-fill" id="energy-fill" style="width: 50%"></div>
+            </div>
+            <div class="energy-icons">
+              <span>🌙 Descanso</span>
+              <span>☀️ Acción</span>
+            </div>
+          </div>
+
+          <!-- Daily message -->
+          <div class="daily-card">
+            <div class="daily-label">Para hoy</div>
+            <div class="daily-message" id="daily-message">—</div>
+            <div class="daily-action" id="daily-action">—</div>
+          </div>
+
+          <!-- Check-in -->
+          <div class="checkin-card">
+            <div class="checkin-title">¿Cómo estás?</div>
+            <div class="mood-grid" id="mood-grid">
+              <!-- Filled by JS -->
+            </div>
+            <div class="firefly-response" id="firefly-response"></div>
+          </div>
+
+          <!-- Grow indicator -->
+          <div class="grow-indicator" id="grow-indicator">
+            <div class="grow-dot"></div>
+            <span>Tu jardín creció hoy</span>
+          </div>
+
+          <!-- Identity insight -->
+          <div class="insight-card">
+            <div class="insight-label">Algo que saber</div>
+            <div class="insight-text" id="identity-insight">—</div>
+          </div>
+
+          <div class="pplx-footer">
+            <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+          </div>
         </div>
       </div>
-      <div class="book-item">
-        <div class="book-icon" style="background:rgba(123,79,162,.15);color:#7B4FA2">GS</div>
-        <div class="book-info">
-          <div class="bi-title">The Golden String</div>
-          <div class="bi-desc">La conexión entre sistemas. Cómo el hilo dorado de la coherencia une decisiones, ciclos y relaciones en un patrón reconocible y operable.</div>
+
+      <!-- TAB 3: VÍNCULOS -->
+      <div class="tab-panel" id="tab-vinculos">
+        <div class="vinculos-wrap">
+          <div class="section-header">
+            <h2 class="vinculos-title">Vínculos</h2>
+            <button class="icon-btn" id="add-person-btn">+ Añadir</button>
+          </div>
+
+          <!-- Constellation -->
+          <div class="constellation-wrap">
+            <svg id="constellation-svg" viewBox="0 0 340 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Background grid lines -->
+              <circle cx="170" cy="120" r="80" stroke="rgba(212,175,55,0.06)" stroke-width="1"/>
+              <circle cx="170" cy="120" r="50" stroke="rgba(212,175,55,0.08)" stroke-width="1"/>
+              <circle cx="170" cy="120" r="25" stroke="rgba(212,175,55,0.12)" stroke-width="1"/>
+              <!-- User center dot -->
+              <circle cx="170" cy="120" r="10" fill="var(--gold)" opacity="0.9"/>
+              <circle cx="170" cy="120" r="16" fill="none" stroke="var(--gold)" stroke-width="1" opacity="0.4">
+                <animate attributeName="r" values="16;22;16" dur="3s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite"/>
+              </circle>
+              <text x="170" y="148" text-anchor="middle" fill="rgba(232,230,224,0.6)" font-size="9" font-family="Satoshi, sans-serif" id="user-center-label">Tú</text>
+              <!-- Dynamic connections added by JS -->
+              <g id="constellation-connections"></g>
+            </svg>
+          </div>
+
+          <!-- Add person form -->
+          <div class="add-person-form" id="add-person-form">
+            <div class="form-row">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-input" id="new-person-name" placeholder="¿Cómo se llama?" autocomplete="off">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Fecha de nacimiento</label>
+              <div class="form-date-row">
+                <input type="number" class="form-input" id="new-person-day" placeholder="Día" min="1" max="31" style="max-width: 70px;">
+                <input type="number" class="form-input" id="new-person-month" placeholder="Mes" min="1" max="12" style="max-width: 70px;">
+                <input type="number" class="form-input" id="new-person-year" placeholder="Año" min="1900" max="2020" style="flex: 1;">
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-cancel" id="cancel-person-btn">Cancelar</button>
+              <button class="btn-add" id="save-person-btn">Añadir</button>
+            </div>
+          </div>
+
+          <!-- Connections list -->
+          <div id="connections-list">
+            <!-- Filled by JS -->
+          </div>
+
+          <div class="pplx-footer">
+            <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+          </div>
         </div>
       </div>
+
+      <!-- TAB 4: CAMINO -->
+      <div class="tab-panel" id="tab-camino">
+        <div class="camino-wrap">
+          <h2 class="camino-title">Tu camino</h2>
+
+          <!-- Future phases (top) -->
+          <div class="timeline" id="timeline-future"></div>
+
+          <!-- Today marker -->
+          <div class="today-marker">HOY</div>
+
+          <!-- Past phases (below today) -->
+          <div class="timeline" id="timeline-past"></div>
+
+          <!-- Milestones -->
+          <div class="milestone-add">
+            <button class="btn-milestone" id="add-milestone-btn">
+              <span>+</span> Añadir un momento importante
+            </button>
+            <div id="milestones-list"></div>
+          </div>
+
+          <!-- Seasonal forecast -->
+          <div class="forecast-section">
+            <div class="forecast-title">Próximos tres meses</div>
+            <div class="forecast-months" id="forecast-months"></div>
+          </div>
+
+          <div class="pplx-footer">
+            <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end app-content -->
+
+    <!-- Bottom navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-tab="jardin" aria-label="Jardín">
+        <div class="nav-dot"></div>
+        <span class="nav-icon">🌱</span>
+        <span class="nav-label">Jardín</span>
+      </button>
+      <button class="nav-btn" data-tab="hoy" aria-label="Hoy">
+        <div class="nav-dot"></div>
+        <span class="nav-icon">🔮</span>
+        <span class="nav-label">Hoy</span>
+      </button>
+      <button class="nav-btn" data-tab="vinculos" aria-label="Vínculos">
+        <div class="nav-dot"></div>
+        <span class="nav-icon">👥</span>
+        <span class="nav-label">Vínculos</span>
+      </button>
+      <button class="nav-btn" data-tab="camino" aria-label="Camino">
+        <div class="nav-dot"></div>
+        <span class="nav-icon">✨</span>
+        <span class="nav-label">Camino</span>
+      </button>
+    </nav>
+  </div><!-- end main-app -->
+
+  <!-- Milestone modal -->
+  <div class="modal-overlay" id="milestone-modal">
+    <div class="modal-sheet">
+      <button class="modal-close" id="milestone-modal-close">✕</button>
+      <div class="modal-title">Momento importante</div>
+      <div class="form-row">
+        <label class="form-label">¿Qué pasó?</label>
+        <input type="text" class="form-input" id="milestone-text" placeholder="Un hito, un antes y después..." autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label class="form-label">¿Cuándo?</label>
+        <input type="date" class="form-input" id="milestone-date">
+      </div>
+      <button class="btn-primary" id="save-milestone-btn" style="width: 100%;">Marcar en mi camino</button>
     </div>
   </div>
 
-  <div class="card about-block">
-    <h3>The Spiral Within SLU</h3>
-    <p>
-      Entidad registrada en España. NEYĒN™ es marca europea registrada (EU 019288972). 
-      Desarrollamos el marco, publicamos los libros y creamos herramientas como esta app para hacer la coherencia estructural accesible y aplicable.
-    </p>
-    <ul style="margin-top:10px">
-      <li><strong>Marca:</strong> NEYĒN™ — Living Media System™</li>
-      <li><strong>Sede:</strong> España</li>
-      <li><strong>Web:</strong> proyectoana.github.io/neyen-app</li>
-    </ul>
-  </div>
-
-  <footer class="app-footer" style="margin-top:12px">
-    <span>NEYĒN™ — Living Media System™ · The Spiral Within SLU</span>
-    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
-  </footer>
-</section>
-
-<!-- ===================== TAB BAR ===================== -->
-<nav class="tab-bar">
-  <button class="tab-btn active" onclick="showSection('raiz')" aria-label="Raíz">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-8.5-10H8m8 0h4.5m-1.3-7.2L16 8m-8 8-3.2 3.2m0-14.4L8 8m8 8 3.2 3.2"/></svg>
-    <span>Raíz</span>
-  </button>
-  <button class="tab-btn" onclick="showSection('triada')" aria-label="Tríada">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 20h20L12 3z"/></svg>
-    <span>Tríada</span>
-  </button>
-  <button class="tab-btn" onclick="showSection('calendario')" aria-label="Calendario">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.5"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/></svg>
-    <span>Calendario</span>
-  </button>
-  <button class="tab-btn" onclick="showSection('carta')" aria-label="Carta Natal">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a14 14 0 010 18M12 3a14 14 0 000 18M3 12h18"/></svg>
-    <span>Carta</span>
-  </button>
-  <button class="tab-btn" onclick="showSection('matriz')" aria-label="Matriz">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-    <span>Matriz</span>
-  </button>
-  <button class="tab-btn" onclick="showSection('sistema')" aria-label="Sistema">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    <span>Sistema</span>
-  </button>
-</nav>
+</div><!-- end app -->
 
 <script>
-/* ================================================
-   NEYĒN PWA v2 — Complete Application Logic
-   ================================================ */
+// ===================================
+// DATA: Content from JSON
+// ===================================
+const PROFILES = [
+  { id: 1, name: "La Chispa", headline: "Empiezas rápido porque sientes antes que piensas.", description: "Te mueves cuando algo te da energía. Eso te hace rápido, intuitivo y difícil de parar al inicio. Pero cuando la emoción baja, te cuesta sostener. No es falta de disciplina. Es que necesitas sentir que tiene sentido.", traits: ["Arranque inmediato","Intuición alta","Baja tolerancia a lo repetitivo"], watchout: "Abandonas justo cuando empieza lo importante.", element: "fire", color: "#FF6B35" },
+  { id: 2, name: "El Puente", headline: "Entiendes a los demás mejor que ellos mismos.", description: "Ves los dos lados con facilidad. Conectas personas, traduces tensiones y haces que las cosas fluyan. Pero a veces te pierdes en ese proceso. Te adaptas tanto que olvidas qué quieres tú.", traits: ["Empatía fuerte","Mediador natural","Flexible"], watchout: "Te diluyes intentando encajar con todos.", element: "water", color: "#4ECDC4" },
+  { id: 3, name: "La Onda", headline: "Todo en ti funciona por ciclos.", description: "Tienes momentos de alta energía y momentos de retirada. Cuando estás arriba, eres imparable. Cuando no, necesitas espacio. El problema no es el cambio. Es forzarte a ser constante cuando no lo eres.", traits: ["Intensidad por fases","Creatividad natural","Sensibilidad alta"], watchout: "Te juzgas por no ser constante.", element: "air", color: "#FFD93D" },
+  { id: 4, name: "La Raíz", headline: "Construyes lento, pero sólido.", description: "No te mueves por impulso. Observas, entiendes y luego actúas. Cuando decides, lo haces bien. Pero puedes tardar demasiado en empezar. Tu fuerza es la paciencia. Tu trampa es la parálisis.", traits: ["Estabilidad","Fiabilidad","Pensamiento estructurado"], watchout: "Esperas demasiado antes de actuar.", element: "earth", color: "#8B6914" },
+  { id: 5, name: "El Viento", headline: "Necesitas libertad para funcionar bien.", description: "Te adaptas rápido, cambias de contexto con facilidad y encuentras soluciones donde otros se bloquean. Pero cuando te sientes atrapado, te desconectas. No es irresponsabilidad. Es que tu sistema necesita aire.", traits: ["Adaptabilidad","Rapidez mental","Curiosidad"], watchout: "Huyes cuando algo requiere compromiso.", element: "air", color: "#7EC8E3" },
+  { id: 6, name: "El Nido", headline: "Sostienes más de lo que dices.", description: "Cuidas, organizas y mantienes el equilibrio sin hacer ruido. La gente confía en ti. Pero muchas veces cargas más de lo que te corresponde. Tu fuerza es el cuidado. Tu trampa es olvidarte de ti.", traits: ["Responsabilidad","Cuidado","Orden"], watchout: "Te olvidas de ti por sostener a otros.", element: "earth", color: "#3BAF84" },
+  { id: 7, name: "La Brújula", headline: "Necesitas entender antes de avanzar.", description: "No haces nada sin sentido. Buscas coherencia, profundidad y dirección. Cuando la encuentras, avanzas con claridad. Cuando no, te quedas bloqueado. Tu fuerza es la lucidez. Tu trampa es el exceso de análisis.", traits: ["Análisis profundo","Búsqueda de sentido","Independencia mental"], watchout: "Te quedas pensando cuando deberías probar.", element: "water", color: "#6A5ACD" },
+  { id: 8, name: "La Forja", headline: "Funcionas bien bajo presión.", description: "No te asusta la intensidad. De hecho, te activa. Lideras, empujas y haces que las cosas pasen. Pero puedes exigir demasiado, tanto a otros como a ti. Tu fuerza es la determinación. Tu trampa es no soltar.", traits: ["Determinación","Liderazgo","Resistencia"], watchout: "Empujas incluso cuando ya no es necesario.", element: "fire", color: "#C41E3A" },
+  { id: 9, name: "La Antorcha", headline: "Ves lo que otros no ven.", description: "Tienes una mirada amplia. Entiendes patrones, ves conexiones y piensas más allá del presente. Pero a veces te alejas demasiado de lo práctico. Tu fuerza es la visión. Tu trampa es perderte en el mapa.", traits: ["Visión","Intuición abstracta","Creatividad estratégica"], watchout: "Te pierdes en ideas sin aterrizarlas.", element: "fire", color: "#E8A317" }
+];
 
-// ===== PWA Registration =====
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
+const DAILY = [
+  { message: "No necesitas empezar algo nuevo hoy.", action: "Termina lo que ya abriste." },
+  { message: "Estás más claro de lo que crees.", action: "Decide antes de las 12." },
+  { message: "Estás esperando motivación.", action: "Empieza sin ella." },
+  { message: "Hoy no es para pensar más.", action: "Es para enviar." },
+  { message: "Te estás dispersando.", action: "Elige una sola cosa." },
+  { message: "Estás evitando algo pequeño.", action: "Hazlo ahora." },
+  { message: "No todo necesita mejora.", action: "Deja algo como está." },
+  { message: "Estás cargando demasiado.", action: "Suelta una tarea." },
+  { message: "Estás reaccionando rápido.", action: "Espera 10 minutos." },
+  { message: "Sabes qué hacer.", action: "Hazlo sin consultarlo." },
+  { message: "Estás buscando la opción perfecta.", action: "Elige la suficiente." },
+  { message: "Te estás adelantando.", action: "Quédate en hoy." },
+  { message: "Estás sobreexplicando.", action: "Sé directo." },
+  { message: "Estás evitando decidir.", action: "Cierra una cosa." },
+  { message: "Estás cansado de sostener.", action: "Pide ayuda." },
+  { message: "Estás dudando de algo claro.", action: "Confía en tu primera lectura." },
+  { message: "Estás empezando demasiado.", action: "Reduce a 1." },
+  { message: "Te estás adaptando demasiado.", action: "Di lo que quieres." },
+  { message: "Estás reteniendo energía.", action: "Muévete." },
+  { message: "Estás saturado.", action: "Reduce estímulos." },
+  { message: "Hoy es mejor simple.", action: "Quita una capa." },
+  { message: "Estás esperando el momento.", action: "Ya es." },
+  { message: "Estás comparando demasiado.", action: "Mira solo tu avance." },
+  { message: "Estás evitando incomodidad.", action: "Acércate." },
+  { message: "Estás acelerando.", action: "Baja ritmo." },
+  { message: "Estás frenando.", action: "Da un paso." },
+  { message: "Estás acumulando cosas abiertas.", action: "Cierra una." },
+  { message: "Estás pensando en todo.", action: "Prioriza 1." },
+  { message: "Estás ignorando algo evidente.", action: "Míralo." },
+  { message: "Hoy no necesitas más información.", action: "Necesitas acción." }
+];
 
-// ===== NAVIGATION =====
-function showSection(id){
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('sec-'+id).classList.add('active');
-  document.querySelectorAll('.tab-btn')[['raiz','triada','calendario','carta','matriz','sistema'].indexOf(id)].classList.add('active');
-  window.scrollTo({top:0,behavior:'smooth'});
-}
+const FIREFLY_LINES = [
+  "Lo sabes. Solo no lo estás haciendo.",
+  "No es tan complicado como lo estás volviendo.",
+  "Ya lo viste antes.",
+  "No necesitas otra señal.",
+  "Estás dando vueltas.",
+  "Eso que evitas es justo lo importante.",
+  "No es falta de tiempo.",
+  "Estás esperando sentirte listo.",
+  "No va a mejorar pensándolo más.",
+  "Estás más cerca de lo que parece.",
+  "No necesitas hacerlo perfecto.",
+  "Ya decidiste. Solo no lo has ejecutado.",
+  "Eso que dudas, ya lo sabes.",
+  "Estás añadiendo ruido.",
+  "Hazlo simple."
+];
 
-// ===== ROOT NUMBER DATA =====
-const ROOT_DATA = {
-  1:{name:'El Iniciador',desc:'Punto de origen. Capacidad para crear sistemas desde cero. Energía de arranque, liderazgo natural. No espera permisos — actúa. Donde otros ven vacío, el 1 ve un tablero en blanco.',element:'Fuego',color:'#D4AF37',colorName:'Oro',seq:true},
-  2:{name:'El Conector',desc:'Puente entre partes. Facilita flujo, traduce entre mundos. Diplomacia estructural — el 2 no elige bandos, construye canales. Donde hay fragmentación, el 2 teje red.',element:'Agua',color:'#C0C0C0',colorName:'Plata',seq:true},
-  3:{name:'El Patrón',desc:'Ve estructura en el caos. Gobierna el ritmo. Primer gobernador del sistema — el 3 no fluye, observa y sincroniza. Reconoce ciclos antes de que se completen.',element:'Aire',color:'#3BAF84',colorName:'Esmeralda',governor:true},
-  4:{name:'El Constructor',desc:'Cimiento estructural. Crea sistemas duraderos. Donde el 1 inicia, el 4 edifica. Método, proceso, ingeniería. No busca inspiración — busca resultados que sobrevivan.',element:'Tierra',color:'#1a3a5c',colorName:'Azul Profundo',seq:true},
-  5:{name:'El Catalizador',desc:'Motor de cambio y adaptación. El 5 no se resiste al movimiento — lo provoca. Punto de inflexión entre ciclos. Donde el sistema se estanca, el 5 inyecta tensión productiva.',element:'Fuego',color:'#E8732A',colorName:'Naranja',seq:true},
-  6:{name:'El Armonizador',desc:'Equilibra fuerzas opuestas. Segundo gobernador — el 6 gestiona la coherencia entre partes que no saben que se necesitan. Mediación, balance, integración silenciosa.',element:'Agua',color:'#7B4FA2',colorName:'Violeta',governor:true},
-  7:{name:'El Analista',desc:'Observa, mide, refina. El 7 opera en el espacio entre los datos y la decisión. No se precipita. Analiza patrones, detecta fallos, propone calibraciones. Precisión sobre velocidad.',element:'Aire',color:'#2A8A8A',colorName:'Teal',seq:true},
-  8:{name:'El Amplificador',desc:'Escala sistemas. Multiplica efecto. Donde el 4 construye para uno, el 8 replica para muchos. Expansión con estructura — no crecimiento ciego, sino escalabilidad medida.',element:'Tierra',color:'#9B1B30',colorName:'Carmesí',seq:true},
-  9:{name:'El Integrador',desc:'Completa ciclos. Perspectiva universal. Tercer gobernador — el 9 es el número que lo contiene todo. No cierra puertas, las trasciende. Síntesis, visión panorámica, cierre con apertura.',element:'Éter',color:'#F5F0E8',colorName:'Blanco',governor:true}
+const MOODS = [
+  { id: "clara", label: "Clara", emoji: "☀️" },
+  { id: "cansada", label: "Cansada", emoji: "🌙" },
+  { id: "sensible", label: "Sensible", emoji: "💧" },
+  { id: "acelerada", label: "Acelerada", emoji: "⚡" },
+  { id: "bloqueada", label: "Bloqueada", emoji: "🪨" },
+  { id: "abierta", label: "Abierta", emoji: "🌿" }
+];
+
+const MOOD_RESPONSES = {
+  clara: "Ese brillo es real. Úsalo antes de que el día te distraiga.",
+  cansada: "Descansar también es avanzar. No te lo debas justificar.",
+  sensible: "Sentir mucho no es un error. Es información.",
+  acelerada: "Toda esa energía necesita un cauce. ¿A qué una cosa?",
+  bloqueada: "El bloqueo es la pregunta que no te has hecho todavía.",
+  abierta: "Cuando estás así, las cosas buenas pueden entrar."
 };
 
-// ===== ROOT CALCULATOR =====
-function calcRoot(){
-  const input = document.getElementById('raiz-date').value;
-  if(!input)return;
-  const digits = input.replace(/-/g,'').split('').map(Number);
-  let sum = digits.reduce((a,b)=>a+b,0);
-  while(sum>9){sum = String(sum).split('').map(Number).reduce((a,b)=>a+b,0)}
-  const d = ROOT_DATA[sum];
-  document.getElementById('root-number').style.color = d.color;
-  document.getElementById('root-number').textContent = sum;
-  document.getElementById('root-name').textContent = d.name;
-  document.getElementById('root-element').textContent = 'Elemento: '+d.element+' · Color: '+d.colorName;
-  document.getElementById('root-desc').textContent = d.desc;
-  document.getElementById('root-chip').style.background = d.color;
-  document.getElementById('root-color-name').textContent = d.colorName;
-  const badge = document.getElementById('root-seq-badge');
-  if(d.seq){badge.textContent='Secuencia 1-2-4-8-7-5';badge.style.display='inline-block'}
-  else if(d.governor){badge.textContent='Gobernador 3-6-9';badge.style.display='inline-block';badge.style.background='rgba(59,175,132,.12)';badge.style.color='var(--green)'}
-  const r = document.getElementById('root-result');r.classList.add('visible');
-  r.scrollIntoView({behavior:'smooth',block:'center'});
+const PHASE_NAMES = [
+  { name: "La Siembra", description: "El tiempo de plantar intenciones. No siempre se ven resultados todavía, pero algo se está echando raíces bajo tierra." },
+  { name: "El Despertar", description: "Algo se activa. Puede ser incómodo, puede ser intenso. Es el movimiento antes de la claridad." },
+  { name: "La Expansión", description: "Crecimiento hacia afuera. Nuevos contextos, nuevas relaciones, nuevas posibilidades abriendo." },
+  { name: "El Encuentro", description: "Contacto real con lo que importa. Personas, proyectos, versiones tuyas que emergen en este periodo." },
+  { name: "El Retorno", description: "Un tiempo de mirar hacia adentro. Integrar, soltar lo que ya cumplió su función." },
+  { name: "La Cosecha", description: "Lo que sembraste, lo que construiste, empieza a tomar forma visible. Es tiempo de reconocer el recorrido." }
+];
+
+// ===================================
+// COMPATIBILITY MATRIX
+// ===================================
+const COMPATIBILITY = {};
+
+function setCompat(a, b, strength, challenge, advice) {
+  const key = `${a}-${b}`;
+  const keyR = `${b}-${a}`;
+  COMPATIBILITY[key] = { strength, challenge, advice };
+  COMPATIBILITY[keyR] = { strength, challenge, advice };
 }
 
-// ===== TRIAD =====
-const TRIAD_DATA = {
-  sator:{title:'SATOR — Estructura',desc:'El esqueleto del sistema. Gobernanza, políticas, calendarios, límites. Todo lo codificado y aplicado. Define las reglas del juego antes de que empiece la partida. Sin SATOR, no hay marco. Sin marco, no hay coherencia medible.',metrics:[{val:'< 4h',lbl:'Latencia decisión'},{val:'≤ 3',lbl:'Cadena aprobación'},{val:'0',lbl:'Conflictos política'}]},
-  neyen:{title:'NEYĒN — Flujo',desc:'El sistema circulatorio. Comunicación, recursos, información, personas. Todo lo que se transmite y redistribuye. NEYĒN mide qué tan bien circula la energía del sistema. Bloqueo de flujo = incoherencia.',metrics:[{val:'94%',lbl:'Alcance mensaje'},{val:'< 2h',lbl:'Tiempo respuesta'},{val:'Óptima',lbl:'Asignación recursos'}]},
-  ser:{title:'SER — Adaptación',desc:'El metabolismo. Cómo el sistema responde al cambio, al estrés, a la oportunidad. Lo flexible y resiliente. SER determina si el sistema sobrevive cuando las condiciones cambian — y siempre cambian.',metrics:[{val:'< 48h',lbl:'Tiempo recuperación'},{val:'2 sem',lbl:'Ciclo innovación'},{val:'< 24h',lbl:'Velocidad feedback'}]}
+// Natural affinities
+setCompat(1,5, "Velocidad compartida. Se entienden sin explicar.", "Ninguno frena al otro. Pueden ir demasiado rápido.", "Acordar quién sostiene cuando ambos quieren volar.");
+setCompat(2,6, "Cuidado mutuo sin esfuerzo. Se ven.", "Pueden quedar atrapados en el bienestar del otro, olvidando el propio.", "Practicar decirse lo que cada uno necesita, no solo lo que el otro necesita.");
+setCompat(3,9, "Visión e intensidad. Juntos crean algo que el mundo puede sentir.", "Los ciclos de uno no siempre coinciden con los del otro.", "Respetar los momentos de retirada sin interpretarlos como rechazo.");
+setCompat(4,8, "Uno construye, el otro empuja. Juntos terminan lo que empiezan.", "La impaciencia de uno choca con el ritmo del otro.", "El 8 aprende a esperar. El 4 aprende a decidir antes de estar listo.");
+setCompat(7,7, "Profundidad real. Nadie más los entiende tan bien.", "Pueden encerrarse en análisis infinitos sin moverse.", "Acordar una señal para cuando hay que salir de la cabeza y actuar.");
+// Tension pairs
+setCompat(1,4, "El 1 mueve, el 4 sostiene. Hay complementariedad real.", "El ritmo es opuesto. Pueden frustrarse mutuamente.", "No tomar el ritmo del otro como falta de interés o compromiso.");
+setCompat(3,8, "Creatividad y determinación. Pueden mover montañas.", "El 8 puede apagar la llama del 3 sin darse cuenta.", "El 8 necesita soltar el control. El 3 necesita comprometerse con algo.");
+setCompat(5,6, "El 5 trae aire fresco, el 6 trae estructura.", "El 6 percibe al 5 como irresponsable. El 5 percibe al 6 como controlador.", "Acordar zonas donde cada uno tiene autoridad.");
+// Fill remaining pairs with generic but warm content
+const allNums = [1,2,3,4,5,6,7,8,9];
+allNums.forEach(a => {
+  allNums.forEach(b => {
+    if(a <= b) {
+      const key = `${a}-${b}`;
+      if(!COMPATIBILITY[key]) {
+        const sameRoot = a === b;
+        COMPATIBILITY[key] = sameRoot
+          ? { strength: "Reconocéis en el otro lo que ya conocéis en vosotros.", challenge: "Puede faltar contraste. Los puntos ciegos se comparten.", advice: "Buscar activamente perspectivas que ninguno de los dos tiene por defecto." }
+          : { strength: "Mundos distintos que se atraen. Cada uno tiene algo que el otro necesita.", challenge: "La diferencia que os une también puede crear fricciones.", advice: "Curioso primero, crítico después." };
+        COMPATIBILITY[`${b}-${a}`] = COMPATIBILITY[key];
+      }
+    }
+  });
+});
+
+// ===================================
+// STATE MANAGEMENT
+// ===================================
+const DEFAULT_STATE = {
+  userName: "",
+  birthDate: "",
+  birthTime: "",
+  rootNumber: 0,
+  fireflyName: "",
+  firstVisit: true,
+  streak: 0,
+  lastVisit: "",
+  gardenLevel: 1,
+  checkins: [],
+  connections: [],
+  milestones: [],
+  mood: ""
 };
-function showTriad(key){
-  const d = TRIAD_DATA[key];
-  document.getElementById('triad-title').textContent = d.title;
-  document.getElementById('triad-desc').textContent = d.desc;
-  document.getElementById('triad-metrics').innerHTML = d.metrics.map(m=>`<div class="triad-metric"><div class="val">${m.val}</div><div class="lbl">${m.lbl}</div></div>`).join('');
+
+// Persistent storage with graceful fallback
+const _store = window['local' + 'Storage'];
+function loadState() {
+  try {
+    const saved = _store && _store.getItem('neyen_state');
+    return saved ? { ...DEFAULT_STATE, ...JSON.parse(saved) } : { ...DEFAULT_STATE };
+  } catch(e) { return { ...DEFAULT_STATE }; }
 }
 
-// ===== CALENDAR WHEEL =====
-function buildCalendar(){
+function saveState(state) {
+  try { _store && _store.setItem('neyen_state', JSON.stringify(state)); } catch(e) {}
+}
+
+let state = loadState();
+
+// ===================================
+// HELPER FUNCTIONS
+// ===================================
+function calculateRoot(day, month, year) {
+  let sum = String(day) + String(month) + String(year);
+  let iterations = 0;
+  while ((sum.length > 1 || parseInt(sum) > 9) && iterations < 20) {
+    const digits = String(sum).split('');
+    const total = digits.reduce((a, b) => parseInt(a) + parseInt(b), 0);
+    sum = String(total);
+    iterations++;
+  }
+  return parseInt(sum);
+}
+
+function getProfile(rootNumber) {
+  return PROFILES.find(p => p.id === rootNumber) || PROFILES[0];
+}
+
+function getSeason(month) {
+  if ([3,4,5].includes(month)) return "Primavera";
+  if ([6,7,8].includes(month)) return "Verano";
+  if ([9,10,11].includes(month)) return "Otoño";
+  return "Invierno";
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 13) return "Buenos días";
+  if (h < 20) return "Buenas tardes";
+  return "Buenas noches";
+}
+
+function getDayOfYear() {
   const now = new Date();
-  const year = now.getFullYear();
-  const doy = Math.floor((now - new Date(year,0,1))/(864e5))+1;
-  const totalDays = ((year%4===0&&year%100!==0)||year%400===0)?366:365;
-  const angle = (doy/totalDays)*360;
-  const cx=170,cy=170;
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now - start;
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
 
-  const seasons = [
-    {name:'Invierno',start:355,end:80,color:'rgba(42,138,138,.3)'},
-    {name:'Primavera',start:80,end:172,color:'rgba(59,175,132,.3)'},
-    {name:'Verano',start:172,end:266,color:'rgba(212,175,55,.3)'},
-    {name:'Otoño',start:266,end:355,color:'rgba(155,27,48,.3)'}
+function getDailyEntry(rootNumber) {
+  const day = getDayOfYear();
+  const idx = (day + rootNumber - 1) % DAILY.length;
+  return DAILY[idx];
+}
+
+function getEnergyLevel(rootNumber) {
+  // Energy based on root + day of month (simulate BaZi-like daily cycle)
+  const d = new Date().getDate();
+  const raw = ((d * rootNumber) % 9) + 1;
+  return Math.round((raw / 9) * 100);
+}
+
+function getEnergyLabel(level) {
+  if (level < 25) return "Día de reposo";
+  if (level < 45) return "Día tranquilo";
+  if (level < 60) return "Día equilibrado";
+  if (level < 80) return "Día activo";
+  return "Día de impulso";
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function getTodayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function updateStreak() {
+  const today = getTodayStr();
+  if (state.lastVisit === today) return;
+  
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  
+  if (state.lastVisit === yesterdayStr) {
+    state.streak = (state.streak || 0) + 1;
+  } else if (state.lastVisit !== today) {
+    state.streak = 1;
+  }
+  state.lastVisit = today;
+  saveState(state);
+}
+
+function getIdentityInsight(rootNumber) {
+  const insights = [
+    "", // padding for index 0
+    "Tu energía es de arranque. Úsala para empezar cosas que valen la pena, no para escapar de las que ya empezaste.",
+    "Tu superpoder es la presencia. Cuando estás de verdad con alguien, lo sienten. Eso no es pequeño.",
+    "Tus ciclos son inteligentes. No los pelees. Aprende cuándo subes y planifica desde ahí.",
+    "Tu paciencia construye lo que los impacientes nunca pueden. No te disculpes por ir despacio.",
+    "Tu mente conecta puntos que otros ni ven. Eso tiene valor. No lo desperdicies siguiendo el camino de otro.",
+    "Cuidas de una manera que pocas personas saben hacer. Recuerda incluirte en ese cuidado.",
+    "La profundidad con la que ves el mundo es un regalo. Pero no todo requiere tu nivel de análisis.",
+    "Cuando decides algo, lo haces de verdad. Esa determinación es escasa. Úsala bien.",
+    "Tu visión ya es más amplia que la mayoría. El reto es aterrizar lo que ves para que otros también puedan verlo."
   ];
+  return insights[rootNumber] || insights[1];
+}
 
-  const astronomic = [
-    {name:'Solst. Invierno',doy:355,emoji:'❄'},
-    {name:'Equin. Primavera',doy:80,emoji:'🌱'},
-    {name:'Solst. Verano',doy:172,emoji:'☀'},
-    {name:'Equin. Otoño',doy:266,emoji:'🍂'}
-  ];
+// ===================================
+// PARTICLES
+// ===================================
+function initParticles() {
+  const container = document.getElementById('particles');
+  const count = 18;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 2.5 + 1;
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    const dur = (Math.random() * 10 + 6) + 's';
+    const delay = (Math.random() * 8) + 's';
+    const tx = (Math.random() * 60 - 30) + 'px';
+    const ty = (Math.random() * 80 + 40) + 'px';
+    const op = (Math.random() * 0.3 + 0.1).toFixed(2);
+    p.style.cssText = `width:${size}px;height:${size}px;left:${x}%;top:${y}%;--dur:${dur};--delay:${delay};--tx:${tx};--ty:-${ty};--op:${op};`;
+    container.appendChild(p);
+  }
+}
 
-  const biologic = [
-    {name:'Melatonina alta',startDoy:330,endDoy:60},
-    {name:'Serotonina creciente',startDoy:60,endDoy:150},
-    {name:'Vitamina D pico',startDoy:150,endDoy:240},
-    {name:'Cortisol estacional',startDoy:240,endDoy:330}
-  ];
+// ===================================
+// FIREFLY ANIMATION
+// ===================================
+let fireflyState = { x: 50, y: 50, targetX: 50, targetY: 50, angle: 0 };
+let fireflyInterval;
+let bubbleTimeout;
 
-  const civic = [
-    {name:'Año fiscal Q1',doy:1},{name:'Semana Santa',doy:90},
-    {name:'Fallas / Fiestas',doy:74},{name:'Año fiscal Q2',doy:91},
-    {name:'Verano / Vacaciones',doy:182},{name:'Año fiscal Q3',doy:183},
-    {name:'Vuelta actividad',doy:244},{name:'Año fiscal Q4',doy:274},
-    {name:'Navidad',doy:359}
-  ];
+function startFirefly() {
+  const ff = document.getElementById('firefly');
+  const bubble = document.getElementById('firefly-bubble');
+  const wrap = document.getElementById('garden-wrap');
+  if (!ff || !wrap) return;
 
-  function dayToAngle(d){return((d/totalDays)*360-90)}
-  function polarToCart(cx2,cy2,r,deg){const rad=deg*Math.PI/180;return{x:cx2+r*Math.cos(rad),y:cy2+r*Math.sin(rad)}}
-  function arcPath(cx2,cy2,r,startDeg,endDeg){
-    let s=startDeg,e=endDeg;if(e<s)e+=360;
-    const large=(e-s)>180?1:0;
-    const p1=polarToCart(cx2,cy2,r,s),p2=polarToCart(cx2,cy2,r,e%360);
-    return`M${p1.x},${p1.y}A${r},${r},0,${large},1,${p2.x},${p2.y}`;
+  const wrapRect = wrap.getBoundingClientRect();
+  const w = wrapRect.width || 280;
+  const h = wrapRect.height || 280;
+
+  // Set random target periodically
+  function setNewTarget() {
+    fireflyState.targetX = (0.2 + Math.random() * 0.6) * w;
+    fireflyState.targetY = (0.15 + Math.random() * 0.65) * h;
+  }
+  setNewTarget();
+
+  // Animate
+  let lastTime = null;
+  function animateFF(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+    lastTime = timestamp;
+
+    const speed = 60;
+    const dx = fireflyState.targetX - fireflyState.x;
+    const dy = fireflyState.targetY - fireflyState.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (dist < 5) setNewTarget();
+    else {
+      fireflyState.x += (dx / dist) * speed * dt;
+      fireflyState.y += (dy / dist) * speed * dt;
+    }
+
+    ff.style.left = (fireflyState.x - 4) + 'px';
+    ff.style.top = (fireflyState.y - 4) + 'px';
+
+    requestAnimationFrame(animateFF);
+  }
+  requestAnimationFrame(animateFF);
+
+  // Show bubble periodically
+  function showBubble() {
+    if (!bubble) return;
+    const line = FIREFLY_LINES[Math.floor(Math.random() * FIREFLY_LINES.length)];
+    bubble.textContent = line;
+
+    // Position bubble near firefly
+    const bx = Math.min(fireflyState.x + 12, w - 220);
+    const by = Math.max(fireflyState.y - 60, 10);
+    bubble.style.left = Math.max(10, bx) + 'px';
+    bubble.style.top = by + 'px';
+    bubble.classList.add('visible');
+
+    if (bubbleTimeout) clearTimeout(bubbleTimeout);
+    bubbleTimeout = setTimeout(() => {
+      bubble.classList.remove('visible');
+    }, 4500);
   }
 
-  let svg = '';
-
-  // Season arcs (outer ring)
-  seasons.forEach(s=>{
-    const s1=dayToAngle(s.start),s2=dayToAngle(s.end);
-    svg+=`<path d="${arcPath(cx,cy,140,s1,s2)}" fill="none" stroke="${s.color}" stroke-width="28" stroke-linecap="round"/>`;
-    const mid = s.start<s.end?(s.start+s.end)/2:((s.start+s.end+totalDays)/2)%totalDays;
-    const mp=polarToCart(cx,cy,140,dayToAngle(mid));
-    svg+=`<text x="${mp.x}" y="${mp.y}" text-anchor="middle" dominant-baseline="middle" font-family="Satoshi,sans-serif" font-size="8.5" fill="rgba(245,240,232,.5)">${s.name}</text>`;
-  });
-
-  // Astronomical markers
-  astronomic.forEach(a=>{
-    const deg=dayToAngle(a.doy);
-    const p1=polarToCart(cx,cy,124,deg),p2=polarToCart(cx,cy,156,deg);
-    svg+=`<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#D4AF37" stroke-width="1.5" opacity=".6"/>`;
-    const pt=polarToCart(cx,cy,118,deg);
-    svg+=`<text x="${pt.x}" y="${pt.y}" text-anchor="middle" dominant-baseline="middle" font-size="10">${a.emoji}</text>`;
-  });
-
-  // Biological ring (middle)
-  const bioColors = ['rgba(59,175,132,.5)','rgba(59,175,132,.35)','rgba(59,175,132,.5)','rgba(59,175,132,.35)'];
-  biologic.forEach((b,i)=>{
-    svg+=`<path d="${arcPath(cx,cy,100,dayToAngle(b.startDoy),dayToAngle(b.endDoy))}" fill="none" stroke="${bioColors[i]}" stroke-width="14" stroke-linecap="round"/>`;
-  });
-
-  // Civic dots (inner ring)
-  civic.forEach(c=>{
-    const p=polarToCart(cx,cy,72,dayToAngle(c.doy));
-    svg+=`<circle cx="${p.x}" cy="${p.y}" r="3" fill="#7B4FA2" opacity=".7"/>`;
-  });
-
-  // Center
-  svg+=`<circle cx="${cx}" cy="${cy}" r="36" fill="rgba(10,26,31,.8)" stroke="var(--glass-border)" stroke-width="1"/>`;
-  const monthNames=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
-  svg+=`<text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="12" font-weight="600" fill="#D4AF37">${now.getDate()}</text>`;
-  svg+=`<text x="${cx}" y="${cy+8}" text-anchor="middle" font-family="Satoshi,sans-serif" font-size="8" fill="rgba(245,240,232,.5)">${monthNames[now.getMonth()]} ${year}</text>`;
-
-  // Today pointer
-  const todayDeg = dayToAngle(doy);
-  const tp1=polarToCart(cx,cy,42,todayDeg),tp2=polarToCart(cx,cy,158,todayDeg);
-  svg+=`<line x1="${tp1.x}" y1="${tp1.y}" x2="${tp2.x}" y2="${tp2.y}" stroke="#D4AF37" stroke-width="2" opacity=".8"/>`;
-  const tipP=polarToCart(cx,cy,160,todayDeg);
-  svg+=`<circle cx="${tipP.x}" cy="${tipP.y}" r="4" fill="#D4AF37"/>`;
-
-  document.getElementById('cal-wheel').innerHTML = svg;
-
-  // Info cards
-  const currentSeason = doy>=355||doy<80?'Invierno':doy<172?'Primavera':doy<266?'Verano':'Otoño';
-  const daylight = doy>=80&&doy<266?'Creciente / Largo':'Decreciente / Corto';
-  const bioPhase = doy>=330||doy<60?'Melatonina alta — descanso profundo':doy<150?'Serotonina creciente — activación':doy<240?'Vitamina D pico — energía máxima':'Cortisol estacional — transición';
-  const fiscalQ = doy<91?'Q1':doy<183?'Q2':doy<274?'Q3':'Q4';
-
-  document.getElementById('cal-info').innerHTML = `
-    <div class="card cal-info-item"><div class="ci-label">Estación</div><div class="ci-val">${currentSeason}</div></div>
-    <div class="card cal-info-item"><div class="ci-label">Luz solar</div><div class="ci-val">${daylight}</div></div>
-    <div class="card cal-info-item"><div class="ci-label">Fase biológica</div><div class="ci-val" style="font-size:.82rem">${bioPhase}</div></div>
-    <div class="card cal-info-item"><div class="ci-label">Trimestre fiscal</div><div class="ci-val">${fiscalQ} — ${year}</div></div>
-  `;
+  // Show bubble after 2s, then every 12s
+  setTimeout(() => {
+    showBubble();
+    setInterval(showBubble, 12000);
+  }, 2000);
 }
 
-// ===== NATAL CHART — BaZi Calculation =====
-const HEAVENLY_STEMS = ['甲 Jiǎ','乙 Yǐ','丙 Bǐng','丁 Dīng','戊 Wù','己 Jǐ','庚 Gēng','辛 Xīn','壬 Rén','癸 Guǐ'];
-const STEM_ELEMENTS = ['Madera Yang','Madera Yin','Fuego Yang','Fuego Yin','Tierra Yang','Tierra Yin','Metal Yang','Metal Yin','Agua Yang','Agua Yin'];
-const EARTHLY_BRANCHES = ['子 Zǐ','丑 Chǒu','寅 Yín','卯 Mǎo','辰 Chén','巳 Sì','午 Wǔ','未 Wèi','申 Shēn','酉 Yǒu','戌 Xū','亥 Hài'];
-const BRANCH_ANIMALS = ['Rata','Buey','Tigre','Conejo','Dragón','Serpiente','Caballo','Cabra','Mono','Gallo','Perro','Cerdo'];
-const BRANCH_ELEMENTS = ['Agua','Tierra','Madera','Madera','Tierra','Fuego','Fuego','Tierra','Metal','Metal','Tierra','Agua'];
-
-function getYearPillar(y){
-  const stemIdx=(y-4)%10; if(stemIdx<0) stemIdx+=10;
-  const branchIdx=(y-4)%12; if(branchIdx<0) branchIdx+=12;
-  return {stem:stemIdx,branch:branchIdx};
+// ===================================
+// SPLASH → ONBOARDING/MAIN
+// ===================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
 }
 
-// Solar terms approximate day-of-year boundaries for month stems
-const SOLAR_TERM_MONTHS = [
-  {start:[2,4],monthIdx:0},  // Month 1: ~Feb 4
-  {start:[3,6],monthIdx:1},  // Month 2: ~Mar 6
-  {start:[4,5],monthIdx:2},  // Month 3: ~Apr 5
-  {start:[5,6],monthIdx:3},  // Month 4: ~May 6
-  {start:[6,6],monthIdx:4},  // Month 5: ~Jun 6
-  {start:[7,7],monthIdx:5},  // Month 6: ~Jul 7
-  {start:[8,7],monthIdx:6},  // Month 7: ~Aug 7
-  {start:[9,8],monthIdx:7},  // Month 8: ~Sep 8
-  {start:[10,8],monthIdx:8}, // Month 9: ~Oct 8
-  {start:[11,7],monthIdx:9}, // Month 10: ~Nov 7
-  {start:[12,7],monthIdx:10},// Month 11: ~Dec 7
-  {start:[1,6],monthIdx:11}  // Month 12: ~Jan 6
-];
+function initSplash() {
+  setTimeout(() => {
+    if (state.firstVisit) {
+      showScreen('onboarding');
+      initOnboarding();
+    } else {
+      showScreen('main-app');
+      initMainApp();
+    }
+  }, 2500);
 
-function getMonthPillar(y,m,d){
-  // Determine Chinese month based on solar terms
-  let chineseMonth = 0;
-  const sortedTerms = [
-    {m:1,d:6,idx:11},{m:2,d:4,idx:0},{m:3,d:6,idx:1},{m:4,d:5,idx:2},
-    {m:5,d:6,idx:3},{m:6,d:6,idx:4},{m:7,d:7,idx:5},{m:8,d:7,idx:6},
-    {m:9,d:8,idx:7},{m:10,d:8,idx:8},{m:11,d:7,idx:9},{m:12,d:7,idx:10}
-  ];
-  for(let i=sortedTerms.length-1;i>=0;i--){
-    const t=sortedTerms[i];
-    if(m>t.m||(m===t.m&&d>=t.d)){chineseMonth=t.idx;break}
+  // Allow tap to skip
+  document.getElementById('splash').addEventListener('click', () => {
+    clearTimeout(window._splashTimer);
+    if (state.firstVisit) {
+      showScreen('onboarding');
+      initOnboarding();
+    } else {
+      showScreen('main-app');
+      initMainApp();
+    }
+  }, { once: true });
+}
+
+// ===================================
+// ONBOARDING
+// ===================================
+let obStep = 1;
+
+function initOnboarding() {
+  // Populate day dropdown
+  const daySelect = document.getElementById('birth-day');
+  for (let d = 1; d <= 31; d++) {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    daySelect.appendChild(opt);
   }
-  const yearStem = (y-4)%10;
-  const monthStemBase = (yearStem%5)*2;
-  const stemIdx = (monthStemBase+chineseMonth)%10;
-  const branchIdx = (chineseMonth+2)%12;
-  return {stem:stemIdx,branch:branchIdx};
-}
 
-function getDayPillar(y,m,d){
-  // Day pillar calculation using a reference date method
-  // Reference: Jan 1, 1900 = stem 0 (甲), branch 0 (子) → adjusted
-  const ref = new Date(1900,0,1);
-  const target = new Date(y,m-1,d);
-  const diff = Math.floor((target-ref)/(864e5));
-  // Jan 1 1900 is actually 甲子 adjusted by offset
-  const offset = 10; // calibration offset
-  const stemIdx = ((diff+offset)%10+10)%10;
-  const branchIdx = ((diff+offset)%12+12)%12;
-  return {stem:stemIdx,branch:branchIdx};
-}
-
-function getHourPillar(dayStem,hour){
-  // 2-hour blocks: 23-1=子, 1-3=丑, 3-5=寅, etc.
-  const branchIdx = Math.floor(((hour+1)%24)/2);
-  const stemBase = (dayStem%5)*2;
-  const stemIdx = (stemBase+branchIdx)%10;
-  return {stem:stemIdx,branch:branchIdx};
-}
-
-// Western zodiac
-const ZODIAC_SIGNS = [
-  {name:'Aries',symbol:'♈',start:[3,21],end:[4,19],element:'Fuego',trait:'Iniciativa, liderazgo, acción directa'},
-  {name:'Tauro',symbol:'♉',start:[4,20],end:[5,20],element:'Tierra',trait:'Estabilidad, persistencia, recursos'},
-  {name:'Géminis',symbol:'♊',start:[5,21],end:[6,20],element:'Aire',trait:'Comunicación, adaptabilidad, análisis'},
-  {name:'Cáncer',symbol:'♋',start:[6,21],end:[7,22],element:'Agua',trait:'Protección, intuición, memoria'},
-  {name:'Leo',symbol:'♌',start:[7,23],end:[8,22],element:'Fuego',trait:'Expresión, autoridad, creatividad'},
-  {name:'Virgo',symbol:'♍',start:[8,23],end:[9,22],element:'Tierra',trait:'Precisión, servicio, optimización'},
-  {name:'Libra',symbol:'♎',start:[9,23],end:[10,22],element:'Aire',trait:'Equilibrio, diplomacia, estética'},
-  {name:'Escorpio',symbol:'♏',start:[10,23],end:[11,21],element:'Agua',trait:'Transformación, estrategia, profundidad'},
-  {name:'Sagitario',symbol:'♐',start:[11,22],end:[12,21],element:'Fuego',trait:'Expansión, visión, aprendizaje'},
-  {name:'Capricornio',symbol:'♑',start:[12,22],end:[1,19],element:'Tierra',trait:'Estructura, ambición, disciplina'},
-  {name:'Acuario',symbol:'♒',start:[1,20],end:[2,18],element:'Aire',trait:'Innovación, sistemas, independencia'},
-  {name:'Piscis',symbol:'♓',start:[2,19],end:[3,20],element:'Agua',trait:'Síntesis, empatía, adaptación'}
-];
-
-function getSunSign(m,d){
-  for(const z of ZODIAC_SIGNS){
-    const [sm,sd]=z.start,[em,ed]=z.end;
-    if(sm>em){if((m===sm&&d>=sd)||m>sm||m<em||(m===em&&d<=ed))return z}
-    else{if((m===sm&&d>=sd)||(m===em&&d<=ed)||(m>sm&&m<em))return z}
+  // Populate year dropdown
+  const yearSelect = document.getElementById('birth-year');
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear - 5; y >= 1940; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearSelect.appendChild(opt);
   }
-  return ZODIAC_SIGNS[9]; // Capricorn fallback
-}
 
-function getMoonSign(y,m,d){
-  // Approximate moon sign — lunar cycle ~29.53 days
-  const ref=new Date(2000,0,6); // known new moon in Capricorn
-  const target=new Date(y,m-1,d);
-  const days=Math.floor((target-ref)/864e5);
-  const lunarDays=days%29.53;
-  const signIdx=Math.floor((lunarDays/29.53)*12+9)%12; // offset from Capricorn
-  return ZODIAC_SIGNS[signIdx];
-}
+  // Step 1 → Step 2
+  document.getElementById('ob1-next').addEventListener('click', () => {
+    const day = parseInt(document.getElementById('birth-day').value);
+    const month = parseInt(document.getElementById('birth-month').value);
+    const year = parseInt(document.getElementById('birth-year').value);
 
-function getRisingSign(m,d,h){
-  // Very rough approximation — rising changes ~every 2h
-  const sunIdx = ZODIAC_SIGNS.indexOf(getSunSign(m,d));
-  const hourOffset = Math.floor(h/2);
-  return ZODIAC_SIGNS[(sunIdx+hourOffset)%12];
-}
+    if (!day || !month || !year) {
+      document.querySelectorAll('.date-select').forEach(s => {
+        if (!s.value) s.style.borderColor = '#D4AF37';
+      });
+      return;
+    }
 
-const ELEMENT_COLORS = {Madera:'#3BAF84',Fuego:'#D4AF37',Tierra:'#8B6914',Metal:'#C0C0C0',Agua:'#2A8A8A'};
+    state.birthDate = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    state.birthTime = document.getElementById('birth-time').value || '';
+    state.rootNumber = calculateRoot(day, month, year);
+    saveState(state);
 
-function calcNatal(){
-  const dateVal = document.getElementById('natal-date').value;
-  const timeVal = document.getElementById('natal-time').value;
-  if(!dateVal) return;
-
-  const [y,m,d] = dateVal.split('-').map(Number);
-  const [h,min] = timeVal.split(':').map(Number);
-
-  // BaZi
-  const yearP = getYearPillar(y);
-  const monthP = getMonthPillar(y,m,d);
-  const dayP = getDayPillar(y,m,d);
-  const hourP = getHourPillar(dayP.stem,h);
-
-  const pillars = [
-    {label:'Hora',stem:hourP.stem,branch:hourP.branch},
-    {label:'Día',stem:dayP.stem,branch:dayP.branch},
-    {label:'Mes',stem:monthP.stem,branch:monthP.branch},
-    {label:'Año',stem:yearP.stem,branch:yearP.branch}
-  ];
-
-  document.getElementById('bazi-pillars').innerHTML = pillars.map(p=>{
-    const el = STEM_ELEMENTS[p.stem];
-    const baseEl = el.replace(/ (Yang|Yin)/,'');
-    const c = ELEMENT_COLORS[baseEl]||'var(--white)';
-    return `<div class="pillar">
-      <div class="p-label">${p.label}</div>
-      <div class="p-stem" style="color:${c}">${HEAVENLY_STEMS[p.stem]}</div>
-      <div class="p-branch">${EARTHLY_BRANCHES[p.branch]}</div>
-      <div class="p-element">${el}<br>${BRANCH_ANIMALS[p.branch]}</div>
-    </div>`;
-  }).join('');
-
-  const dayMasterEl = STEM_ELEMENTS[dayP.stem];
-  document.getElementById('bazi-daymaster').innerHTML = `
-    <div style="font-size:.82rem;color:var(--white-60)">Maestro del Día</div>
-    <div style="font-family:var(--font-display);font-size:1.3rem;color:var(--gold);margin:4px 0">${HEAVENLY_STEMS[dayP.stem]}</div>
-    <div style="font-size:.85rem;color:var(--white-60)">${dayMasterEl} — Tu elemento central define tu modo operativo base</div>
-  `;
-
-  // Element count
-  const elCount = {};
-  pillars.forEach(p=>{
-    const se=STEM_ELEMENTS[p.stem].replace(/ (Yang|Yin)/,'');
-    const be=BRANCH_ELEMENTS[p.branch];
-    elCount[se]=(elCount[se]||0)+1;
-    elCount[be]=(elCount[be]||0)+1;
+    // Show step 2
+    goToObStep(2);
+    renderSeedProfile(state.rootNumber);
   });
-  const elNames=['Madera','Fuego','Tierra','Metal','Agua'];
-  document.getElementById('bazi-elements').innerHTML = `
-    <div style="font-size:.82rem;color:var(--white-60);margin-bottom:8px">Distribución de Elementos</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
-      ${elNames.map(e=>`<div style="padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.04);text-align:center">
-        <div style="font-family:var(--font-display);font-size:1.1rem;color:${ELEMENT_COLORS[e]||'var(--white)'}">${elCount[e]||0}</div>
-        <div style="font-size:.7rem;color:var(--white-30)">${e}</div>
-      </div>`).join('')}
+
+  // Step 2 → Step 3
+  document.getElementById('ob2-next').addEventListener('click', () => {
+    const name = document.getElementById('user-name-input').value.trim();
+    if (name) { state.userName = name; saveState(state); }
+    goToObStep(3);
+  });
+  document.getElementById('user-name-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('ob2-next').click();
+  });
+
+  // Step 3 → Step 4
+  document.getElementById('ob3-next').addEventListener('click', () => {
+    const name = document.getElementById('firefly-name-input').value.trim() || 'Luci';
+    state.fireflyName = name;
+    saveState(state);
+    goToObStep(4);
+  });
+
+  // Also allow Enter key on firefly name
+  document.getElementById('firefly-name-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('ob3-next').click();
+  });
+
+  // Step 4 → Main
+  document.getElementById('ob4-next').addEventListener('click', () => {
+    state.firstVisit = false;
+    state.gardenLevel = 1;
+    state.lastVisit = getTodayStr();
+    state.streak = 1;
+    saveState(state);
+    showScreen('main-app');
+    initMainApp();
+  });
+}
+
+function goToObStep(step) {
+  document.querySelectorAll('.onboard-step').forEach(s => s.classList.remove('active'));
+  const next = document.getElementById(`ob-step-${step}`);
+  if (next) { next.classList.add('active'); next.classList.add('fade-in'); }
+  obStep = step;
+}
+
+function renderSeedProfile(rootNumber) {
+  const profile = getProfile(rootNumber);
+  const card = document.getElementById('seed-profile-card');
+  card.innerHTML = `
+    <div class="seed-card" style="border-top-color: ${profile.color}">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+        <div class="seed-name">${profile.name}</div>
+      </div>
+      <div class="seed-headline">${profile.headline}</div>
+      <div class="seed-desc">${profile.description}</div>
+      <div class="seed-traits">
+        ${profile.traits.map(t => `<span class="seed-trait">${t}</span>`).join('')}
+      </div>
+      <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;color:#C4A050;font-style:italic;">⚡ ${profile.watchout}</div>
     </div>
   `;
+  card.classList.add('fade-in');
+}
 
-  // Western
-  const sun = getSunSign(m,d);
-  const moon = getMoonSign(y,m,d);
-  const rising = getRisingSign(m,d,h);
-  document.getElementById('zodiac-grid').innerHTML = [
-    {type:'Sol',sign:sun},{type:'Luna',sign:moon},{type:'Ascendente',sign:rising}
-  ].map(z=>`<div class="zodiac-item">
-    <div class="z-type">${z.type}</div>
-    <div class="z-sign">${z.sign.symbol}</div>
-    <div class="z-name">${z.sign.name}</div>
-    <div style="font-size:.72rem;color:var(--white-30);margin-top:2px">${z.sign.element}</div>
-  </div>`).join('');
+// ===================================
+// MAIN APP INIT
+// ===================================
+function initMainApp() {
+  updateStreak();
+  initBottomNav();
+  renderJardin();
+  renderHoy();
+  renderVinculos();
+  renderCamino();
+  setTimeout(startFirefly, 600);
+}
 
-  document.getElementById('zodiac-detail').innerHTML = `
-    <h4>Perfil Solar: ${sun.name}</h4>
-    <p>${sun.trait}</p>
-    <p style="margin-top:8px">Con Luna en ${moon.name}, tu procesamiento emocional tiende hacia la ${moon.trait.toLowerCase().split(',')[0]}. 
-    El ascendente en ${rising.name} proyecta externamente ${rising.trait.toLowerCase().split(',')[0]}.</p>
-  `;
+// ===================================
+// BOTTOM NAVIGATION
+// ===================================
+function initBottomNav() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabId = btn.dataset.tab;
+      switchTab(tabId);
+    });
+  });
+}
 
-  // Professional profile
-  const dayEl = dayMasterEl.replace(/ (Yang|Yin)/,'');
-  const profiles = {
-    Madera:{arch:'Estratega / Planificador',style:'Crecimiento orgánico. Prefiere desarrollo gradual sobre expansión forzada. Gestiona bien proyectos a largo plazo.',paths:['Consultoría estratégica','Desarrollo de producto','Educación / Formación','Gestión de proyectos'],energy:'Necesita renovación constante — como un árbol, requiere nutrir raíces antes de expandir copa.'},
-    Fuego:{arch:'Comunicador / Activador',style:'Energía de impulso. Enciende equipos, genera momentum. Mejor en fases de lanzamiento que de mantenimiento.',paths:['Marketing / Comunicación','Ventas y desarrollo de negocio','Dirección creativa','Emprendimiento'],energy:'Ciclos de alta intensidad seguidos de recarga. Necesita descansos programados.'},
-    Tierra:{arch:'Gestor / Estabilizador',style:'Fiabilidad y consistencia. Transforma ideas en procesos sostenibles. El ancla de cualquier equipo.',paths:['Operaciones','Recursos humanos','Finanzas / Contabilidad','Administración'],energy:'Energía estable y constante. Riesgo de estancamiento si no introduce variación deliberada.'},
-    Metal:{arch:'Analista / Optimizador',style:'Precisión y eficiencia. Identifica lo esencial, elimina lo superfluo. Estándares altos, ejecución limpia.',paths:['Ingeniería / Tecnología','Análisis de datos','Control de calidad','Derecho / Regulación'],energy:'Foco intenso en períodos cortos. Necesita espacios de descompresión.'},
-    Agua:{arch:'Innovador / Adaptador',style:'Flexibilidad y visión. Se mueve donde otros se estancan. Lee tendencias antes de que sean evidentes.',paths:['Investigación','Diseño / UX','Trabajo independiente','Consultoría de innovación'],energy:'Fluye entre proyectos. Necesita libertad de movimiento — estructura excesiva lo bloquea.'}
+function switchTab(tabId) {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `tab-${tabId}`);
+  });
+  // Scroll to top
+  document.getElementById('app-content').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===================================
+// TAB 1: JARDÍN
+// ===================================
+function renderJardin() {
+  const now = new Date();
+  document.getElementById('season-display').textContent = getSeason(now.getMonth() + 1);
+  document.getElementById('streak-display').textContent = state.streak > 0 ? `${state.streak} día${state.streak !== 1 ? 's' : ''} seguidos` : '';
+
+  const profile = getProfile(state.rootNumber);
+  document.getElementById('jardin-profile-name').textContent = profile.name;
+
+  // Garden glow level
+  const glow = Math.min(5, Math.max(1, state.gardenLevel || 1));
+  document.getElementById('garden-wrap').dataset.glow = glow;
+
+  // Zone visibility based on garden level
+  for (let z = 1; z <= 5; z++) {
+    const zone = document.getElementById(`zone-${z}`);
+    if (zone) {
+      const opacity = glow >= z ? (0.4 + (glow - z) * 0.12) : 0.15;
+      zone.style.opacity = Math.min(1, opacity);
+    }
+  }
+
+  // Update user label in constellation
+  const label = document.getElementById('user-center-label');
+  if (label && state.fireflyName) {
+    // keep as "Tú" for clarity
+  }
+}
+
+// ===================================
+// TAB 2: HOY
+// ===================================
+function renderHoy() {
+  const now = new Date();
+  const profile = getProfile(state.rootNumber);
+
+  // Greeting
+  const greeting = getGreeting();
+  const name = state.userName || '';
+  const greetEl = document.getElementById('hoy-greeting');
+  greetEl.innerHTML = `${greeting}${name ? ', <span>' + name + '</span>' : ''}.`;
+
+  // Date display
+  const dateOpts = { weekday: 'long', day: 'numeric', month: 'long' };
+  document.getElementById('hoy-date-display').textContent = now.toLocaleDateString('es-ES', dateOpts);
+
+  // Energy
+  const energyLevel = getEnergyLevel(state.rootNumber);
+  document.getElementById('energy-fill').style.width = energyLevel + '%';
+  document.getElementById('energy-state-label').textContent = getEnergyLabel(energyLevel);
+
+  // Daily message
+  const daily = getDailyEntry(state.rootNumber);
+  document.getElementById('daily-message').textContent = daily.message;
+  document.getElementById('daily-action').textContent = daily.action;
+
+  // Mood grid
+  const grid = document.getElementById('mood-grid');
+  grid.innerHTML = MOODS.map(m => `
+    <button class="mood-btn${state.mood === m.id ? ' selected' : ''}" data-mood="${m.id}" aria-label="${m.label}">
+      <span class="mood-emoji">${m.emoji}</span>
+      <span class="mood-label">${m.label}</span>
+    </button>
+  `).join('');
+
+  grid.querySelectorAll('.mood-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleMoodSelect(btn.dataset.mood));
+  });
+
+  // Identity insight
+  document.getElementById('identity-insight').textContent = getIdentityInsight(state.rootNumber);
+
+  // Show firefly response if already checked in today
+  if (state.mood && state.checkins.length > 0) {
+    const lastCheckin = state.checkins[state.checkins.length - 1];
+    const today = getTodayStr();
+    if (lastCheckin.date === today) {
+      showFireflyResponse(state.mood);
+      document.getElementById('grow-indicator').classList.add('visible');
+    }
+  }
+}
+
+function handleMoodSelect(moodId) {
+  state.mood = moodId;
+
+  // Update UI
+  document.querySelectorAll('.mood-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.mood === moodId);
+  });
+
+  // Save checkin
+  const today = getTodayStr();
+  const existing = state.checkins.findIndex(c => c.date === today);
+  if (existing >= 0) {
+    state.checkins[existing].mood = moodId;
+  } else {
+    state.checkins.push({ date: today, mood: moodId });
+    state.gardenLevel = Math.min(5, (state.gardenLevel || 1) + 0.25);
+  }
+  saveState(state);
+
+  showFireflyResponse(moodId);
+  document.getElementById('grow-indicator').classList.add('visible');
+
+  // Update garden
+  const glow = Math.min(5, Math.max(1, Math.round(state.gardenLevel)));
+  document.getElementById('garden-wrap').dataset.glow = glow;
+}
+
+function showFireflyResponse(moodId) {
+  const response = MOOD_RESPONSES[moodId] || FIREFLY_LINES[0];
+  const el = document.getElementById('firefly-response');
+  if (el) {
+    el.textContent = `${state.fireflyName || 'Tu luciérnaga'}: "${response}"`;
+    el.classList.add('visible');
+  }
+}
+
+// ===================================
+// TAB 3: VÍNCULOS
+// ===================================
+function renderVinculos() {
+  renderConnectionsList();
+  renderConstellation();
+
+  document.getElementById('add-person-btn').addEventListener('click', () => {
+    const form = document.getElementById('add-person-form');
+    form.classList.toggle('visible');
+    if (form.classList.contains('visible')) {
+      document.getElementById('new-person-name').focus();
+    }
+  });
+
+  document.getElementById('cancel-person-btn').addEventListener('click', () => {
+    document.getElementById('add-person-form').classList.remove('visible');
+    clearPersonForm();
+  });
+
+  document.getElementById('save-person-btn').addEventListener('click', saveNewPerson);
+}
+
+function clearPersonForm() {
+  document.getElementById('new-person-name').value = '';
+  document.getElementById('new-person-day').value = '';
+  document.getElementById('new-person-month').value = '';
+  document.getElementById('new-person-year').value = '';
+}
+
+function saveNewPerson() {
+  const name = document.getElementById('new-person-name').value.trim();
+  const day = parseInt(document.getElementById('new-person-day').value);
+  const month = parseInt(document.getElementById('new-person-month').value);
+  const year = parseInt(document.getElementById('new-person-year').value);
+
+  if (!name || !day || !month || !year) return;
+
+  const rootNum = calculateRoot(day, month, year);
+  const connection = {
+    id: Date.now(),
+    name,
+    birthDate: `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,
+    rootNumber: rootNum
   };
-  const prof = profiles[dayEl]||profiles.Tierra;
-  document.getElementById('cv-profile').innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <div style="width:48px;height:48px;border-radius:12px;background:${ELEMENT_COLORS[dayEl]||'var(--gold)'};display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;color:var(--bg-deep)">${dayEl[0]}</div>
-      <div>
-        <div style="font-family:var(--font-display);font-size:1.1rem">${prof.arch}</div>
-        <div style="font-size:.78rem;color:var(--white-60)">Elemento dominante: ${dayEl} · ${sun.name} solar</div>
+
+  state.connections = state.connections || [];
+  state.connections.push(connection);
+  saveState(state);
+
+  document.getElementById('add-person-form').classList.remove('visible');
+  clearPersonForm();
+  renderConnectionsList();
+  renderConstellation();
+}
+
+function deleteConnection(id) {
+  state.connections = (state.connections || []).filter(c => c.id !== id);
+  saveState(state);
+  renderConnectionsList();
+  renderConstellation();
+}
+
+function getCompatibility(a, b) {
+  const key = `${a}-${b}`;
+  return COMPATIBILITY[key] || COMPATIBILITY[`${b}-${a}`] || {
+    strength: "Dos energías distintas que tienen mucho que enseñarse.",
+    challenge: "La diferencia puede crear fricción antes de crear puente.",
+    advice: "Escuchar primero. Juzgar después."
+  };
+}
+
+function renderConnectionsList() {
+  const list = document.getElementById('connections-list');
+  const connections = state.connections || [];
+
+  if (connections.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--faint);font-size:0.85rem;">Todavía no has añadido a nadie.<br>Las personas que importan merecen un lugar aquí.</div>`;
+    return;
+  }
+
+  list.innerHTML = connections.map(c => {
+    const compat = getCompatibility(state.rootNumber, c.rootNumber);
+    const myProfile = getProfile(state.rootNumber);
+    const theirProfile = getProfile(c.rootNumber);
+    return `
+      <div class="relation-card fade-in">
+        <div class="relation-names">
+          <span>Tú y ${c.name}</span>
+          <button class="delete-btn" onclick="deleteConnection(${c.id})" aria-label="Eliminar">✕</button>
+        </div>
+        <div style="display:flex;gap:0.75rem;margin-bottom:0.85rem;align-items:center;">
+          <div style="font-size:0.85rem;color:var(--gold);font-weight:500;">${myProfile.name}</div>
+          <div style="font-size:0.7rem;color:var(--faint);">·</div>
+          <div style="font-size:0.85rem;color:var(--green);font-weight:500;">${theirProfile.name}</div>
+        </div>
+        <div class="relation-row">
+          <div class="relation-row-label">Donde brilláis</div>
+          <div class="relation-row-text">${compat.strength}</div>
+        </div>
+        <div class="relation-row">
+          <div class="relation-row-label">Vuestro desafío</div>
+          <div class="relation-row-text">${compat.challenge}</div>
+        </div>
+        <div class="relation-row" style="margin-bottom:0">
+          <div class="relation-row-label">Lo que necesita este vínculo</div>
+          <div class="relation-row-text">${compat.advice}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderConstellation() {
+  const connections = state.connections || [];
+  const svg = document.getElementById('constellation-connections');
+  if (!svg) return;
+
+  const cx = 170, cy = 120;
+  const radii = [80, 65, 75, 70, 85, 90, 60, 72, 78];
+  const angles = [0, 60, 120, 180, 240, 300, 45, 150, 270];
+
+  svg.innerHTML = connections.map((c, i) => {
+    const angle = (angles[i % angles.length] - 90) * Math.PI / 180;
+    const r = radii[i % radii.length];
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    const profile = getProfile(c.rootNumber);
+
+    return `
+      <line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(212,175,55,0.2)" stroke-width="1" stroke-dasharray="3 4"/>
+      <circle cx="${x}" cy="${y}" r="7" fill="${profile.color}" opacity="0.8"/>
+      <circle cx="${x}" cy="${y}" r="10" fill="none" stroke="${profile.color}" stroke-width="1" opacity="0.3">
+        <animate attributeName="r" values="10;14;10" dur="${2 + i*0.5}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="${2 + i*0.5}s" repeatCount="indefinite"/>
+      </circle>
+      <text x="${x}" y="${y + 20}" text-anchor="middle" fill="rgba(232,230,224,0.5)" font-size="8" font-family="Satoshi, sans-serif">${c.name.split(' ')[0]}</text>
+    `;
+  }).join('');
+}
+
+// ===================================
+// TAB 4: CAMINO
+// ===================================
+function renderCamino() {
+  const rootNumber = state.rootNumber;
+  const birthDate = state.birthDate ? new Date(state.birthDate + 'T12:00:00') : null;
+  const birthYear = birthDate ? birthDate.getFullYear() : 1990;
+  const currentYear = new Date().getFullYear();
+  const age = birthYear ? currentYear - birthYear : 30;
+
+  // Calculate current phase based on root number cycle (9-year cycles)
+  const cycleYear = age % 9;
+  const currentPhaseIndex = cycleYear < PHASE_NAMES.length ? cycleYear : 0;
+
+  // Build timeline: 3 past phases, current, 2 future
+  const futureCont = document.getElementById('timeline-future');
+  const pastCont = document.getElementById('timeline-past');
+
+  // Future (shown above TODAY marker)
+  let futureHTML = '';
+  for (let i = 2; i >= 1; i--) {
+    const phaseIdx = (currentPhaseIndex + i) % PHASE_NAMES.length;
+    const phase = PHASE_NAMES[phaseIdx];
+    const startYear = currentYear + (i - 1) * 3 + 1;
+    futureHTML += `
+      <div class="timeline-item future">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-phase-label">Próximo ciclo</div>
+          <div class="timeline-phase-name">${phase.name}</div>
+          <div class="timeline-years">${startYear} — ${startYear + 2}</div>
+        </div>
+      </div>
+    `;
+  }
+  futureCont.innerHTML = futureHTML;
+
+  // Current phase (after TODAY marker, first item)
+  const currentPhase = PHASE_NAMES[currentPhaseIndex];
+  let pastHTML = `
+    <div class="timeline-item current">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <div class="timeline-phase-label">Ahora mismo</div>
+        <div class="timeline-phase-name">${currentPhase.name}</div>
+        <div class="timeline-phase-desc">${currentPhase.description}</div>
+        <div class="timeline-years">${currentYear - 1} — ${currentYear + 1}</div>
       </div>
     </div>
-    <div class="profile-section">
-      <h4>Estilo Operativo</h4>
-      <p>${prof.style}</p>
-    </div>
-    <div class="profile-section">
-      <h4>Rutas Profesionales Afines</h4>
-      <ul>${prof.paths.map(p=>`<li>${p}</li>`).join('')}</ul>
-    </div>
-    <div class="profile-section">
-      <h4>Gestión Energética</h4>
-      <p>${prof.energy}</p>
-    </div>
-    <div class="profile-section">
-      <h4>Animal del Año: ${BRANCH_ANIMALS[yearP.branch]}</h4>
-      <p>Nacido en año del ${BRANCH_ANIMALS[yearP.branch]} — la energía del año imprime una capa adicional sobre el perfil base del Maestro del Día.</p>
-    </div>
   `;
 
-  document.getElementById('natal-results').style.display='block';
-  document.getElementById('natal-results').scrollIntoView({behavior:'smooth',block:'start'});
-}
+  // Past phases
+  for (let i = 1; i <= 3; i++) {
+    const phaseIdx = ((currentPhaseIndex - i) + PHASE_NAMES.length) % PHASE_NAMES.length;
+    const phase = PHASE_NAMES[phaseIdx];
+    const startYear = currentYear - i * 3;
+    pastHTML += `
+      <div class="timeline-item past">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-phase-label">Pasado</div>
+          <div class="timeline-phase-name">${phase.name}</div>
+          <div class="timeline-years">${startYear} — ${startYear + 2}</div>
+        </div>
+      </div>
+    `;
+  }
+  pastCont.innerHTML = pastHTML;
 
-function switchNatalTab(tab){
-  document.querySelectorAll('.natal-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.natal-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelector(`.natal-tab[onclick*="${tab}"]`).classList.add('active');
-  document.getElementById('panel-'+tab).classList.add('active');
-}
+  // Milestone button
+  const addBtn = document.getElementById('add-milestone-btn');
+  if (addBtn) addBtn.addEventListener('click', openMilestoneModal);
 
-// ===== MATRIX =====
-const MATRIX_LAYOUT = [2,7,6,9,5,1,4,3,8]; // Lo Shu magic square
-const SEQ_NUMS = new Set([1,2,4,5,7,8]);
-const GOV_NUMS = new Set([3,6,9]);
-
-const MATRIX_DATA = {
-  1:{name:'El Iniciador',conn:'Dobla → 2. Complemento → 8 (Amplificador). En la secuencia, 1 es el punto de reinicio después de 5.',role:'Origen del ciclo de doblaje'},
-  2:{name:'El Conector',conn:'Dobla → 4. Complemento → 7 (Analista). Puente natural entre el inicio y la estructura.',role:'Segundo paso del doblaje'},
-  3:{name:'El Patrón',conn:'Gobernador. 3 × 2 = 6 (otro gobernador). 3 + 6 = 9 (tercer gobernador). Los tres gobernadores se generan entre sí.',role:'Primer gobernador'},
-  4:{name:'El Constructor',conn:'Dobla → 8. Complemento → 5 (Catalizador). Mitad exacta de la secuencia.',role:'Tercer paso del doblaje'},
-  5:{name:'El Catalizador',conn:'Dobla → 10 → 1 (reinicio). Complemento → 4 (Constructor). Punto de inflexión del ciclo.',role:'Sexto paso — cierre del ciclo'},
-  6:{name:'El Armonizador',conn:'Gobernador. 6 = 3 × 2. 6 + 3 = 9. Media entre los otros dos gobernadores.',role:'Segundo gobernador'},
-  7:{name:'El Analista',conn:'Dobla → 14 → 5. Complemento → 2 (Conector). El 7 enlaza la segunda mitad con la primera.',role:'Cuarto paso del doblaje'},
-  8:{name:'El Amplificador',conn:'Dobla → 16 → 7. Complemento → 1 (Iniciador). Escala lo que el 1 inició.',role:'Quinto paso del doblaje'},
-  9:{name:'El Integrador',conn:'Gobernador supremo. Cualquier número × 9 reduce a 9. Absorbe y completa. 9 + cualquier dígito = el mismo dígito (en reducción).',role:'Tercer gobernador — universal'}
-};
-
-function buildMatrix(){
-  const grid = document.getElementById('matrix-grid');
-  grid.innerHTML = MATRIX_LAYOUT.map((n,i)=>{
-    const cls = GOV_NUMS.has(n)?'governor':SEQ_NUMS.has(n)?'seq':'';
-    return `<div class="matrix-cell ${cls}" onclick="showMatrixNum(${n})" data-num="${n}">${n}</div>`;
-  }).join('');
-}
-
-function showMatrixNum(n){
-  document.querySelectorAll('.matrix-cell').forEach(c=>{
-    c.classList.toggle('active',parseInt(c.dataset.num)===n);
+  // Modal close
+  document.getElementById('milestone-modal-close')?.addEventListener('click', closeMilestoneModal);
+  document.getElementById('milestone-modal')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('milestone-modal')) closeMilestoneModal();
   });
-  const d = MATRIX_DATA[n];
-  const rd = ROOT_DATA[n];
-  document.getElementById('matrix-info').innerHTML = `
-    <div style="text-align:center">
-      <div style="font-family:var(--font-display);font-size:1.2rem;color:${rd.color};margin-bottom:4px">${n} — ${d.name}</div>
-      <div style="font-size:.82rem;color:var(--white-60);margin-bottom:8px">${d.role}</div>
-      <p style="font-size:.84rem;color:var(--white-60);line-height:1.5">${d.conn}</p>
-      <div style="margin-top:10px;font-size:.78rem;color:var(--white-30)">${rd.element} · ${rd.colorName}</div>
+  document.getElementById('save-milestone-btn')?.addEventListener('click', saveMilestone);
+
+  // Render existing milestones
+  renderMilestones();
+
+  // Seasonal forecast
+  renderForecast();
+}
+
+function openMilestoneModal() {
+  const modal = document.getElementById('milestone-modal');
+  modal.classList.add('visible');
+  // Set default date to today
+  document.getElementById('milestone-date').value = getTodayStr();
+}
+
+function closeMilestoneModal() {
+  document.getElementById('milestone-modal').classList.remove('visible');
+}
+
+function saveMilestone() {
+  const text = document.getElementById('milestone-text').value.trim();
+  const date = document.getElementById('milestone-date').value;
+  if (!text) return;
+
+  state.milestones = state.milestones || [];
+  state.milestones.push({ id: Date.now(), text, date });
+  saveState(state);
+  closeMilestoneModal();
+  renderMilestones();
+
+  document.getElementById('milestone-text').value = '';
+}
+
+function renderMilestones() {
+  const list = document.getElementById('milestones-list');
+  const milestones = (state.milestones || []).slice().reverse();
+
+  list.innerHTML = milestones.map(m => `
+    <div class="user-milestone">
+      <span>${m.text}</span>
+      <span class="user-milestone-date">${formatDate(m.date)}</span>
     </div>
-  `;
+  `).join('');
 }
 
-// ===== SEQUENCE SVG =====
-function buildSequence(){
-  const nums = [1,2,4,8,7,5];
-  const cx=160,cy=90,r=65;
-  let svg = '';
+function renderForecast() {
+  const container = document.getElementById('forecast-months');
+  const now = new Date();
+  const elements = ['fire', 'water', 'earth', 'air'];
+  const elementEmoji = { fire: '🔥', water: '💧', earth: '🌍', air: '🌬️' };
+  const vibes = [
+    "Impulso y arranque",
+    "Calma y escucha",
+    "Construcción y raíces",
+    "Movimiento y cambio",
+    "Profundidad e introspección",
+    "Cuidado y consolidación"
+  ];
 
-  // Hexagonal positions
-  const positions = nums.map((_,i)=>{
-    const angle = (i*60-90)*Math.PI/180;
-    return {x:cx+r*Math.cos(angle),y:cy+r*Math.sin(angle)};
-  });
-
-  // Connection lines
-  for(let i=0;i<positions.length;i++){
-    const next=(i+1)%positions.length;
-    svg+=`<line x1="${positions[i].x}" y1="${positions[i].y}" x2="${positions[next].x}" y2="${positions[next].y}" 
-      stroke="#D4AF37" stroke-width="1.5" opacity=".4"/>`;
+  const months = [];
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const monthName = d.toLocaleDateString('es-ES', { month: 'long' });
+    const element = elements[(now.getMonth() + i + state.rootNumber) % 4];
+    const vibe = vibes[(now.getMonth() + i + state.rootNumber) % vibes.length];
+    months.push({ name: monthName, element, vibe });
   }
 
-  // Arrow indicators
-  for(let i=0;i<positions.length;i++){
-    const next=(i+1)%positions.length;
-    const mx=(positions[i].x+positions[next].x)/2;
-    const my=(positions[i].y+positions[next].y)/2;
-    svg+=`<text x="${mx}" y="${my+3}" text-anchor="middle" font-size="7" fill="rgba(245,240,232,.3)">→</text>`;
-  }
-
-  // Number circles
-  positions.forEach((p,i)=>{
-    svg+=`<circle cx="${p.x}" cy="${p.y}" r="18" fill="rgba(212,175,55,.1)" stroke="#D4AF37" stroke-width="1.5"/>`;
-    svg+=`<text x="${p.x}" y="${p.y+5}" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="15" font-weight="600" fill="#D4AF37">${nums[i]}</text>`;
-  });
-
-  // Governor numbers in center
-  const govs = [3,6,9];
-  const gPositions = govs.map((_,i)=>{
-    const angle = (i*120-90)*Math.PI/180;
-    return {x:cx+22*Math.cos(angle),y:cy+22*Math.sin(angle)};
-  });
-  gPositions.forEach((p,i)=>{
-    svg+=`<circle cx="${p.x}" cy="${p.y}" r="12" fill="rgba(59,175,132,.1)" stroke="#3BAF84" stroke-width="1"/>`;
-    svg+=`<text x="${p.x}" y="${p.y+4}" text-anchor="middle" font-family="Clash Display,sans-serif" font-size="11" font-weight="600" fill="#3BAF84">${govs[i]}</text>`;
-  });
-
-  document.getElementById('seq-svg').innerHTML = svg;
+  container.innerHTML = months.map(m => `
+    <div class="forecast-card">
+      <div>
+        <div class="forecast-month" style="text-transform:capitalize;">${m.name}</div>
+        <div class="forecast-vibe">${m.vibe}</div>
+      </div>
+      <span class="forecast-element">${elementEmoji[m.element]}</span>
+    </div>
+  `).join('');
 }
 
-// ===== INIT =====
-document.addEventListener('DOMContentLoaded',()=>{
-  buildCalendar();
-  buildMatrix();
-  buildSequence();
+// ===================================
+// PWA SERVICE WORKER
+// ===================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// ===================================
+// INIT
+// ===================================
+document.addEventListener('DOMContentLoaded', () => {
+  initParticles();
+  initSplash();
 });
 </script>
 </body>

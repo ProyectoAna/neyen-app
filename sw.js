@@ -1,4 +1,4 @@
-const CACHE_NAME = 'neyen-v3';
+const CACHE_NAME = 'neyen-v5';
 
 // Install: skip caching to avoid path issues — use network-first
 self.addEventListener('install', () => {
