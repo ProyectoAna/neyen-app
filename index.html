@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>NEYĒN — Tu Número Raíz</title>
+<meta name="description" content="Descubre tu número raíz NEYĒN y recibe tu carta del día. Una herramienta de autoconocimiento estructural.">
+<meta name="theme-color" content="#0f0f0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NEYĒN">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<!-- Fonts: Clash Display (headings) + Satoshi (body) from Fontshare -->
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
+
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root {
+  /* Type Scale */
+  --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
+  --text-sm:   clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
+  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+  --text-lg:   clamp(1.125rem, 1rem    + 0.75vw, 1.5rem);
+  --text-xl:   clamp(1.5rem,   1.2rem  + 1.25vw, 2.25rem);
+  --text-2xl:  clamp(2rem,     1.2rem  + 2.5vw,  3.5rem);
+  --text-3xl:  clamp(2.5rem,   1rem    + 4vw,    5rem);
+
+  /* Spacing (4px base) */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Transition */
+  --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Fonts */
+  --font-display: 'Clash Display', 'Helvetica Neue', sans-serif;
+  --font-body: 'Satoshi', 'Inter', sans-serif;
+}
+
+/* NEYĒN Dark Theme (primary) */
+[data-theme="dark"] {
+  --color-bg:             #0f0f0e;
+  --color-surface:        #1a1a18;
+  --color-surface-2:      #222220;
+  --color-surface-offset: #2a2a27;
+  --color-border:         #3a3a36;
+  --color-divider:        #2e2e2b;
+
+  --color-text:           #e8e6e1;
+  --color-text-muted:     #9a9890;
+  --color-text-faint:     #6a6862;
+
+  --color-gold:           #D4AF37;
+  --color-gold-hover:     #e0c04a;
+  --color-gold-dim:       #9a7f28;
+
+  --color-green:          #3BAF84;
+  --color-green-hover:    #4bc498;
+  --color-green-dim:      #2a7d5e;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
+  --shadow-glow-gold: 0 0 40px rgba(212, 175, 55, 0.15);
+  --shadow-glow-green: 0 0 40px rgba(59, 175, 132, 0.12);
+}
+
+/* NEYĒN Light Theme */
+[data-theme="light"] {
+  --color-bg:             #f5f4f0;
+  --color-surface:        #ffffff;
+  --color-surface-2:      #fafaf8;
+  --color-surface-offset: #edecea;
+  --color-border:         #d4d2cc;
+  --color-divider:        #e0dedb;
+
+  --color-text:           #1a1a18;
+  --color-text-muted:     #6a6862;
+  --color-text-faint:     #9a9890;
+
+  --color-gold:           #b8961e;
+  --color-gold-hover:     #a3841a;
+  --color-gold-dim:       #d4c47a;
+
+  --color-green:          #2d8a68;
+  --color-green-hover:    #247656;
+  --color-green-dim:      #9ad4ba;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
+  --shadow-glow-gold: 0 0 40px rgba(184, 150, 30, 0.1);
+  --shadow-glow-green: 0 0 40px rgba(45, 138, 104, 0.08);
+}
+
+/* ===== BASE RESET ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100dvh;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; }
+p { text-wrap: pretty; max-width: 72ch; }
+img, svg { display: block; max-width: 100%; }
+button { cursor: pointer; background: none; border: none; font: inherit; color: inherit; }
+
+a, button, input, select {
+  transition: color var(--transition-interactive),
+              background var(--transition-interactive),
+              border-color var(--transition-interactive),
+              box-shadow var(--transition-interactive),
+              transform var(--transition-interactive);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: rgba(212, 175, 55, 0.25);
+  color: var(--color-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+}
+
+/* ===== APP LAYOUT ===== */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.logo-mark {
+  width: 36px;
+  height: 36px;
+}
+
+.logo-text {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--color-gold);
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+}
+
+.theme-toggle:hover {
+  color: var(--color-text);
+  background: var(--color-surface-offset);
+}
+
+/* ===== SCREENS ===== */
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-6);
+  gap: var(--space-8);
+}
+
+.screen[aria-hidden="true"] {
+  display: none;
+}
+
+/* ===== SCREEN 1: BIRTH DATE ===== */
+.intro-block {
+  text-align: center;
+  max-width: 440px;
+}
+
+.intro-block h1 {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-gold);
+  margin-bottom: var(--space-4);
+}
+
+.intro-block p {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  margin: 0 auto;
+}
+
+.date-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+  width: 100%;
+  max-width: 380px;
+}
+
+.date-inputs {
+  display: flex;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.date-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.date-field label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.date-field input,
+.date-field select {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--color-text);
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.date-field input::placeholder {
+  color: var(--color-text-faint);
+}
+
+.date-field input::-webkit-outer-spin-button,
+.date-field input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.date-field input:focus,
+.date-field select:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-4) var(--space-8);
+  background: var(--color-gold);
+  color: #0f0f0e;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-lg);
+  border: none;
+}
+
+.btn-primary:hover {
+  background: var(--color-gold-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow-gold);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.error-msg {
+  font-size: var(--text-sm);
+  color: #d94f4f;
+  min-height: 1.4em;
+}
+
+/* ===== SCREEN 2: ROOT NUMBER ===== */
+.result-block {
+  text-align: center;
+  max-width: 480px;
+}
+
+.result-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-3);
+}
+
+.root-number {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--color-gold);
+  line-height: 1;
+  margin-bottom: var(--space-2);
+  text-shadow: 0 0 60px rgba(212, 175, 55, 0.3);
+}
+
+.root-name {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: var(--space-6);
+}
+
+/* ===== CARD OF THE DAY ===== */
+.card-today {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  text-align: left;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-today::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-green));
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.card-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--color-green);
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-green);
+}
+
+.card-date {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+}
+
+.card-message {
+  font-size: var(--text-base);
+  color: var(--color-text);
+  line-height: 1.7;
+  margin-bottom: var(--space-6);
+}
+
+.card-reflection {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-divider);
+}
+
+/* Back button */
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.btn-back:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+/* ===== FOOTER ===== */
+.app-footer {
+  padding: var(--space-4) var(--space-6);
+  text-align: center;
+  border-top: 1px solid var(--color-divider);
+}
+
+.app-footer a {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  color: var(--color-text-muted);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .app-header { padding: var(--space-3) var(--space-4); }
+  .screen { padding: var(--space-6) var(--space-4); }
+  .card-today { padding: var(--space-6); }
+  .date-inputs { gap: var(--space-2); }
+}
+
+/* Install prompt */
+.install-prompt {
+  display: none;
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-6);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  text-align: center;
+  max-width: 340px;
+  width: calc(100% - var(--space-8));
+}
+
+.install-prompt.visible { display: block; }
+
+.install-prompt p {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  margin-bottom: var(--space-3);
+}
+
+.install-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.btn-install {
+  padding: var(--space-2) var(--space-5);
+  background: var(--color-gold);
+  color: #0f0f0e;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
+
+.btn-dismiss {
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="logo">
+      <svg class="logo-mark" viewBox="0 0 36 36" fill="none" aria-label="NEYĒN logo">
+        <circle cx="18" cy="18" r="16" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
+        <path d="M18 4 C18 4, 28 14, 22 22 C18 28, 12 28, 14 22 C16 16, 18 12, 18 4Z" fill="none" stroke="#D4AF37" stroke-width="1.5"/>
+        <path d="M18 4 C18 4, 8 14, 14 22 C18 28, 24 28, 22 22 C20 16, 18 12, 18 4Z" fill="none" stroke="#3BAF84" stroke-width="1.5"/>
+        <circle cx="18" cy="18" r="2.5" fill="#D4AF37"/>
+      </svg>
+      <span class="logo-text">NEYĒN</span>
+    </div>
+    <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- SCREEN 1: BIRTH DATE -->
+  <main id="screen-birth" class="screen" aria-hidden="false">
+    <div class="intro-block animate-fade-up">
+      <h1>Tu Número Raíz</h1>
+      <p>Introduce tu fecha de nacimiento para descubrir tu número raíz NEYĒN y recibir tu carta del día.</p>
+    </div>
+
+    <form class="date-form animate-fade-up delay-1" id="birthForm" novalidate>
+      <div class="date-inputs">
+        <div class="date-field">
+          <label for="birth-day">Día</label>
+          <input type="number" id="birth-day" min="1" max="31" placeholder="15" inputmode="numeric" required>
+        </div>
+        <div class="date-field">
+          <label for="birth-month">Mes</label>
+          <select id="birth-month" required>
+            <option value="" disabled selected>Mes</option>
+            <option value="1">Ene</option>
+            <option value="2">Feb</option>
+            <option value="3">Mar</option>
+            <option value="4">Abr</option>
+            <option value="5">May</option>
+            <option value="6">Jun</option>
+            <option value="7">Jul</option>
+            <option value="8">Ago</option>
+            <option value="9">Sep</option>
+            <option value="10">Oct</option>
+            <option value="11">Nov</option>
+            <option value="12">Dic</option>
+          </select>
+        </div>
+        <div class="date-field">
+          <label for="birth-year">Año</label>
+          <input type="number" id="birth-year" min="1920" max="2025" placeholder="1990" inputmode="numeric" required>
+        </div>
+      </div>
+      <div class="error-msg" id="errorMsg" role="alert" aria-live="polite"></div>
+      <button type="submit" class="btn-primary" id="submitBtn">
+        Descubrir mi número
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </form>
+  </main>
+
+  <!-- SCREEN 2: RESULT -->
+  <main id="screen-result" class="screen" aria-hidden="true">
+    <div class="result-block">
+      <p class="result-label animate-fade-up">Tu Número Raíz NEYĒN</p>
+      <div class="root-number animate-scale-in delay-1" id="rootNumber">—</div>
+      <p class="root-name animate-fade-up delay-2" id="rootName"></p>
+    </div>
+
+    <div class="card-today animate-fade-up delay-3" id="cardToday">
+      <div class="card-header">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+          <circle cx="12" cy="16" r="2" fill="currentColor" stroke="none"/>
+        </svg>
+        <div>
+          <div class="card-title">Carta del Día</div>
+          <div class="card-date" id="cardDate"></div>
+        </div>
+      </div>
+      <p class="card-message" id="cardMessage"></p>
+      <p class="card-reflection" id="cardReflection"></p>
+    </div>
+
+    <button class="btn-back" id="btnBack">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Cambiar fecha
+    </button>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">
+      Created with Perplexity Computer
+    </a>
+  </footer>
+</div>
+
+<!-- Install Prompt -->
+<div class="install-prompt" id="installPrompt">
+  <p>Instala NEYĒN en tu móvil para acceso directo.</p>
+  <div class="install-actions">
+    <button class="btn-install" id="btnInstall">Instalar</button>
+    <button class="btn-dismiss" id="btnDismiss">Ahora no</button>
+  </div>
+</div>
+
+<script>
+/* ===== THEME TOGGLE ===== */
+(function(){
+  const toggle = document.querySelector('[data-theme-toggle]');
+  const root = document.documentElement;
+  let theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  root.setAttribute('data-theme', theme);
+  updateToggleIcon();
+
+  toggle.addEventListener('click', () => {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', theme);
+    toggle.setAttribute('aria-label', 'Cambiar a modo ' + (theme === 'dark' ? 'claro' : 'oscuro'));
+    updateToggleIcon();
+  });
+
+  function updateToggleIcon() {
+    toggle.innerHTML = theme === 'dark'
+      ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+      : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  }
+})();
+
+/* ===== NEYĒN ROOT NUMBER CALCULATION ===== */
+function calculateRoot(day, month, year) {
+  const digits = String(day) + String(month) + String(year);
+  let sum = digits.split('').reduce((a, d) => a + parseInt(d, 10), 0);
+  while (sum > 9) {
+    sum = String(sum).split('').reduce((a, d) => a + parseInt(d, 10), 0);
+  }
+  return sum;
+}
+
+/* ===== ROOT NUMBER DATA ===== */
+const rootData = {
+  1: {
+    name: "El Inicio",
+    messages: [
+      { text: "Hoy es un día para decisiones claras. No esperes a que el camino se ilumine: enciende tu propia luz.", reflection: "¿Qué decisión he estado postergando?" },
+      { text: "La independencia no es soledad. Es la capacidad de sostener tu dirección cuando el ruido crece.", reflection: "¿Dónde estoy delegando mi criterio?" },
+      { text: "Cada nuevo comienzo lleva consigo la semilla de lo que ya sabes. No partes de cero.", reflection: "¿Qué experiencia pasada me sirve hoy?" }
+    ]
+  },
+  2: {
+    name: "El Vínculo",
+    messages: [
+      { text: "Escuchar es una forma de acción. Hoy, la pausa entre lo que oyes y lo que respondes contiene la respuesta.", reflection: "¿A quién necesito escuchar mejor?" },
+      { text: "La cooperación no es ceder. Es encontrar el punto donde dos fuerzas se multiplican.", reflection: "¿Dónde puedo sumar sin perderme?" },
+      { text: "Los vínculos que funcionan no son los perfectos, sino los que se reparan con honestidad.", reflection: "¿Qué relación necesita mi atención?" }
+    ]
+  },
+  3: {
+    name: "La Expresión",
+    messages: [
+      { text: "Lo que no expresas se acumula. Hoy, encuentra una forma — cualquiera — de sacar lo que llevas dentro.", reflection: "¿Qué necesito decir que no estoy diciendo?" },
+      { text: "La creatividad no es un lujo. Es la forma en que tu sistema procesa lo que la lógica no alcanza.", reflection: "¿Cuándo fue la última vez que creé algo sin propósito productivo?" },
+      { text: "Comunicar con claridad es un acto de respeto. Hacia ti y hacia quien escucha.", reflection: "¿Estoy siendo claro o estoy esperando que me adivinen?" }
+    ]
+  },
+  4: {
+    name: "La Estructura",
+    messages: [
+      { text: "El orden no limita. El orden libera energía que el caos consume. Hoy, organiza una cosa.", reflection: "¿Qué área de mi vida necesita estructura?" },
+      { text: "Los cimientos no se ven, pero sostienen todo. Hoy, revisa lo que está debajo de la superficie.", reflection: "¿Qué fundamento estoy descuidando?" },
+      { text: "La disciplina no es rigidez. Es el ritmo que permite que lo importante ocurra sin depender de la motivación.", reflection: "¿Qué hábito me sostiene cuando todo falla?" }
+    ]
+  },
+  5: {
+    name: "El Cambio",
+    messages: [
+      { text: "La incomodidad no siempre es una señal de error. A veces es la señal de que estás creciendo.", reflection: "¿Qué incomodidad estoy evitando?" },
+      { text: "La libertad no es hacer lo que quieras. Es saber por qué eliges lo que eliges.", reflection: "¿Mis decisiones recientes son reactivas o conscientes?" },
+      { text: "Adaptarse no es traicionarse. Es la habilidad de mantener tu esencia mientras cambia la forma.", reflection: "¿Qué puedo soltar sin perder lo esencial?" }
+    ]
+  },
+  6: {
+    name: "La Responsabilidad",
+    messages: [
+      { text: "Cuidar de otros empieza por no descuidarte tú. Hoy, el primer acto de servicio es hacia ti.", reflection: "¿Estoy dando desde la abundancia o desde el vacío?" },
+      { text: "La armonía no se impone. Se construye con decisiones pequeñas y consistentes.", reflection: "¿Qué pequeño ajuste traería más equilibrio hoy?" },
+      { text: "La responsabilidad real no es carga. Es la consecuencia natural de que algo te importa.", reflection: "¿De qué me estoy haciendo responsable por obligación y no por convicción?" }
+    ]
+  },
+  7: {
+    name: "La Observación",
+    messages: [
+      { text: "No todo necesita respuesta inmediata. Hoy, observa antes de actuar. La claridad llega.", reflection: "¿Qué situación necesita observación antes que acción?" },
+      { text: "La solitud productiva es diferente del aislamiento. Una alimenta. La otra consume.", reflection: "¿Mi tiempo a solas me está recargando o desconectando?" },
+      { text: "Las preguntas correctas valen más que las respuestas rápidas.", reflection: "¿Qué pregunta importante estoy evitando?" }
+    ]
+  },
+  8: {
+    name: "El Poder",
+    messages: [
+      { text: "El poder real no es control sobre otros. Es la capacidad de ejecutar lo que decides.", reflection: "¿Qué he decidido pero no he ejecutado?" },
+      { text: "Los recursos — tiempo, dinero, energía — fluyen hacia donde pones atención consistente.", reflection: "¿Dónde estoy poniendo mi atención realmente?" },
+      { text: "La ambición sin sistema es fantasía. El sistema sin ambición es burocracia. Hoy necesitas los dos.", reflection: "¿Tengo un sistema para lo que quiero lograr?" }
+    ]
+  },
+  9: {
+    name: "La Integración",
+    messages: [
+      { text: "Cerrar un ciclo no es perder algo. Es liberar espacio para lo que sigue.", reflection: "¿Qué ciclo necesito cerrar?" },
+      { text: "La generosidad más difícil es compartir lo que aprendiste con dolor.", reflection: "¿Qué lección aprendida puedo compartir hoy?" },
+      { text: "Integrar no es mezclar todo. Es saber qué elementos se potencian juntos.", reflection: "¿Qué partes de mi vida funcionan mejor cuando las conecto?" }
+    ]
+  }
+};
+
+/* ===== DAILY CARD SELECTION ===== */
+function getDailyCard(rootNum) {
+  const today = new Date();
+  const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+  const seed = (dayOfYear + rootNum) % 3;
+  return rootData[rootNum].messages[seed];
+}
+
+function formatDate(date) {
+  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  return `${days[date.getDay()]}, ${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`;
+}
+
+/* ===== FORM HANDLING ===== */
+const form = document.getElementById('birthForm');
+const dayInput = document.getElementById('birth-day');
+const monthInput = document.getElementById('birth-month');
+const yearInput = document.getElementById('birth-year');
+const errorMsg = document.getElementById('errorMsg');
+const screenBirth = document.getElementById('screen-birth');
+const screenResult = document.getElementById('screen-result');
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  errorMsg.textContent = '';
+
+  const day = parseInt(dayInput.value, 10);
+  const month = parseInt(monthInput.value, 10);
+  const year = parseInt(yearInput.value, 10);
+
+  // Validate
+  if (!day || !month || !year) {
+    errorMsg.textContent = 'Completa todos los campos.';
+    return;
+  }
+
+  if (year < 1920 || year > 2025) {
+    errorMsg.textContent = 'Introduce un año entre 1920 y 2025.';
+    return;
+  }
+
+  // Check valid date
+  const testDate = new Date(year, month - 1, day);
+  if (testDate.getDate() !== day || testDate.getMonth() !== month - 1) {
+    errorMsg.textContent = 'Esa fecha no existe. Revisa el día.';
+    return;
+  }
+
+  // Calculate
+  const root = calculateRoot(day, month, year);
+  const data = rootData[root];
+  const card = getDailyCard(root);
+
+  // Populate result screen
+  document.getElementById('rootNumber').textContent = root;
+  document.getElementById('rootName').textContent = data.name;
+  document.getElementById('cardDate').textContent = formatDate(new Date());
+  document.getElementById('cardMessage').textContent = card.text;
+  document.getElementById('cardReflection').textContent = '→ ' + card.reflection;
+
+  // Switch screens
+  screenBirth.setAttribute('aria-hidden', 'true');
+  screenResult.setAttribute('aria-hidden', 'false');
+
+  // Re-trigger animations
+  screenResult.querySelectorAll('[class*="animate-"]').forEach(el => {
+    el.style.animation = 'none';
+    el.offsetHeight; // trigger reflow
+    el.style.animation = '';
+  });
+});
+
+// Back button
+document.getElementById('btnBack').addEventListener('click', () => {
+  screenResult.setAttribute('aria-hidden', 'true');
+  screenBirth.setAttribute('aria-hidden', 'false');
+});
+
+// Auto-advance from day to month
+dayInput.addEventListener('input', () => {
+  if (dayInput.value.length >= 2) monthInput.focus();
+});
+
+// Auto-advance from month to year
+monthInput.addEventListener('change', () => {
+  yearInput.focus();
+});
+
+/* ===== PWA INSTALL PROMPT ===== */
+let deferredPrompt;
+const installPrompt = document.getElementById('installPrompt');
+const btnInstall = document.getElementById('btnInstall');
+const btnDismiss = document.getElementById('btnDismiss');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installPrompt.classList.add('visible');
+});
+
+btnInstall.addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  }
+  installPrompt.classList.remove('visible');
+});
+
+btnDismiss.addEventListener('click', () => {
+  installPrompt.classList.remove('visible');
+});
+
+/* ===== REGISTER SERVICE WORKER ===== */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
