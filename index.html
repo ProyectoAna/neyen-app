@@ -2,309 +2,358 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>NEYĒN — The Game of Life</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    :root {
+      --gold: #C9A84C;
+      --gold-dim: rgba(201,168,76,0.3);
+      --gold-glow: rgba(201,168,76,0.15);
+      --bg: #05050f;
+      --white: #F0EDE4;
+      --dim: rgba(240,237,228,0.5);
+    }
+
     body {
-      background: #0a0a14;
-      color: #e8e4d0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
       min-height: 100vh;
       overflow-x: hidden;
     }
 
-    /* STARS BACKGROUND */
-    body::before {
-      content: '';
+    /* ── CANVAS BACKGROUND ── */
+    #canvas-bg {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-image:
-        radial-gradient(1px 1px at 20% 30%, rgba(255,215,0,0.4) 0%, transparent 100%),
-        radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.3) 0%, transparent 100%),
-        radial-gradient(1px 1px at 50% 60%, rgba(255,215,0,0.2) 0%, transparent 100%),
-        radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.2) 0%, transparent 100%),
-        radial-gradient(1px 1px at 90% 70%, rgba(255,215,0,0.3) 0%, transparent 100%),
-        radial-gradient(1px 1px at 35% 90%, rgba(255,255,255,0.2) 0%, transparent 100%),
-        radial-gradient(1px 1px at 65% 40%, rgba(255,215,0,0.2) 0%, transparent 100%),
-        radial-gradient(2px 2px at 75% 85%, rgba(255,215,0,0.5) 0%, transparent 100%),
-        radial-gradient(2px 2px at 25% 15%, rgba(255,255,255,0.4) 0%, transparent 100%);
-      pointer-events: none;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       z-index: 0;
+      opacity: 0.6;
     }
 
-    .container {
+    .screen {
       position: relative;
       z-index: 1;
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 0 20px 60px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
     }
 
-    /* HEADER */
-    header {
-      text-align: center;
-      padding: 50px 20px 40px;
-      border-bottom: 1px solid rgba(201,168,76,0.2);
+    /* ── SCREEN 1: SPHINX ── */
+    #screen-sphinx { display: flex; }
+    #screen-input  { display: none; }
+    #screen-result { display: none; }
+
+    /* Sphinx SVG */
+    .sphinx-container {
+      width: 100%;
+      max-width: 340px;
+      margin-bottom: 40px;
+      animation: sphinxFloat 6s ease-in-out infinite;
     }
 
-    .logo {
-      font-size: 56px;
-      font-weight: 900;
-      letter-spacing: 12px;
-      color: #C9A84C;
-      text-shadow: 0 0 40px rgba(201,168,76,0.5);
-      margin-bottom: 8px;
+    @keyframes sphinxFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
     }
 
-    .tagline {
-      font-size: 16px;
-      letter-spacing: 4px;
-      color: rgba(232,228,208,0.5);
+    .sphinx-title {
+      font-size: 13px;
+      letter-spacing: 6px;
+      color: rgba(201,168,76,0.6);
       text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .riddle-box {
+      background: rgba(201,168,76,0.05);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 16px;
+      padding: 28px 24px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .riddle-text {
+      font-size: 19px;
+      line-height: 1.7;
+      color: var(--white);
+      font-style: italic;
       margin-bottom: 16px;
     }
 
-    .one-line {
-      font-size: 18px;
-      color: rgba(232,228,208,0.85);
-      font-style: italic;
-      line-height: 1.6;
+    .riddle-answer {
+      font-size: 13px;
+      color: rgba(201,168,76,0.7);
+      letter-spacing: 2px;
     }
 
-    /* GEOMETRY DISPLAY */
-    .geometry-strip {
+    .geo-row {
       display: flex;
+      gap: 20px;
       justify-content: center;
-      gap: 30px;
-      padding: 24px 0;
-      border-bottom: 1px solid rgba(201,168,76,0.1);
+      margin-bottom: 40px;
       flex-wrap: wrap;
     }
 
-    .geo-item {
-      text-align: center;
+    .geo-pill {
+      background: rgba(201,168,76,0.08);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: var(--gold);
+      letter-spacing: 1px;
     }
 
-    .geo-number {
-      font-size: 28px;
+    .geo-pill span {
       font-weight: 700;
-      color: #C9A84C;
+      font-size: 16px;
     }
 
-    .geo-label {
-      font-size: 11px;
-      letter-spacing: 2px;
-      color: rgba(232,228,208,0.4);
+    .btn-primary {
+      background: linear-gradient(135deg, #C9A84C, #8B6914);
+      border: none;
+      border-radius: 14px;
+      color: #05050f;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      padding: 18px 48px;
       text-transform: uppercase;
-      margin-top: 2px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 8px 30px rgba(201,168,76,0.3);
     }
 
-    /* INPUT SECTION */
-    .input-section {
-      padding: 50px 0 30px;
+    .btn-primary:hover, .btn-primary:active {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(201,168,76,0.5);
+    }
+
+    /* ── SCREEN 2: INPUT ── */
+    .logo-small {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 8px;
+      color: var(--gold);
+      margin-bottom: 8px;
       text-align: center;
+    }
+
+    .tagline-small {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: var(--dim);
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .pyramid-svg {
+      width: 160px;
+      height: 120px;
+      margin: 0 auto 40px;
+      display: block;
+      animation: pyramidPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes pyramidPulse {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(201,168,76,0.4)); }
+      50% { filter: drop-shadow(0 0 24px rgba(201,168,76,0.8)); }
     }
 
     .input-label {
-      font-size: 13px;
+      font-size: 11px;
       letter-spacing: 3px;
-      color: rgba(232,228,208,0.5);
+      color: var(--dim);
       text-transform: uppercase;
-      margin-bottom: 20px;
-      display: block;
+      text-align: center;
+      margin-bottom: 16px;
     }
 
     .date-input {
-      background: rgba(201,168,76,0.08);
-      border: 1px solid rgba(201,168,76,0.4);
-      border-radius: 12px;
-      color: #e8e4d0;
-      font-size: 22px;
-      padding: 16px 24px;
+      background: rgba(201,168,76,0.06);
+      border: 1px solid rgba(201,168,76,0.35);
+      border-radius: 14px;
+      color: var(--white);
+      font-size: 24px;
+      padding: 18px 28px;
       text-align: center;
       width: 100%;
-      max-width: 320px;
+      max-width: 300px;
       outline: none;
+      display: block;
+      margin: 0 auto 24px;
       transition: all 0.3s;
     }
 
     .date-input:focus {
-      border-color: #C9A84C;
+      border-color: var(--gold);
       box-shadow: 0 0 30px rgba(201,168,76,0.2);
     }
 
-    .calculate-btn {
-      display: block;
-      width: 100%;
-      max-width: 320px;
-      margin: 20px auto 0;
-      background: linear-gradient(135deg, #C9A84C, #a07830);
-      border: none;
-      border-radius: 12px;
-      color: #0a0a14;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      padding: 18px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .calculate-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(201,168,76,0.4);
-    }
-
-    /* RESULT */
-    #result { display: none; }
-
-    .result-header {
-      text-align: center;
-      padding: 50px 0 30px;
-      border-top: 1px solid rgba(201,168,76,0.2);
-      margin-top: 40px;
-    }
-
-    .root-number {
-      font-size: 100px;
+    /* ── SCREEN 3: RESULT ── */
+    .result-number {
+      font-size: 120px;
       font-weight: 900;
-      color: #C9A84C;
+      color: var(--gold);
       line-height: 1;
-      text-shadow: 0 0 60px rgba(201,168,76,0.6);
-    }
-
-    .letter-hebrew {
-      font-size: 72px;
-      color: rgba(232,228,208,0.9);
-      margin: 10px 0;
-      line-height: 1;
-    }
-
-    .letter-name {
-      font-size: 28px;
-      font-weight: 300;
-      letter-spacing: 6px;
-      color: #C9A84C;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
-    .letter-transliteration {
-      font-size: 14px;
-      letter-spacing: 3px;
-      color: rgba(232,228,208,0.4);
-      text-transform: uppercase;
-    }
-
-    /* DATA CARDS */
-    .data-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin: 30px 0;
-    }
-
-    .data-card {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(201,168,76,0.15);
-      border-radius: 12px;
-      padding: 20px 16px;
+      text-shadow: 0 0 80px rgba(201,168,76,0.6);
       text-align: center;
+      animation: numberReveal 1s ease-out;
     }
 
-    .data-card.full {
-      grid-column: 1 / -1;
+    @keyframes numberReveal {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 1; transform: scale(1); }
     }
 
-    .data-card-label {
+    .result-hebrew {
+      font-size: 80px;
+      color: var(--white);
+      text-align: center;
+      margin: 8px 0;
+      animation: fadeUp 0.8s ease-out 0.3s both;
+    }
+
+    .result-name {
+      font-size: 26px;
+      font-weight: 300;
+      letter-spacing: 8px;
+      color: var(--gold);
+      text-transform: uppercase;
+      text-align: center;
+      animation: fadeUp 0.8s ease-out 0.5s both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-plane {
+      margin: 32px 0;
+      text-align: center;
+      animation: fadeUp 0.8s ease-out 0.7s both;
+    }
+
+    .plane-label {
       font-size: 10px;
-      letter-spacing: 3px;
-      color: rgba(232,228,208,0.35);
+      letter-spacing: 4px;
+      color: var(--dim);
       text-transform: uppercase;
       margin-bottom: 8px;
     }
 
-    .data-card-value {
-      font-size: 18px;
-      color: #C9A84C;
+    .plane-name {
+      font-size: 20px;
+      color: var(--gold);
       font-weight: 600;
     }
 
-    .data-card-sub {
-      font-size: 13px;
-      color: rgba(232,228,208,0.6);
+    /* Geometry cards */
+    .geo-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 460px;
+      margin: 24px 0;
+      animation: fadeUp 0.8s ease-out 0.9s both;
+    }
+
+    .geo-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,168,76,0.15);
+      border-radius: 14px;
+      padding: 18px 14px;
+      text-align: center;
+    }
+
+    .geo-card.full { grid-column: 1 / -1; }
+
+    .gc-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--dim);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .gc-value {
+      font-size: 20px;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .gc-sub {
+      font-size: 12px;
+      color: rgba(240,237,228,0.5);
       margin-top: 4px;
       line-height: 1.4;
     }
 
-    /* TRUTH BLOCK */
-    .truth-block {
-      background: rgba(201,168,76,0.06);
-      border: 1px solid rgba(201,168,76,0.25);
-      border-left: 3px solid #C9A84C;
+    /* Truth */
+    .truth {
+      background: rgba(201,168,76,0.05);
+      border-left: 3px solid var(--gold);
       border-radius: 0 12px 12px 0;
-      padding: 24px;
-      margin: 20px 0;
+      padding: 20px 20px;
+      margin: 16px 0;
+      max-width: 460px;
+      width: 100%;
+      animation: fadeUp 0.8s ease-out 1.1s both;
     }
 
     .truth-label {
-      font-size: 10px;
+      font-size: 9px;
       letter-spacing: 3px;
       color: rgba(201,168,76,0.6);
       text-transform: uppercase;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .truth-text {
-      font-size: 16px;
+      font-size: 15px;
       line-height: 1.7;
-      color: rgba(232,228,208,0.85);
+      color: rgba(240,237,228,0.85);
     }
 
-    /* PROOF BLOCK */
-    .proof-block {
-      background: rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 12px;
-      padding: 20px;
-      margin: 12px 0;
-      font-family: 'Courier New', monospace;
-      font-size: 13px;
-      color: rgba(232,228,208,0.6);
-      line-height: 1.8;
+    /* 22 wheel */
+    .wheel-wrap {
+      width: 100%;
+      max-width: 460px;
+      margin: 24px 0;
+      animation: fadeUp 0.8s ease-out 1.3s both;
     }
 
-    .proof-block .highlight {
-      color: #C9A84C;
-      font-weight: 700;
-    }
-
-    /* 22 WHEEL */
-    .wheel-section {
-      margin: 40px 0;
-    }
-
-    .section-title {
-      font-size: 11px;
-      letter-spacing: 4px;
-      color: rgba(232,228,208,0.35);
+    .wheel-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--dim);
       text-transform: uppercase;
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 14px;
     }
 
     .wheel-grid {
       display: grid;
       grid-template-columns: repeat(11, 1fr);
-      gap: 6px;
+      gap: 5px;
     }
 
-    .wheel-cell {
+    .wc {
       aspect-ratio: 1;
-      background: rgba(255,255,255,0.03);
+      background: rgba(255,255,255,0.02);
       border: 1px solid rgba(201,168,76,0.1);
       border-radius: 8px;
       display: flex;
@@ -313,457 +362,456 @@
       justify-content: center;
       cursor: pointer;
       transition: all 0.2s;
-      padding: 4px;
     }
 
-    .wheel-cell:hover {
-      background: rgba(201,168,76,0.1);
-      border-color: rgba(201,168,76,0.4);
-    }
+    .wc:hover { background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.4); }
+    .wc.active { background: rgba(201,168,76,0.2); border-color: var(--gold); box-shadow: 0 0 16px rgba(201,168,76,0.3); }
 
-    .wheel-cell.active {
-      background: rgba(201,168,76,0.2);
-      border-color: #C9A84C;
-      box-shadow: 0 0 20px rgba(201,168,76,0.3);
-    }
+    .wc-heb { font-size: 14px; color: rgba(240,237,228,0.8); }
+    .wc.active .wc-heb { color: var(--gold); }
+    .wc-n { font-size: 7px; color: rgba(240,237,228,0.3); margin-top: 1px; }
+    .wc.active .wc-n { color: rgba(201,168,76,0.7); }
 
-    .wheel-cell .heb {
-      font-size: 16px;
-      color: rgba(232,228,208,0.8);
-    }
-
-    .wheel-cell.active .heb {
-      color: #C9A84C;
-    }
-
-    .wheel-cell .num {
-      font-size: 8px;
-      color: rgba(232,228,208,0.3);
-      margin-top: 2px;
-    }
-
-    .wheel-cell.active .num {
-      color: rgba(201,168,76,0.7);
-    }
-
-    /* TOOLTIP */
-    #tooltip {
+    /* Tooltip */
+    #tt {
       display: none;
-      background: rgba(10,10,20,0.95);
+      background: rgba(5,5,15,0.97);
       border: 1px solid rgba(201,168,76,0.4);
       border-radius: 12px;
       padding: 16px;
-      margin-top: 12px;
+      margin-top: 10px;
       text-align: center;
+      max-width: 460px;
+      width: 100%;
     }
+    #tt .t-heb { font-size: 40px; color: var(--white); }
+    #tt .t-name { font-size: 16px; color: var(--gold); margin: 4px 0; letter-spacing: 2px; }
+    #tt .t-info { font-size: 12px; color: rgba(240,237,228,0.6); line-height: 1.6; }
 
-    #tooltip .t-letter { font-size: 36px; color: rgba(232,228,208,0.9); }
-    #tooltip .t-name { font-size: 16px; color: #C9A84C; margin: 4px 0; letter-spacing: 2px; }
-    #tooltip .t-info { font-size: 13px; color: rgba(232,228,208,0.6); line-height: 1.6; }
-
-    /* CALENDAR */
-    .calendar-block {
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(201,168,76,0.15);
-      border-radius: 12px;
-      padding: 24px;
-      margin: 20px 0;
-    }
-
-    .cal-row {
+    /* Foundation strip */
+    .found-strip {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 32px 0 16px;
+      max-width: 460px;
+      width: 100%;
+      animation: fadeUp 0.8s ease-out 1.5s both;
     }
 
-    .cal-row:last-child { border-bottom: none; }
-
-    .cal-key {
-      font-size: 12px;
-      color: rgba(232,228,208,0.4);
-      letter-spacing: 1px;
-    }
-
-    .cal-val {
-      font-size: 14px;
-      color: #C9A84C;
-      font-weight: 600;
-    }
-
-    /* FOUNDATION */
-    .foundation {
-      margin: 50px 0 0;
-      padding: 30px 0;
-      border-top: 1px solid rgba(201,168,76,0.1);
-    }
-
-    .foundation-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 16px;
-      margin-top: 20px;
-    }
-
-    .found-item {
+    .found-pill {
       text-align: center;
-      padding: 16px 8px;
       background: rgba(255,255,255,0.02);
       border: 1px solid rgba(201,168,76,0.1);
       border-radius: 10px;
+      padding: 10px 14px;
     }
 
-    .found-num {
-      font-size: 32px;
-      font-weight: 700;
-      color: #C9A84C;
-    }
+    .fp-n { font-size: 22px; font-weight: 700; color: var(--gold); }
+    .fp-l { font-size: 9px; color: var(--dim); letter-spacing: 1px; margin-top: 2px; }
 
-    .found-eq {
-      font-size: 11px;
-      color: rgba(232,228,208,0.4);
-      margin: 4px 0 2px;
+    .btn-again {
+      background: transparent;
+      border: 1px solid rgba(201,168,76,0.4);
+      border-radius: 12px;
+      color: var(--gold);
+      font-size: 13px;
+      letter-spacing: 2px;
+      padding: 14px 32px;
+      cursor: pointer;
+      margin-top: 24px;
+      transition: all 0.3s;
     }
+    .btn-again:hover { background: rgba(201,168,76,0.1); }
 
-    .found-name {
-      font-size: 12px;
-      color: rgba(232,228,208,0.6);
-      letter-spacing: 1px;
-    }
-
-    /* FOOTER */
-    footer {
+    /* footer */
+    .foot {
       text-align: center;
-      padding: 40px 20px;
-      border-top: 1px solid rgba(201,168,76,0.1);
-      margin-top: 60px;
+      padding: 20px;
+      font-size: 10px;
+      color: rgba(240,237,228,0.2);
+      letter-spacing: 2px;
     }
 
-    .footer-logo { font-size: 20px; color: #C9A84C; letter-spacing: 6px; margin-bottom: 8px; }
-    .footer-sub { font-size: 11px; color: rgba(232,228,208,0.3); letter-spacing: 2px; }
-
-    @media (max-width: 480px) {
-      .logo { font-size: 40px; }
-      .root-number { font-size: 72px; }
-      .letter-hebrew { font-size: 56px; }
-      .data-grid { grid-template-columns: 1fr; }
-      .foundation-grid { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 400px) {
+      .result-number { font-size: 88px; }
+      .result-hebrew { font-size: 60px; }
       .wheel-grid { grid-template-columns: repeat(8, 1fr); }
-      .geometry-strip { gap: 20px; }
+      .geo-cards { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-<div class="container">
+<!-- ANIMATED GEOMETRY BACKGROUND -->
+<canvas id="canvas-bg"></canvas>
 
-  <!-- HEADER -->
-  <header>
-    <div class="logo">NEYĒN</div>
-    <div class="tagline">The Game of Life</div>
-    <div class="one-line">Enter your date of birth.<br>The universe has been calculating your number since before you were born.</div>
-  </header>
+<!-- ══ SCREEN 1: SPHINX ══ -->
+<div class="screen" id="screen-sphinx">
 
-  <!-- VERIFIED GEOMETRY STRIP -->
-  <div class="geometry-strip">
-    <div class="geo-item">
-      <div class="geo-number">86</div>
-      <div class="geo-label">God · Nature</div>
+  <div class="sphinx-title">The Gate</div>
+
+  <!-- Sphinx SVG -->
+  <div class="sphinx-container">
+    <svg viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="sphinxGlow" cx="50%" cy="60%" r="50%">
+          <stop offset="0%" stop-color="#C9A84C" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#C9A84C" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#C9A84C" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#8B6914" stop-opacity="0.4"/>
+        </linearGradient>
+        <linearGradient id="goldLine" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#C9A84C" stop-opacity="0"/>
+          <stop offset="50%" stop-color="#C9A84C" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#C9A84C" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Glow -->
+      <ellipse cx="170" cy="180" rx="130" ry="40" fill="url(#sphinxGlow)"/>
+      <!-- Body -->
+      <path d="M60 180 L60 140 L90 120 L250 120 L280 140 L280 180 Z" fill="url(#bodyGrad)" stroke="#C9A84C" stroke-width="1" stroke-opacity="0.5"/>
+      <!-- Front paws -->
+      <rect x="70" y="165" width="40" height="20" rx="6" fill="#8B6914" stroke="#C9A84C" stroke-width="0.5" stroke-opacity="0.6"/>
+      <rect x="230" y="165" width="40" height="20" rx="6" fill="#8B6914" stroke="#C9A84C" stroke-width="0.5" stroke-opacity="0.6"/>
+      <!-- Neck -->
+      <rect x="148" y="90" width="44" height="35" rx="4" fill="#C9A84C" fill-opacity="0.5" stroke="#C9A84C" stroke-width="1"/>
+      <!-- Head -->
+      <ellipse cx="170" cy="72" rx="38" ry="34" fill="#C9A84C" fill-opacity="0.6" stroke="#C9A84C" stroke-width="1.5"/>
+      <!-- Headdress -->
+      <path d="M138 60 L132 20 L142 58" fill="#C9A84C" fill-opacity="0.8" stroke="#C9A84C" stroke-width="1"/>
+      <path d="M202 60 L208 20 L198 58" fill="#C9A84C" fill-opacity="0.8" stroke="#C9A84C" stroke-width="1"/>
+      <rect x="132" y="16" width="76" height="10" rx="3" fill="#C9A84C" fill-opacity="0.9"/>
+      <!-- Face -->
+      <ellipse cx="158" cy="68" rx="6" ry="5" fill="#05050f" stroke="#C9A84C" stroke-width="1"/>
+      <ellipse cx="182" cy="68" rx="6" ry="5" fill="#05050f" stroke="#C9A84C" stroke-width="1"/>
+      <ellipse cx="160" cy="68" rx="2" ry="2" fill="#C9A84C"/>
+      <ellipse cx="184" cy="68" rx="2" ry="2" fill="#C9A84C"/>
+      <path d="M158 82 Q170 90 182 82" stroke="#C9A84C" stroke-width="1.5" fill="none"/>
+      <!-- Nemes lines -->
+      <line x1="138" y1="55" x2="132" y2="80" stroke="#C9A84C" stroke-width="0.8" stroke-opacity="0.6"/>
+      <line x1="202" y1="55" x2="208" y2="80" stroke="#C9A84C" stroke-width="0.8" stroke-opacity="0.6"/>
+      <!-- Star of David on chest -->
+      <g transform="translate(170,148)" opacity="0.8">
+        <polygon points="0,-12 10.4,6 -10.4,6" fill="none" stroke="#C9A84C" stroke-width="1.2"/>
+        <polygon points="0,12 10.4,-6 -10.4,-6" fill="none" stroke="#C9A84C" stroke-width="1.2"/>
+      </g>
+      <!-- Ground line -->
+      <line x1="40" y1="185" x2="300" y2="185" stroke="url(#goldLine)" stroke-width="1"/>
+      <!-- Pyramids in background -->
+      <polygon points="20,183 50,130 80,183" fill="none" stroke="#C9A84C" stroke-width="0.8" stroke-opacity="0.3"/>
+      <polygon points="260,183 295,118 330,183" fill="none" stroke="#C9A84C" stroke-width="0.8" stroke-opacity="0.3"/>
+      <!-- Stars -->
+      <circle cx="30" cy="25" r="1.5" fill="#C9A84C" opacity="0.7"/>
+      <circle cx="80" cy="10" r="1" fill="#C9A84C" opacity="0.5"/>
+      <circle cx="260" cy="15" r="1.5" fill="#C9A84C" opacity="0.6"/>
+      <circle cx="310" cy="30" r="1" fill="#C9A84C" opacity="0.4"/>
+      <circle cx="170" cy="5" r="2" fill="#C9A84C" opacity="0.8"/>
+    </svg>
+  </div>
+
+  <div class="riddle-box">
+    <div class="riddle-text">
+      "What walks on four legs in the morning,<br>
+      two at noon,<br>
+      and three in the evening?"
     </div>
-    <div class="geo-item">
-      <div class="geo-number">73</div>
-      <div class="geo-label">Wisdom</div>
+    <div class="riddle-answer">4 + 2 + 3 = 9 · The number of man</div>
+  </div>
+
+  <div class="geo-row">
+    <div class="geo-pill"><span>86</span> God · Nature</div>
+    <div class="geo-pill"><span>73</span> Wisdom</div>
+    <div class="geo-pill"><span>13</span> One</div>
+    <div class="geo-pill"><span>22</span> Letters · Paths</div>
+  </div>
+
+  <button class="btn-primary" onclick="goToInput()">Enter the Gate</button>
+
+  <div class="foot">neyen.thespiralwithin.ai · Open · Free · Verifiable</div>
+</div>
+
+<!-- ══ SCREEN 2: INPUT ══ -->
+<div class="screen" id="screen-input">
+  <div class="logo-small">NEYĒN</div>
+  <div class="tagline-small">The Game of Life</div>
+
+  <!-- Pyramid SVG -->
+  <svg class="pyramid-svg" viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="pyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#C9A84C" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#8B6914" stop-opacity="0.4"/>
+      </linearGradient>
+    </defs>
+    <!-- Pyramid -->
+    <polygon points="80,8 155,108 5,108" fill="none" stroke="#C9A84C" stroke-width="1.5"/>
+    <line x1="80" y1="8" x2="80" y2="108" stroke="#C9A84C" stroke-width="0.8" stroke-opacity="0.4"/>
+    <line x1="80" y1="8" x2="30" y2="78" stroke="#C9A84C" stroke-width="0.8" stroke-opacity="0.3"/>
+    <line x1="80" y1="8" x2="130" y2="78" stroke="#C9A84C" stroke-width="0.8" stroke-opacity="0.3"/>
+    <!-- Eye -->
+    <ellipse cx="80" cy="42" rx="10" ry="7" fill="none" stroke="#C9A84C" stroke-width="1.2"/>
+    <circle cx="80" cy="42" r="3" fill="#C9A84C"/>
+    <!-- Glow rays -->
+    <line x1="80" y1="30" x2="80" y2="15" stroke="#C9A84C" stroke-width="0.8" stroke-opacity="0.5"/>
+    <line x1="91" y1="34" x2="100" y2="22" stroke="#C9A84C" stroke-width="0.8" stroke-opacity="0.4"/>
+    <line x1="69" y1="34" x2="60" y2="22" stroke="#C9A84C" stroke-width="0.8" stroke-opacity="0.4"/>
+    <!-- Base measure -->
+    <text x="80" y="118" fill="#C9A84C" font-size="8" text-anchor="middle" opacity="0.6" font-family="Arial">Joseph 110 · Jacob 147 · Moses 120</text>
+  </svg>
+
+  <div class="input-label">Your Date of Birth</div>
+  <input type="date" class="date-input" id="birthdate" max="2010-01-01">
+  <button class="btn-primary" onclick="calculate()" style="margin-top:8px;">Reveal My Number</button>
+
+  <div style="margin-top: 32px; text-align:center; font-size:12px; color:var(--dim); max-width:300px; line-height:1.7;">
+    The universe has been calculating this since before you were born.<br>
+    <span style="color:rgba(201,168,76,0.5);">Verified mathematics. Anyone can check.</span>
+  </div>
+</div>
+
+<!-- ══ SCREEN 3: RESULT ══ -->
+<div class="screen" id="screen-result" style="padding-top: 60px; padding-bottom: 60px;">
+
+  <div class="result-number" id="rNum"></div>
+  <div class="result-hebrew" id="rHeb"></div>
+  <div class="result-name" id="rName"></div>
+
+  <div class="result-plane">
+    <div class="plane-label">Your Plane of Being</div>
+    <div class="plane-name" id="rPlane"></div>
+  </div>
+
+  <div class="geo-cards">
+    <div class="geo-card">
+      <div class="gc-label">Geometric Value</div>
+      <div class="gc-value" id="rGeo"></div>
+      <div class="gc-sub" id="rGeoDesc"></div>
     </div>
-    <div class="geo-item">
-      <div class="geo-number">13</div>
-      <div class="geo-label">One</div>
+    <div class="geo-card">
+      <div class="gc-label">Generation</div>
+      <div class="gc-value" id="rGen"></div>
+      <div class="gc-sub" id="rGenName"></div>
     </div>
-    <div class="geo-item">
-      <div class="geo-number">26</div>
-      <div class="geo-label">Jehovah</div>
+    <div class="geo-card">
+      <div class="gc-label">Sefirah</div>
+      <div class="gc-value" id="rSef"></div>
+      <div class="gc-sub" id="rSefDesc"></div>
     </div>
-    <div class="geo-item">
-      <div class="geo-number">22</div>
-      <div class="geo-label">Letters · Paths</div>
+    <div class="geo-card">
+      <div class="gc-label">Element</div>
+      <div class="gc-value" id="rElem"></div>
+      <div class="gc-sub" id="rElemDesc"></div>
     </div>
-    <div class="geo-item">
-      <div class="geo-number">32</div>
-      <div class="geo-label">Ways of Wisdom</div>
+    <div class="geo-card full">
+      <div class="gc-label">Your Calculation</div>
+      <div class="gc-value" id="rCalc" style="font-size:13px; font-family:monospace;"></div>
     </div>
   </div>
 
-  <!-- INPUT -->
-  <div class="input-section">
-    <span class="input-label">Your Date of Birth</span>
-    <input type="date" class="date-input" id="birthdate">
-    <button class="calculate-btn" onclick="calculate()">Calculate My Number</button>
-  </div>
+  <div class="truth" id="rTruth"></div>
 
-  <!-- RESULT -->
-  <div id="result">
-
-    <div class="result-header">
-      <div class="root-number" id="rootNum"></div>
-      <div class="letter-hebrew" id="letterHeb"></div>
-      <div class="letter-name" id="letterName"></div>
-      <div class="letter-transliteration" id="letterTrans"></div>
-    </div>
-
-    <div class="data-grid">
-      <div class="data-card">
-        <div class="data-card-label">Geometric Value</div>
-        <div class="data-card-value" id="geoValue"></div>
-        <div class="data-card-sub" id="geoDesc"></div>
-      </div>
-      <div class="data-card">
-        <div class="data-card-label">Generation</div>
-        <div class="data-card-value" id="genNum"></div>
-        <div class="data-card-sub" id="genName"></div>
-      </div>
-      <div class="data-card">
-        <div class="data-card-label">Sefirah</div>
-        <div class="data-card-value" id="sefira"></div>
-        <div class="data-card-sub" id="sefiraDesc"></div>
-      </div>
-      <div class="data-card">
-        <div class="data-card-label">Element</div>
-        <div class="data-card-value" id="element"></div>
-        <div class="data-card-sub" id="elementDesc"></div>
-      </div>
-      <div class="data-card full">
-        <div class="data-card-label">Your Calculation</div>
-        <div class="data-card-value" id="calcShow" style="font-size:14px; font-family: monospace;"></div>
-      </div>
-    </div>
-
-    <div class="truth-block">
-      <div class="truth-label">Mathematical Truth</div>
-      <div class="truth-text" id="truthText"></div>
-    </div>
-
-    <div class="proof-block" id="proofBlock"></div>
-
-    <!-- 22 LETTER WHEEL -->
-    <div class="wheel-section">
-      <div class="section-title">The 22 Letters — Tap any to explore</div>
-      <div class="wheel-grid" id="wheelGrid"></div>
-      <div id="tooltip">
-        <div class="t-letter" id="tt-letter"></div>
-        <div class="t-name" id="tt-name"></div>
-        <div class="t-info" id="tt-info"></div>
-      </div>
-    </div>
-
-    <!-- CALENDAR -->
-    <div class="calendar-block">
-      <div class="section-title" style="text-align:left; margin-bottom:16px;">Today in the Universal Calendar</div>
-      <div class="cal-row">
-        <span class="cal-key">Day of Year</span>
-        <span class="cal-val" id="dayOfYear"></span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-key">Season</span>
-        <span class="cal-val" id="season"></span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-key">Week of Season</span>
-        <span class="cal-val" id="weekOfSeason"></span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-key">Today's Letter</span>
-        <span class="cal-val" id="todayLetter"></span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-key">Calendar Structure</span>
-        <span class="cal-val">364 days · 4 × 91 · 52 weeks</span>
-      </div>
-    </div>
-
-  </div><!-- end result -->
-
-  <!-- FOUNDATION — always visible -->
-  <div class="foundation">
-    <div class="section-title">Verified Foundations — Anyone Can Check</div>
-    <div class="foundation-grid">
-      <div class="found-item">
-        <div class="found-num">55</div>
-        <div class="found-eq">1+2+3...+10</div>
-        <div class="found-name">Everything</div>
-      </div>
-      <div class="found-item">
-        <div class="found-num">111</div>
-        <div class="found-eq">Alef = A+L+P</div>
-        <div class="found-name">One · Thousand</div>
-      </div>
-      <div class="found-item">
-        <div class="found-num">385</div>
-        <div class="found-eq">Σ(1²+2²...+10²)</div>
-        <div class="found-name">Shekhinah</div>
-      </div>
-      <div class="found-item">
-        <div class="found-num">364</div>
-        <div class="found-eq">4 × 91</div>
-        <div class="found-name">Year · Jacob+Jacob</div>
-      </div>
-      <div class="found-item">
-        <div class="found-num">π</div>
-        <div class="found-eq">22 ÷ 7</div>
-        <div class="found-name">142857 repeating</div>
-      </div>
-      <div class="found-item">
-        <div class="found-num">484</div>
-        <div class="found-eq">22 × 22</div>
-        <div class="found-name">All Paths</div>
-      </div>
+  <!-- 22 Wheel -->
+  <div class="wheel-wrap">
+    <div class="wheel-label">The 22 Paths — Tap to Explore</div>
+    <div class="wheel-grid" id="wheelGrid"></div>
+    <div id="tt">
+      <div class="t-heb" id="tt-heb"></div>
+      <div class="t-name" id="tt-name"></div>
+      <div class="t-info" id="tt-info"></div>
     </div>
   </div>
 
-  <footer>
-    <div class="footer-logo">NEYĒN</div>
-    <div class="footer-sub">The Spiral Within SLU · EU Trademark 019288972 · Open · Free · Verifiable</div>
-  </footer>
+  <!-- Foundation -->
+  <div class="found-strip">
+    <div class="found-pill"><div class="fp-n">55</div><div class="fp-l">Everything</div></div>
+    <div class="found-pill"><div class="fp-n">111</div><div class="fp-l">Alef=One=Thousand</div></div>
+    <div class="found-pill"><div class="fp-n">385</div><div class="fp-l">Shekhinah</div></div>
+    <div class="found-pill"><div class="fp-n">364</div><div class="fp-l">Year=Jacob×2</div></div>
+    <div class="found-pill"><div class="fp-n">π=22÷7</div><div class="fp-l">142857...</div></div>
+  </div>
 
+  <button class="btn-again" onclick="goBack()">← Another Date</button>
+
+  <div class="foot" style="margin-top:24px;">NEYĒN · The Spiral Within SLU · EU TM 019288972 · Open · Free</div>
 </div>
 
 <script>
-const LETTERS = [
-  { n:1,  heb:"א", name:"Alef",  trans:"A",  geo:111,  geoDesc:"Right triangle 100/50 — proven",       gen:1,  genName:"Adam",     sefira:"Keter",   sefDesc:"Crown · The Source",     elem:"Air",   elemDesc:"Mother letter · All begins here",  truth:"1 = 10 = 100 = 1000. Alef leads every decimal. Everything returns to one place. 1+2+3+4+5+6+7+8+9+10 = 55 = Everything.", proof:"Alef = א + ל + פ = 1 + 30 + 80 = 111\nRight triangle: sides 100 and 50 → remainder = 111\nAlef = One = Thousand" },
-  { n:2,  heb:"ב", name:"Bet",   trans:"B",  geo:222,  geoDesc:"Second column sum — Blessing",          gen:2,  genName:"Seth",     sefira:"Jokhmah", sefDesc:"Wisdom · 73",            elem:"Saturn",elemDesc:"Double letter · Two forces",      truth:"222 = Blessing. The Bible opens with Bet — Bereshit. Blessing + Blessing = Image of God. 7 Blessings = 372 + 628 = 1000.", proof:"Bet = ב = 2\n222 = Blessing\n2 × 111 = 222\nGenesis begins: B-reshit" },
-  { n:3,  heb:"ג", name:"Gimel", trans:"G",  geo:333,  geoDesc:"Snow under the Throne — Octahedron",   gen:3,  genName:"Enosh",    sefira:"Binah",   sefDesc:"Intelligence · 67",      elem:"Jupiter",elemDesc:"Double letter · Two paths",      truth:"333 = Snow. Inside the 3D Star of David (double tetrahedron) the hidden octahedron is 333 high. Water. The Philosopher's Stone.", proof:"3D Star of David → inner octahedron height = 333\nSphere diameter 1000 → inner sphere = 333\nGimel = 3 = Snow = Water" },
-  { n:4,  heb:"ד", name:"Dalet", trans:"D",  geo:444,  geoDesc:"Image — Demut — 13 × 444 = 5772",      gen:4,  genName:"Kenan",    sefira:"Hesed",   sefDesc:"Kindness · 72",          elem:"Mars",  elemDesc:"Double letter · Gate",             truth:"444 = Image (Demut). 13 × 444 = 5772 years = the year 2012 in Gregorian. One × Image = the time of completion. Dalet = Gate.", proof:"13 × 444 = 5772\nOne (13) × Image (444) = Sabbath Night\n5772 ÷ 52 = 111" },
-  { n:5,  heb:"ה", name:"He",    trans:"H",  geo:5,    geoDesc:"The breath — the name begins",          gen:5,  genName:"Mahalalel",sefira:"Gevurah", sefDesc:"Strength · 216",         elem:"Aries", elemDesc:"Simple letter · Zodiac",           truth:"He is the 5th letter and the first letter of HaShem (the Name). 216 = Gevurah = 6³ = 6×6×6. The strength that precedes kindness.", proof:"Gevurah = 216 = 6³\nHe = 5 = breath\nThe Name: Yod-He-Vav-He = 10+5+6+5 = 26" },
-  { n:6,  heb:"ו", name:"Vav",   trans:"V",  geo:6,    geoDesc:"The hook — connector of heaven/earth",  gen:6,  genName:"Jared",    sefira:"Tiferet", sefDesc:"Beauty · Centre",        elem:"Taurus",elemDesc:"Simple letter · Connection",       truth:"Vav = 6 = the central Sefirah connecting above and below. The 6 directions of space. 6 days of creation. Vav connects.", proof:"Vav = ו = 6\n6 directions of space: ±X ±Y ±Z\nTiferet = center of the Tree of Life" },
-  { n:7,  heb:"ז", name:"Zayin", trans:"Z",  geo:7,    geoDesc:"The sword — sanctity of 7",             gen:7,  genName:"Enoch",    sefira:"Netzah",  sefDesc:"Eternity · Victory",     elem:"Gemini",elemDesc:"Simple letter · The week",          truth:"Generation 7 = Enoch. Lived 365 years = days of the sun. Enoch teaches time. 7 cervical vertebrae. 7 days. 7 blessings = 1000.", proof:"Enoch = Generation 7 = 365 years (solar year)\n7 × 13 = 91 days per season\n4 × 91 = 364 = year" },
-  { n:8,  heb:"ח", name:"Het",   trans:"H",  geo:8,    geoDesc:"The fence — life",                      gen:8,  genName:"Methuselah",sefira:"Hod",    sefDesc:"Splendour · Resonance",  elem:"Cancer",elemDesc:"Simple letter · Threshold",         truth:"Het = Life in Hebrew (Hai = 18 = Het+Yod). Methuselah lived 969 years — the longest. 8 = infinity turned upright. The fence that protects.", proof:"Hai (life) = ח + י = 8 + 10 = 18\nMethuselah = generation 8 = 969 years\n8 × 111 = 888" },
-  { n:9,  heb:"ט", name:"Tet",   trans:"T",  geo:81,   geoDesc:"9×9 = Chair/Throne — double tetrahedron",gen:9, genName:"Lamech",   sefira:"Yesod",   sefDesc:"Foundation · 80",        elem:"Leo",   elemDesc:"Simple letter · The spiral",        truth:"Tet = 9. Chair = 81 = 9×9. The throne is found in the 3D Star of David as the side length of the double tetrahedron. Foundation.", proof:"Double tetrahedron side = 81 = Chair\n9 × 9 = 81\nThe Book of Creation: 'before His throne they bow'" },
-];
+// ── ANIMATED GEOMETRY BACKGROUND ──
+const canvas = document.getElementById('canvas-bg');
+const ctx = canvas.getContext('2d');
+let W, H, t = 0;
 
-// Extended to 22
-const LETTERS_FULL = [
-  ...LETTERS,
-  { n:10, heb:"י", name:"Yod",   trans:"Y",  geo:10,   geoDesc:"Hand · The smallest letter",            gen:10, genName:"Noah",     sefira:"Malkhut", sefDesc:"Kingdom · 496",          elem:"Virgo", elemDesc:"Simple letter · The seed",         truth:"Yod = 10 = the hand that creates. Noah = generation 10. Born year 1056. After the flood, a new world. The smallest letter contains everything.", proof:"Yod = י = 10\nNoah born: 1056 (1+0+5+6=12=3)\nKeter=1 to Malkhut=10 — the full tree" },
-  { n:11, heb:"כ", name:"Kaf",   trans:"K",  geo:100,  geoDesc:"Palm — the decimal anchor",             gen:11, genName:"Shem",     sefira:"Keter",   sefDesc:"The return begins",      elem:"Sun",   elemDesc:"Double letter · Two palms",        truth:"Kaf = 11. 100 = the decimal unit. 7 circles of diameter 100 generate the Tree of Life. God=86, Wisdom=73, One=13 — all from 100.", proof:"7 circles diameter 100 → Tree of Life\nGod (Elohim) = 86 = triangle side in circle 100\nKaf = 20 in standard; 11th letter" },
-  { n:12, heb:"ל", name:"Lamed", trans:"L",  geo:12,   geoDesc:"The ox goad — teaching upward",         gen:12, genName:"Arpachshad",sefira:"Jokhmah",sefDesc:"Learning rises",          elem:"Libra", elemDesc:"Simple letter · Ascent",           truth:"Lamed = the only letter that rises above the line. 12 thoracic vertebrae. 12 months. 12 simple letters = zodiac. Learning that rises.", proof:"12 simple letters = 12 signs of zodiac\n12 thoracic vertebrae = emotional zone\nLamed = tallest Hebrew letter" },
-  { n:13, heb:"מ", name:"Mem",   trans:"M",  geo:40,   geoDesc:"Water — Moses in the water",            gen:13, genName:"Shelah",   sefira:"Binah",   sefDesc:"The deep waters",        elem:"Water", elemDesc:"Mother letter · The sea",          truth:"Mem = Water = the middle of the alphabet. Moses = Mem+Shin+He = drawn from water. The middle path. 40 days on the mountain.", proof:"Mem = מ = Water (Mother letter)\nMoses: מ+ש+ה = 40+300+5 = 345\n40 days × 40 nights = the measure of transformation" },
-  { n:14, heb:"נ", name:"Nun",   trans:"N",  geo:50,   geoDesc:"Fish — the hidden faithful",            gen:14, genName:"Eber",     sefira:"Hesed",   sefDesc:"The faithful depth",     elem:"Scorpio",elemDesc:"Simple letter · The submerged",    truth:"Nun is the letter that does not appear in Psalm 145 — it represents falling. But the next verse immediately raises up. Fall and rise.", proof:"Nun = נ = 50\nEarth altar: 'earth = 50 = radius'\nNun missing from Psalm 145 — intentional" },
-  { n:15, heb:"ס", name:"Samek", trans:"S",  geo:60,   geoDesc:"Support — the closed circle",           gen:15, genName:"Peleg",    sefira:"Gevurah", sefDesc:"The support holds",      elem:"Sagittarius",elemDesc:"Simple · The circle closes",    truth:"Samek = 60 = support. A closed circular letter — no opening, complete in itself. The circle that supports. The earth was divided in Peleg's time.", proof:"Samek = ס = closed circle\n60 = support\nIn Peleg's time: the earth was divided (generation 15)" },
-  { n:16, heb:"ע", name:"Ayin",  trans:"A",  geo:70,   geoDesc:"Eye — 70 languages of the world",       gen:16, genName:"Reu",      sefira:"Tiferet", sefDesc:"The eye sees all",       elem:"Capricorn",elemDesc:"Simple letter · Vision",           truth:"Ayin = Eye = 70. Seventy languages emerged from Babel. The eye that sees beyond language. 70 = the secret = wine = Solomon's vineyard.", proof:"Ayin = ע = 70 = Eye\n70 languages from Babel\nSecret = 70 = Wine" },
-  { n:17, heb:"פ", name:"Pe",    trans:"P",  geo:80,   geoDesc:"Mouth — the word creates",              gen:17, genName:"Serug",    sefira:"Netzah",  sefDesc:"The mouth speaks",       elem:"Aquarius",elemDesc:"Double letter · Two lips",          truth:"Pe = Mouth = 80. 'Who put a mouth on a person.' The Passover sacrifice: Pe-Sach = the mouth that speaks. Creation by word.", proof:"Pe = פ = 80 = Mouth\nPe-Sach = Passover = the mouth speaks\nYesod = 80 = Foundation = Pe" },
-  { n:18, heb:"צ", name:"Tsadi", trans:"Ts", geo:90,   geoDesc:"The righteous one — the hook",          gen:18, genName:"Nahor",    sefira:"Hod",     sefDesc:"The righteous path",     elem:"Pisces",elemDesc:"Simple letter · The just",         truth:"Tsadi = 90 = the righteous. The Tsadik sustains the world. 90 degrees = the right angle = the corner of reality. Foundation of the just.", proof:"Tsadi = צ = 90\n90° = right angle = corner of all structure\nThe righteous = Yesod of the world" },
-  { n:19, heb:"ק", name:"Kof",   trans:"K",  geo:100,  geoDesc:"The back of the head — the next cycle", gen:19, genName:"Terah",    sefira:"Yesod",   sefDesc:"The cycle turns",        elem:"Sun",   elemDesc:"Simple letter · The returning",    truth:"Kof = 100. The only letter below the line — it descends to ascend. The cycle that begins again. Before Abraham (generation 20) comes Terah.", proof:"Kof = ק = 100 (below the line)\nTerah = father of Abraham\n19th letter before the 3 Patriarchs" },
-  { n:20, heb:"ר", name:"Resh",  trans:"R",  geo:200,  geoDesc:"Head — Abraham — The Mountain (210)",   gen:20, genName:"Abraham",  sefira:"Jokhmah", sefDesc:"Wisdom begins here",     elem:"Mercury",elemDesc:"Double letter · The head turns",    truth:"Resh = 200 = Head. Abraham = generation 20 = Kindness (72). 'The Mountain' = 210 appears in Abraham and again only in Enoch (generation 7). The promise.", proof:"Abraham = generation 20 = letter Resh\nThe Mountain = 210\nAbraham + Abraham = 248+248 = 496 = Malkhut" },
-  { n:21, heb:"ש", name:"Shin",  trans:"Sh", geo:300,  geoDesc:"Fire — Spirit of God — 3 flames",       gen:21, genName:"Isaac",    sefira:"Binah",   sefDesc:"Fire of understanding",  elem:"Fire",  elemDesc:"Mother letter · The flame",        truth:"Shin = Fire = 300. Spirit of God = 214+86 = 300. True = Shin×Shin = 21×21 = 441. Three flames: right, left, centre. Isaac = generation 21 = Strength (216).", proof:"Shin = ש = 300 = Fire (Mother letter)\nSpirit of God = 214+86 = 300\nTruth = Shin × Shin = 441" },
-  { n:22, heb:"ת", name:"Tav",   trans:"T",  geo:400,  geoDesc:"Mark — Jacob — Truth — completion",     gen:22, genName:"Jacob",    sefira:"Malkhut", sefDesc:"Kingdom · Earth",        elem:"Moon",  elemDesc:"Double letter · The seal",         truth:"Tav = Mark = 400. Jacob = generation 22 = last letter = Truth (441) + Jehovah (26). Jacob+Jacob = 364 = days of the year. The seal of creation.", proof:"Jacob = generation 22 = letter Tav\nJacob+Jacob = 364 = days of the year\nTruth = 441 = Tav×Tav (22×22 in position)" },
-];
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
 
-function digitalRoot(n) {
-  while (n > 9) {
-    n = String(n).split('').reduce((a,b) => a+parseInt(b), 0);
+function drawGeo() {
+  ctx.clearRect(0, 0, W, H);
+  t += 0.003;
+
+  const cx = W/2, cy = H/2;
+  const r = Math.min(W, H) * 0.38;
+
+  // Rotating Star of David
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(t * 0.3);
+
+  for (let i = 0; i < 2; i++) {
+    ctx.beginPath();
+    for (let j = 0; j < 3; j++) {
+      const angle = (j * 120 + i * 60) * Math.PI / 180;
+      const x = r * Math.cos(angle - Math.PI/2);
+      const y = r * Math.sin(angle - Math.PI/2);
+      j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = `rgba(201,168,76,${0.08 + Math.sin(t) * 0.03})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
   }
+
+  // Inner circles (7 circles geometry)
+  for (let i = 0; i < 7; i++) {
+    const angle = i === 0 ? 0 : (i - 1) * 60 * Math.PI / 180;
+    const ox = i === 0 ? 0 : r * 0.5 * Math.cos(angle);
+    const oy = i === 0 ? 0 : r * 0.5 * Math.sin(angle);
+    ctx.beginPath();
+    ctx.arc(ox, oy, r * 0.5, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(201,168,76,${0.04 + Math.sin(t + i) * 0.02})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+
+  // Floating particles (stars)
+  for (let i = 0; i < 60; i++) {
+    const x = ((i * 137.5 + t * 8) % W);
+    const y = ((i * 97.3 + Math.sin(t + i) * 20) % H);
+    const size = 0.5 + (i % 3) * 0.5;
+    const alpha = 0.2 + Math.sin(t * 2 + i) * 0.15;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(201,168,76,${alpha})`;
+    ctx.fill();
+  }
+
+  requestAnimationFrame(drawGeo);
+}
+drawGeo();
+
+// ── LETTER DATA ──
+const L = [
+  {n:1, heb:"א", name:"Alef", geo:111, geoD:"Triangle 100/50", gen:1, genN:"Adam", sef:"Keter", sefD:"The Crown", elem:"Air", elemD:"Mother letter", plane:"The Source", truth:"1 = 10 = 100 = 1000. Alef leads every decimal. Everything returns to one place. 1+2+3...+10 = 55 = Everything in Hebrew."},
+  {n:2, heb:"ב", name:"Bet", geo:222, geoD:"Second column — Blessing", gen:2, genN:"Seth", sef:"Jokhmah", sefD:"Wisdom · 73", elem:"Saturn", elemD:"Double letter", plane:"The Builder", truth:"222 = Blessing. The Bible opens with Bet — Bereshit. 7 Blessings = 372 + 628 = 1000."},
+  {n:3, heb:"ג", name:"Gimel", geo:333, geoD:"Snow — inner octahedron", gen:3, genN:"Enosh", sef:"Binah", sefD:"Intelligence · 67", elem:"Jupiter", elemD:"Double letter", plane:"The Wave", truth:"333 = Snow. Inside the 3D Star of David the hidden octahedron reaches height 333. Water. The Philosopher's Stone."},
+  {n:4, heb:"ד", name:"Dalet", geo:444, geoD:"Image — 13×444=5772", gen:4, genN:"Kenan", sef:"Hesed", sefD:"Kindness · 72", elem:"Mars", elemD:"Double letter — Gate", plane:"The Gate", truth:"444 = Image (Demut). 13 × 444 = 5772 years. One × Image = completion. You were designed to open what was closed."},
+  {n:5, heb:"ה", name:"He", geo:5, geoD:"The breath — the Name begins", gen:5, genN:"Mahalalel", sef:"Gevurah", sefD:"Strength · 216", elem:"Aries", elemD:"Simple letter", plane:"The Breath", truth:"He = the first letter of HaShem. 216 = Gevurah = 6³. The Name: Yod-He-Vav-He = 10+5+6+5 = 26 = Jehovah."},
+  {n:6, heb:"ו", name:"Vav", geo:6, geoD:"The hook — heaven/earth", gen:6, genN:"Jared", sef:"Tiferet", sefD:"Beauty · Centre", elem:"Taurus", elemD:"Simple — Connection", plane:"The Bridge", truth:"Vav = 6 = the central Sefirah. 6 directions of space. 6 days of creation. Vav connects above and below."},
+  {n:7, heb:"ז", name:"Zayin", geo:7, geoD:"Sanctity of 7 — Enoch", gen:7, genN:"Enoch", sef:"Netzah", sefD:"Eternity", elem:"Gemini", elemD:"Simple — The week", plane:"The Calendar", truth:"Generation 7 = Enoch. Lived 365 years = days of the sun. Enoch teaches time. 7 × 13 = 91 days per season. 4 × 91 = 364 = the year."},
+  {n:8, heb:"ח", name:"Het", geo:8, geoD:"Life — Hai = 18", gen:8, genN:"Methuselah", sef:"Hod", sefD:"Splendour", elem:"Cancer", elemD:"Simple — Threshold", plane:"The Living", truth:"Het = Life (Hai = 8+10 = 18). Methuselah lived 969 years — the longest. 8 = infinity upright."},
+  {n:9, heb:"ט", name:"Tet", geo:81, geoD:"9×9 = Throne/Chair", gen:9, genN:"Lamech", sef:"Yesod", sefD:"Foundation · 80", elem:"Leo", elemD:"Simple — The spiral", plane:"The Foundation", truth:"Tet = 9. Chair = 81 = 9×9 = side of double tetrahedron. The throne is a geometric fact. Foundation of all."},
+  {n:10, heb:"י", name:"Yod", geo:10, geoD:"Hand — smallest letter", gen:10, genN:"Noah", sef:"Malkhut", sefD:"Kingdom · 496", elem:"Virgo", elemD:"Simple — The seed", plane:"The New World", truth:"Yod = 10 = the hand. Noah = generation 10. After the flood, a new world. The smallest letter contains everything."},
+  {n:11, heb:"כ", name:"Kaf", geo:100, geoD:"Palm — decimal anchor", gen:11, genN:"Shem", sef:"Keter", sefD:"The return", elem:"Sun", elemD:"Double — Two palms", plane:"The Measure", truth:"Kaf = 100. 7 circles of diameter 100 generate the Tree of Life. God=86, Wisdom=73, One=13 — all from 100."},
+  {n:12, heb:"ל", name:"Lamed", geo:12, geoD:"Ascent — tallest letter", gen:12, genN:"Arpachshad", sef:"Jokhmah", sefD:"Learning rises", elem:"Libra", elemD:"Simple — Ascent", plane:"The Teacher", truth:"Lamed = the only letter that rises above the line. 12 thoracic vertebrae. 12 months. 12 tribes."},
+  {n:13, heb:"מ", name:"Mem", geo:40, geoD:"Water — Moses", gen:13, genN:"Shelah", sef:"Binah", sefD:"Deep waters", elem:"Water", elemD:"Mother — The sea", plane:"The Middle", truth:"Mem = Water = middle of the alphabet. Moses = 345. 40 days on the mountain. The middle path."},
+  {n:14, heb:"נ", name:"Nun", geo:50, geoD:"Fish — faithful depth", gen:14, genN:"Eber", sef:"Hesed", sefD:"Faithful depth", elem:"Scorpio", elemD:"Simple — Submerged", plane:"The Fall & Rise", truth:"Nun is missing from Psalm 145 — it represents falling. But the next verse immediately raises up. Fall and rise."},
+  {n:15, heb:"ס", name:"Samek", geo:60, geoD:"Closed circle — support", gen:15, genN:"Peleg", sef:"Gevurah", sefD:"Support holds", elem:"Sagittarius", elemD:"Simple — Circle", plane:"The Support", truth:"Samek = 60. A closed circular letter — complete in itself. The earth was divided in Peleg's time."},
+  {n:16, heb:"ע", name:"Ayin", geo:70, geoD:"Eye — 70 languages", gen:16, genN:"Reu", sef:"Tiferet", sefD:"Eye sees all", elem:"Capricorn", elemD:"Simple — Vision", plane:"The Seer", truth:"Ayin = Eye = 70. Seventy languages from Babel. 70 = Secret = Wine = Solomon's vineyard."},
+  {n:17, heb:"פ", name:"Pe", geo:80, geoD:"Mouth — word creates", gen:17, genN:"Serug", sef:"Netzah", sefD:"The mouth speaks", elem:"Aquarius", elemD:"Double — Two lips", plane:"The Voice", truth:"Pe = Mouth = 80. Pe-Sach = Passover = the mouth that speaks. In the beginning was the Word."},
+  {n:18, heb:"צ", name:"Tsadi", geo:90, geoD:"Righteous — 90°", gen:18, genN:"Nahor", sef:"Hod", sefD:"The righteous", elem:"Pisces", elemD:"Simple — The just", plane:"The Just", truth:"Tsadi = 90 = the righteous. 90 degrees = the right angle = the corner of all structure."},
+  {n:19, heb:"ק", name:"Kof", geo:100, geoD:"Below the line — returns", gen:19, genN:"Terah", sef:"Yesod", sefD:"The cycle turns", elem:"Sun", elemD:"Simple — Returning", plane:"The Return", truth:"Kof = the only letter below the line — descends to ascend. Before Abraham comes Terah."},
+  {n:20, heb:"ר", name:"Resh", geo:200, geoD:"Head — The Mountain 210", gen:20, genN:"Abraham", sef:"Jokhmah", sefD:"Wisdom here", elem:"Mercury", elemD:"Double — Head", plane:"The Promise", truth:"Resh = 200 = Head. Abraham = generation 20 = Kindness (72). The Mountain = 210. The promise begins."},
+  {n:21, heb:"ש", name:"Shin", geo:300, geoD:"Fire — Spirit of God", gen:21, genN:"Isaac", sef:"Binah", sefD:"Fire of understanding", elem:"Fire", elemD:"Mother — The flame", plane:"The Fire", truth:"Shin = Fire = 300. Spirit of God = 214+86 = 300. Truth = Shin×Shin = 441. Three flames."},
+  {n:22, heb:"ת", name:"Tav", geo:400, geoD:"Mark — Truth — Jacob", gen:22, genN:"Jacob", sef:"Malkhut", sefD:"Kingdom · Earth", elem:"Moon", elemD:"Double — The seal", plane:"The Seal", truth:"Tav = 400 = Mark. Jacob = generation 22 = Truth (441). Jacob+Jacob = 364 = days of the year. The seal of creation."},
+];
+
+function dr(n) {
+  while(n > 9) n = String(n).split('').reduce((a,b)=>a+parseInt(b),0);
   return n;
 }
 
-function getLetterIndex(root) {
-  return root - 1; // 1→index 0, 9→index 8
+function goToInput() {
+  document.getElementById('screen-sphinx').style.display = 'none';
+  document.getElementById('screen-input').style.display = 'flex';
+}
+
+function goBack() {
+  document.getElementById('screen-result').style.display = 'none';
+  document.getElementById('screen-input').style.display = 'flex';
 }
 
 function calculate() {
-  const val = document.getElementById('birthdate').value;
-  if (!val) { alert('Please enter your date of birth'); return; }
+  const v = document.getElementById('birthdate').value;
+  if (!v) { alert('Enter your date of birth'); return; }
+  const [y,m,d] = v.split('-').map(Number);
+  const yD = String(y).split('').reduce((a,b)=>a+parseInt(b),0);
+  const raw = d + m + yD;
+  const root = dr(raw);
+  const l = L[root - 1];
 
-  const [y, m, d] = val.split('-').map(Number);
-  const yDigits = String(y).split('').reduce((a,b)=>a+parseInt(b),0);
-  const rawSum = d + m + yDigits;
-  const root = digitalRoot(rawSum);
-  const letter = LETTERS_FULL[getLetterIndex(root)];
+  document.getElementById('rNum').textContent = root;
+  document.getElementById('rHeb').textContent = l.heb;
+  document.getElementById('rName').textContent = l.name;
+  document.getElementById('rPlane').textContent = l.plane;
+  document.getElementById('rGeo').textContent = l.geo;
+  document.getElementById('rGeoDesc').textContent = l.geoD;
+  document.getElementById('rGen').textContent = 'Gen ' + l.gen;
+  document.getElementById('rGenName').textContent = l.genN;
+  document.getElementById('rSef').textContent = l.sef;
+  document.getElementById('rSefDesc').textContent = l.sefD;
+  document.getElementById('rElem').textContent = l.elem;
+  document.getElementById('rElemDesc').textContent = l.elemD;
+  document.getElementById('rCalc').textContent = `${d} + ${m} + ${y}(→${yD}) = ${raw} → ${root}`;
+  document.getElementById('rTruth').innerHTML = `<div class="truth-label">Mathematical Truth</div><div class="truth-text">${l.truth}</div>`;
 
-  // Show result
-  document.getElementById('result').style.display = 'block';
-  document.getElementById('rootNum').textContent = root;
-  document.getElementById('letterHeb').textContent = letter.heb;
-  document.getElementById('letterName').textContent = letter.name;
-  document.getElementById('letterTrans').textContent = letter.trans + ' · Position ' + letter.n + ' of 22';
-
-  document.getElementById('geoValue').textContent = letter.geo;
-  document.getElementById('geoDesc').textContent = letter.geoDesc;
-  document.getElementById('genNum').textContent = 'Generation ' + letter.gen;
-  document.getElementById('genName').textContent = letter.genName;
-  document.getElementById('sefira').textContent = letter.sefira;
-  document.getElementById('sefiraDesc').textContent = letter.sefDesc;
-  document.getElementById('element').textContent = letter.elem;
-  document.getElementById('elementDesc').textContent = letter.elemDesc;
-
-  // Calculation display
-  document.getElementById('calcShow').textContent =
-    `${d} + ${m} + (${y}→${yDigits}) = ${rawSum} → root = ${root}`;
-
-  document.getElementById('truthText').textContent = letter.truth;
-  document.getElementById('proofBlock').innerHTML =
-    letter.proof.split('\n').map(l => `<span class="highlight">${l.split('=')[0]}</span>${l.includes('=') ? '= '+l.split('=').slice(1).join('=') : ''}`).join('<br>');
-
-  // Build wheel
   buildWheel(root);
 
-  // Calendar
-  buildCalendar();
-
-  // Scroll
-  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('screen-input').style.display = 'none';
+  document.getElementById('screen-result').style.display = 'flex';
+  window.scrollTo(0,0);
 }
 
-function buildWheel(activeRoot) {
-  const grid = document.getElementById('wheelGrid');
-  grid.innerHTML = '';
-  LETTERS_FULL.forEach(l => {
-    const cell = document.createElement('div');
-    cell.className = 'wheel-cell' + (l.n === activeRoot ? ' active' : '');
-    cell.innerHTML = `<span class="heb">${l.heb}</span><span class="num">${l.n}</span>`;
-    cell.onclick = () => showTooltip(l);
-    grid.appendChild(cell);
+function buildWheel(active) {
+  const g = document.getElementById('wheelGrid');
+  g.innerHTML = '';
+  L.forEach(l => {
+    const c = document.createElement('div');
+    c.className = 'wc' + (l.n === active ? ' active' : '');
+    c.innerHTML = `<span class="wc-heb">${l.heb}</span><span class="wc-n">${l.n}</span>`;
+    c.onclick = () => showTT(l);
+    g.appendChild(c);
   });
 }
 
-function showTooltip(l) {
-  const tt = document.getElementById('tooltip');
+function showTT(l) {
+  const tt = document.getElementById('tt');
   tt.style.display = 'block';
-  document.getElementById('tt-letter').textContent = l.heb;
-  document.getElementById('tt-name').textContent = l.name + ' · ' + l.n + ' · ' + l.geo;
-  document.getElementById('tt-info').innerHTML =
-    `<strong>Gen ${l.gen} — ${l.genName}</strong><br>${l.sefira} · ${l.elem}<br><em>${l.truth.substring(0,120)}...</em>`;
+  document.getElementById('tt-heb').textContent = l.heb;
+  document.getElementById('tt-name').textContent = `${l.name} · ${l.n} · ${l.geo}`;
+  document.getElementById('tt-info').innerHTML = `<strong>Gen ${l.gen} — ${l.genN}</strong><br>${l.sef} · ${l.plane}<br><em>${l.truth.substring(0,100)}...</em>`;
 }
 
-function buildCalendar() {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 2, 20); // Spring equinox approx
-  let dayOfYear = Math.floor((now - start) / 86400000);
-  if (dayOfYear < 0) dayOfYear += 364;
-  dayOfYear = dayOfYear % 364;
-
-  const seasons = ['Spring (Nisan–Sivan)', 'Summer (Tammuz–Elul)', 'Autumn (Tishrei–Kislev)', 'Winter (Tevet–Adar)'];
-  const seasonIdx = Math.floor(dayOfYear / 91);
-  const dayInSeason = dayOfYear % 91;
-  const weekOfSeason = Math.floor(dayInSeason / 7) + 1;
-  const todayLetterIdx = dayOfYear % 22;
-  const todayLetter = LETTERS_FULL[todayLetterIdx];
-
-  document.getElementById('dayOfYear').textContent = (dayOfYear + 1) + ' of 364';
-  document.getElementById('season').textContent = seasons[Math.min(seasonIdx, 3)];
-  document.getElementById('weekOfSeason').textContent = 'Week ' + weekOfSeason + ' of 13';
-  document.getElementById('todayLetter').textContent = todayLetter.heb + ' ' + todayLetter.name + ' (' + todayLetter.n + ')';
-}
-
-// Init wheel without active
+// init wheel on load
 window.onload = () => {
-  const grid = document.getElementById('wheelGrid');
-  LETTERS_FULL.forEach(l => {
-    const cell = document.createElement('div');
-    cell.className = 'wheel-cell';
-    cell.innerHTML = `<span class="heb">${l.heb}</span><span class="num">${l.n}</span>`;
-    cell.onclick = () => showTooltip(l);
-    grid.appendChild(cell);
-  });
-  buildCalendar();
+  const g = document.getElementById('wheelGrid');
+  if (g && g.children.length === 0) {
+    L.forEach(l => {
+      const c = document.createElement('div');
+      c.className = 'wc';
+      c.innerHTML = `<span class="wc-heb">${l.heb}</span><span class="wc-n">${l.n}</span>`;
+      c.onclick = () => showTT(l);
+      g.appendChild(c);
+    });
+  }
 };
 </script>
 </body>
