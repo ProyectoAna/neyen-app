@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About NEYĒN System Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+        h2 {
+            color: #333;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        p { color: #555; margin-bottom: 1rem; }
+        .highlight {
+            background: #f0f0ff;
+            padding: 1.5rem;
+            border-left: 4px solid #667eea;
+            margin: 1.5rem 0;
+            border-radius: 0.5rem;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 0.75rem 0;
+            padding-left: 2rem;
+            position: relative;
+        }
+        .feature-list li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: transform 0.2s;
+        }
+        .back-link:hover { transform: translateY(-2px); }
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 3rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>About the NEYĒN System Dashboard</h1>
+            <h2>What is this?</h2>
+            <p>This is the <strong>NEYĒN System Metadata Dashboard</strong> — a live, external, queryable view of the entire NEYĒN transformation system infrastructure.</p>
+            <div class="highlight">
+                <strong>Unlike traditional consultancy deliverables</strong>, this isn't a static PDF or PowerPoint deck. It's a persistent system of record that exists independently of any conversation or documentation.
+            </div>
+            <h2>What does it show?</h2>
+            <p>The dashboard displays <strong>17 interconnected entries</strong> spanning from 1974 to present, organized by:</p>
+            <ul class="feature-list">
+                <li><strong>Symbols:</strong> Core concepts like water consciousness and serpent-star geometry</li>
+                <li><strong>Systems:</strong> Operational architectures like coherence protocols and cross-linking engines</li>
+                <li><strong>Pilots:</strong> Verified transformation projects (HELIOS, Xmas, Paterna)</li>
+                <li><strong>Origins:</strong> Foundational history (DINIBA 1974, "no romper" philosophy)</li>
+                <li><strong>Legal framework:</strong> Trademark, publication, company registration</li>
+            </ul>
+            <h2>Why does it exist?</h2>
+            <p>Most organizational transformation systems live in people's heads or scattered documents. NEYĒN infrastructure is:</p>
+            <ul class="feature-list">
+                <li><strong>External:</strong> Stored in Supabase, accessible via API endpoint</li>
+                <li><strong>Queryable:</strong> Any AI or system can read the complete metadata</li>
+                <li><strong>Connected:</strong> 16/17 entries cross-linked by shared tags, entities, and narrative roles</li>
+                <li><strong>Evolving:</strong> Auto-updates as new content ingests via Slack, Telegram, or manual workflows</li>
+            </ul>
+            <div class="highlight">
+                <strong>For clients:</strong> Your transformation doesn't disappear when the consultant leaves. It lives as infrastructure that grows with you.
+            </div>
+            <h2>How to use it</h2>
+            <p><strong>Filter by narrative role:</strong> Click role buttons (Symbol, System, Pilot, etc.) to see specific entry types.</p>
+            <p><strong>View connections:</strong> Each entry shows related entries via tags and entities.</p>
+            <p><strong>Explore timeline:</strong> Entries span 1974-present, showing evolution from DINIBA's founding through current pilots.</p>
+            <p><strong>Check sources:</strong> All data comes from verified sources (gamma_presentation, website, manual, verified_memory).</p>
+            <h2>Technical details</h2>
+            <p><strong>Endpoint:</strong> <code>https://n8n-docker-t9sr.onrender.com/webhook/system</code></p>
+            <p><strong>Infrastructure:</strong> n8n workflows → Supabase PostgreSQL → JSON API → Dashboard</p>
+            <p><strong>Cross-linking:</strong> Automated scoring algorithm (tags × 3 pts, entities × 2 pts, role × 1 pt)</p>
+            <p><strong>Updates:</strong> Dashboard auto-refreshes every 5 minutes</p>
+            <a href="system.html" class="back-link">← Back to Dashboard</a>
+        </div>
+        <footer>
+            <p>NEYĒN System Infrastructure</p>
+            <p style="margin-top: 0.5rem; opacity: 0.8;">The Spiral Within SLU | Valencia, Spain</p>
+        </footer>
+    </div>
+</body>
+</html>
