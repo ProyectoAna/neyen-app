@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NEYEN System Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e0e0e0;font-family:'Courier New',monospace;padding:20px}
+.header{text-align:center;padding:30px 0;border-bottom:1px solid #333}
+.header h1{font-size:2em;color:#00ff88;letter-spacing:4px}
+.header .sub{color:#666;margin-top:8px;font-size:0.85em}
+.stats{display:flex;gap:20px;justify-content:center;margin:30px 0;flex-wrap:wrap}
+.stat{background:#111;border:1px solid #222;padding:20px 30px;border-radius:8px;text-align:center;min-width:150px}
+.stat .num{font-size:2.5em;color:#00ff88;font-weight:bold}
+.stat .label{color:#666;font-size:0.75em;margin-top:5px;text-transform:uppercase}
+.status{text-align:center;margin:20px 0}
+.status .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+.dot.up{background:#00ff88;box-shadow:0 0 8px #00ff88}
+.dot.down{background:#ff4444;box-shadow:0 0 8px #ff4444}
+.entries{max-width:1000px;margin:30px auto}
+.entry{background:#111;border:1px solid #222;border-radius:8px;padding:20px;margin-bottom:15px;transition:border-color 0.3s}
+.entry:hover{border-color:#00ff88}
+.entry .name{color:#00ff88;font-size:1.1em;font-weight:bold}
+.entry .summary{color:#aaa;margin:10px 0;font-size:0.9em;line-height:1.5}
+.entry .meta{display:flex;gap:15px;flex-wrap:wrap;margin-top:10px}
+.tag{background:#1a2a1a;color:#00ff88;padding:3px 10px;border-radius:12px;font-size:0.7em}
+.role{background:#1a1a2a;color:#6688ff;padding:3px 10px;border-radius:12px;font-size:0.7em}
+.related{color:#666;font-size:0.75em;margin-top:8px}
+.loading{text-align:center;padding:60px;color:#666}
+.error{text-align:center;padding:40px;color:#ff4444}
+.footer{text-align:center;padding:30px;color:#333;font-size:0.75em;border-top:1px solid #1a1a1a;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>&#9651; NEYEN SYSTEM</h1>
+<div class="sub">Live metadata from Supabase via n8n | WF-00 SYSTEM ACCESS</div>
+</div>
+<div class="stats">
+<div class="stat"><div class="num" id="count">--</div><div class="label">Entries</div></div>
+<div class="stat"><div class="num" id="linked">--</div><div class="label">Cross-linked</div></div>
+<div class="stat"><div class="num" id="sources">--</div><div class="label">Sources</div></div>
+<div class="stat"><div class="num" id="latency">--</div><div class="label">ms Latency</div></div>
+</div>
+<div class="status" id="statusBar"><span class="dot down"></span> Checking endpoint...</div>
+<div class="entries" id="entries"><div class="loading">Loading system metadata...</div></div>
+<div class="footer">NEYEN System Dashboard v1.0 | The Spiral Within SLU | thespiralwithin.ai<br>Endpoint: n8n-docker-t9sr.onrender.com/webhook/system</div>
+<script>
+const API='https://n8n-docker-t9sr.onrender.com/webhook/system';
+async function load(){
+const t0=Date.now();
+try{
+const r=await fetch(API);
+const ms=Date.now()-t0;
+const d=await r.json();
+document.getElementById('count').textContent=d.length;
+document.getElementById('latency').textContent=ms;
+const linked=d.filter(e=>e.related_ids&&e.related_ids.length>0).length;
+document.getElementById('linked').textContent=linked;
+const srcs=[...new Set(d.map(e=>e.source).filter(Boolean))];
+document.getElementById('sources').textContent=srcs.length;
+document.getElementById('statusBar').innerHTML='<span class="dot up"></span> Endpoint UP | '+d.length+' entries | '+ms+'ms';
+const el=document.getElementById('entries');
+el.innerHTML=d.map(e=>'<div class="entry"><div class="name">'+e.file_name+'</div><div class="summary">'+(e.summary||'No summary')+'</div><div class="meta">'+(e.tags||[]).map(t=>'<span class="tag">'+t+'</span>').join('')+(e.narrative_role?'<span class="role">'+e.narrative_role+'</span>':'')+'</div>'+(e.related_ids&&e.related_ids.length?'<div class="related">Related: '+e.related_ids.length+' connections</div>':'')+'</div>').join('');
+}catch(err){
+document.getElementById('statusBar').innerHTML='<span class="dot down"></span> Endpoint DOWN';
+document.getElementById('entries').innerHTML='<div class="error">Failed to reach endpoint: '+err.message+'</div>';
+}}
+load();
+setInterval(load,60000);
+</script>
+</body>
+</html>
