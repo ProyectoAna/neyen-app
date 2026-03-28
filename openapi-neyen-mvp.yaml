@@ -1,0 +1,330 @@
+openapi: 3.0.3
+info:
+  title: "NEYEN MVP API"
+  version: 1.0.0
+  description: |
+    REST API specification for NEYEN MVP backend - organizational diagnostic system using Axioma E'A framework.
+    **Base URL:** https://api.neyen.app/v1
+    **Authentication:** OAuth 2.0 (GitHub, Google, Email) + JWT Bearer tokens
+  contact:
+    name: Ana Ballesteros Benavent
+    email: ana@thespiralwithin.ai
+    url: https://thespiralwithin.ai
+
+servers:
+  - url: https://api.neyen.app/v1
+    description: Production server (Supabase)
+  - url: https://staging-api.neyen.app/v1
+    description: Staging server
+  - url: http://localhost:3000/v1
+    description: Local development
+
+paths:
+  /auth/oauth/start:
+    post:
+      summary: Initiate OAuth flow
+      description: Starts OAuth authentication with GitHub, Google, or Email
+      operationId: initOAuth
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - provider
+              properties:
+                provider:
+                  type: string
+                  enum: [github, google, email]
+                redirect_uri:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: OAuth URL generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  auth_url:
+                    type: string
+                    format: uri
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/oauth/callback:
+    get:
+      summary: Handle OAuth callback
+      description: Exchanges authorization code for JWT tokens
+      operationId: oauthCallback
+      tags:
+        - Authentication
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                  expires_in:
+                    type: integer
+
+  /api/diagnostic/analyze:
+    post:
+      summary: Analyze temporal cycles (Axioma E'A)
+      description: |
+        Analyzes organizational patterns using NEYEN framework.
+        Calls Claude API (claude-sonnet-4-20250514).
+        Expected latency: 1.5-5s, tokens: 1500-4000
+      operationId: analyzeDiagnostic
+      tags:
+        - Diagnostics
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiagnosticRequest'
+      responses:
+        '200':
+          description: Analysis complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagnosticResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '502':
+          $ref: '#/components/responses/ClaudeAPIError'
+
+  /api/diagnostic/{diagnostic_id}/recommendations:
+    get:
+      summary: Get recommendations
+      tags:
+        - Diagnostics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: diagnostic_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: detail_level
+          in: query
+          schema:
+            type: string
+            enum: [summary, detailed]
+            default: summary
+      responses:
+        '200':
+          description: Recommendations retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  diagnostic_id:
+                    type: string
+                  recommendations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Recommendation'
+
+  /api/user/profile:
+    get:
+      summary: Get user profile
+      tags:
+        - User Management
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  /api/webhooks/calendly:
+    post:
+      summary: Calendly webhook handler
+      description: "Receives 198 EUR booking events"
+      tags:
+        - Webhooks
+      security:
+        - CalendlySignature: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendlyWebhook'
+      responses:
+        '200':
+          description: Webhook processed
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    CalendlySignature:
+      type: apiKey
+      in: header
+      name: X-Calendly-Webhook-Signature
+
+  schemas:
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+        user_id:
+          type: string
+        email:
+          type: string
+
+    DiagnosticRequest:
+      type: object
+      required:
+        - user_input
+      properties:
+        user_input:
+          type: string
+        avatar_mascot:
+          type: string
+          default: "HEY"
+        context:
+          type: object
+          properties:
+            organization_name:
+              type: string
+            industry:
+              type: string
+
+    DiagnosticResponse:
+      type: object
+      properties:
+        diagnostic_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        axioma_ea_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        patterns:
+          type: array
+          items:
+            type: string
+        hey_mascot_response:
+          type: object
+          properties:
+            tone:
+              type: string
+              enum: [supportive, challenging, celebratory]
+            message:
+              type: string
+
+    Recommendation:
+      type: object
+      properties:
+        category:
+          type: string
+        messaging:
+          type: string
+        mascot_message:
+          type: string
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        subscription:
+          type: object
+          properties:
+            tier:
+              type: string
+            diagnostics_used:
+              type: integer
+            diagnostics_limit:
+              type: integer
+
+    CalendlyWebhook:
+      type: object
+      properties:
+        event:
+          type: string
+        payload:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Invalid request
+    Unauthorized:
+      description: Missing/invalid token
+    RateLimitExceeded:
+      description: Too many requests
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+    ClaudeAPIError:
+      description: Claude API failed
