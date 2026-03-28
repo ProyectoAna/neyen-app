@@ -19,9 +19,10 @@ body { background: var(--bg); color: var(--white); font-family: -apple-system, '
 .date-input:focus { border-color:var(--gold); box-shadow:0 0 30px rgba(201,168,76,0.2); }
 .btn-primary { background:linear-gradient(135deg,#C9A84C,#8B6914); border:none; border-radius:14px; color:#05050f; font-size:15px; font-weight:700; letter-spacing:3px; padding:18px 48px; text-transform:uppercase; cursor:pointer; transition:all 0.3s; box-shadow:0 8px 30px rgba(201,168,76,0.3); }
 .btn-primary:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(201,168,76,0.5); }
-.r-name { font-size:36px; font-weight:700; color:var(--gold); text-align:center; margin-bottom:24px; letter-spacing:4px; animation:fadeUp 0.8s ease-out; }
-.r-text { font-size:18px; line-height:1.8; color:rgba(240,237,228,0.9); text-align:center; max-width:480px; margin-bottom:28px; animation:fadeUp 0.8s ease-out 0.2s both; }
-.r-watchout { background:rgba(201,168,76,0.06); border-left:3px solid var(--gold); border-radius:0 12px 12px 0; padding:16px 20px; max-width:480px; width:100%; margin-bottom:20px; animation:fadeUp 0.8s ease-out 0.4s both; }
+.r-name { font-size:36px; font-weight:700; color:var(--gold); text-align:center; margin-bottom:12px; letter-spacing:4px; animation:fadeUp 0.8s ease-out; }
+.r-hook { font-size:16px; font-style:italic; color:rgba(201,168,76,0.8); text-align:center; max-width:420px; margin-bottom:24px; animation:fadeUp 0.8s ease-out 0.15s both; }
+.r-text { font-size:17px; line-height:1.8; color:rgba(240,237,228,0.85); text-align:center; max-width:480px; margin-bottom:28px; animation:fadeUp 0.8s ease-out 0.3s both; }
+.r-watchout { background:rgba(201,168,76,0.06); border-left:3px solid var(--gold); border-radius:0 12px 12px 0; padding:16px 20px; max-width:480px; width:100%; margin-bottom:20px; animation:fadeUp 0.8s ease-out 0.45s both; }
 .r-watchout-label { font-size:9px; letter-spacing:3px; color:rgba(201,168,76,0.6); text-transform:uppercase; margin-bottom:6px; }
 .r-watchout-text { font-size:15px; line-height:1.6; color:rgba(240,237,228,0.8); }
 .r-daily { background:rgba(255,255,255,0.03); border:1px solid rgba(201,168,76,0.15); border-radius:14px; padding:16px 20px; max-width:480px; width:100%; text-align:center; margin-bottom:32px; animation:fadeUp 0.8s ease-out 0.6s both; }
@@ -29,7 +30,7 @@ body { background: var(--bg); color: var(--white); font-family: -apple-system, '
 .r-daily-text { font-size:15px; color:var(--gold); font-weight:600; }
 @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 .deeper { margin-top:8px; animation:fadeUp 0.8s ease-out 0.8s both; }
-.deeper summary { font-size:11px; letter-spacing:2px; color:rgba(201,168,76,0.5); cursor:pointer; text-align:center; text-transform:uppercase; padding:12px; }
+.deeper summary { font-size:11px; letter-spacing:2px; color:rgba(201,168,76,0.4); cursor:pointer; text-align:center; text-transform:uppercase; padding:12px; }
 .deeper summary:hover { color:var(--gold); }
 .deeper-content { margin-top:16px; max-width:460px; }
 .geo-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
@@ -58,10 +59,11 @@ body { background: var(--bg); color: var(--white); font-family: -apple-system, '
 </div>
 <div class="screen" id="screen-result" style="padding-top:60px;padding-bottom:60px;">
   <div class="r-name" id="rName"></div>
+  <div class="r-hook" id="rHook"></div>
   <div class="r-text" id="rText"></div>
   <div class="r-watchout"><div class="r-watchout-label">Watch out</div><div class="r-watchout-text" id="rWatch"></div></div>
   <div class="r-daily"><div class="r-daily-label">Today</div><div class="r-daily-text" id="rDaily"></div></div>
-  <details class="deeper"><summary>See the geometry behind this △</summary><div class="deeper-content">
+  <details class="deeper"><summary>Where this comes from</summary><div class="deeper-content">
     <div class="geo-cards">
       <div class="geo-card"><div class="gc-label">Number</div><div class="gc-value" id="rNum"></div></div>
       <div class="geo-card"><div class="gc-label">Hebrew Letter</div><div class="gc-value" id="rHeb"></div><div class="gc-sub" id="rLetName"></div></div>
@@ -78,15 +80,15 @@ body { background: var(--bg); color: var(--white); font-family: -apple-system, '
 </div>
 <script>
 const P = [
-{name:"The Source",text:"You start things others don't dare to. You feel before you think, move before you plan. Your intuition is sharper than most people's logic.",watch:"You leave too early when things slow down. Patience is your real test.",heb:"\u05D0",let:"Alef",plane:"The Source",sef:"Keter",sefD:"The Crown",gen:"Gen 1 — Adam",elem:"Air"},
-{name:"The Builder",text:"You understand structures. You see how things connect before others do. People trust you because you build what lasts.",watch:"You overthink before starting. The plan becomes the prison.",heb:"\u05D1",let:"Bet",plane:"The Builder",sef:"Jokhmah",sefD:"Wisdom",gen:"Gen 2 — Seth",elem:"Saturn"},
-{name:"The Wave",text:"You move in cycles. High intensity, then retreat. Your rhythm confuses others but it's your superpower. When you're on, nobody can touch you.",watch:"You judge yourself for not being consistent. Stop. Your inconsistency IS your pattern.",heb:"\u05D2",let:"Gimel",plane:"The Wave",sef:"Binah",sefD:"Intelligence",gen:"Gen 3 — Enosh",elem:"Jupiter"},
-{name:"The Gate",text:"You open doors for others. You sense what's blocked and you unlock it. People come to you when they're stuck, even if they don't know why.",watch:"You carry everyone else's weight. Learn to close the gate behind you sometimes.",heb:"\u05D3",let:"Dalet",plane:"The Gate",sef:"Hesed",sefD:"Kindness",gen:"Gen 4 — Kenan",elem:"Mars"},
-{name:"The Breath",text:"You bring life into rooms. Without you, conversations die and energy stalls. You don't realize how much you hold together just by being there.",watch:"You disappear when you feel unseen. But your absence hurts more than you think.",heb:"\u05D4",let:"He",plane:"The Breath",sef:"Gevurah",sefD:"Strength",gen:"Gen 5 — Mahalalel",elem:"Aries"},
-{name:"The Bridge",text:"You connect worlds that don't normally talk to each other. You translate between people, ideas, dimensions. You belong everywhere and nowhere.",watch:"You adapt so much you forget what YOU actually want. That's dangerous.",heb:"\u05D5",let:"Vav",plane:"The Bridge",sef:"Tiferet",sefD:"Beauty",gen:"Gen 6 — Jared",elem:"Taurus"},
-{name:"The Calendar",text:"You understand timing like nobody else. You know when to move and when to wait. People think you're lucky, but you just read the clock better.",watch:"You wait too long for the perfect moment. Sometimes good enough is the moment.",heb:"\u05D6",let:"Zayin",plane:"The Calendar",sef:"Netzah",sefD:"Eternity",gen:"Gen 7 — Enoch",elem:"Gemini"},
-{name:"The Living",text:"You burn brighter than most. Your energy is contagious and your presence changes the temperature of any room. People remember you.",watch:"You push too hard and burn out. Then you crash and disappear. Learn the rhythm.",heb:"\u05D7",let:"Het",plane:"The Living",sef:"Hod",sefD:"Splendour",gen:"Gen 8 — Methuselah",elem:"Cancer"},
-{name:"The Foundation",text:"You hold things together when everything shakes. You're the one people call when it's serious. Not flashy, but without you, nothing stands.",watch:"You think you need to be strong for everyone. You don't. Ask for help.",heb:"\u05D8",let:"Tet",plane:"The Foundation",sef:"Yesod",sefD:"Foundation",gen:"Gen 9 — Lamech",elem:"Leo"}
+{name:"The Source",hook:"You start fast and lose interest when things become stable.",text:"You start things others don't dare to. You feel before you think, move before you plan. Your intuition is sharper than most people's logic.",watch:"You leave too early when things slow down. Patience is your real test.",heb:"\u05D0",let:"Alef",plane:"The Source",sef:"Keter",sefD:"The Crown",gen:"Gen 1 — Adam",elem:"Air"},
+{name:"The Builder",hook:"You see how things connect before anyone else does.",text:"You understand structures. You see how things connect before others do. People trust you because you build what lasts.",watch:"You overthink before starting. The plan becomes the prison.",heb:"\u05D1",let:"Bet",plane:"The Builder",sef:"Jokhmah",sefD:"Wisdom",gen:"Gen 2 — Seth",elem:"Saturn"},
+{name:"The Wave",hook:"You move in cycles that confuse everyone except you.",text:"You move in cycles. High intensity, then retreat. Your rhythm confuses others but it's your superpower. When you're on, nobody can touch you.",watch:"You judge yourself for not being consistent. Stop. Your inconsistency IS your pattern.",heb:"\u05D2",let:"Gimel",plane:"The Wave",sef:"Binah",sefD:"Intelligence",gen:"Gen 3 — Enosh",elem:"Jupiter"},
+{name:"The Gate",hook:"People come to you when they're stuck, even if they don't know why.",text:"You open doors for others. You sense what's blocked and you unlock it. People come to you when they're stuck, even if they don't know why.",watch:"You carry everyone else's weight. Learn to close the gate behind you sometimes.",heb:"\u05D3",let:"Dalet",plane:"The Gate",sef:"Hesed",sefD:"Kindness",gen:"Gen 4 — Kenan",elem:"Mars"},
+{name:"The Breath",hook:"Without you, conversations die and energy stalls.",text:"You bring life into rooms. Without you, conversations die and energy stalls. You don't realize how much you hold together just by being there.",watch:"You disappear when you feel unseen. But your absence hurts more than you think.",heb:"\u05D4",let:"He",plane:"The Breath",sef:"Gevurah",sefD:"Strength",gen:"Gen 5 — Mahalalel",elem:"Aries"},
+{name:"The Bridge",hook:"You belong everywhere and nowhere at the same time.",text:"You connect worlds that don't normally talk to each other. You translate between people, ideas, dimensions. You belong everywhere and nowhere.",watch:"You adapt so much you forget what YOU actually want. That's dangerous.",heb:"\u05D5",let:"Vav",plane:"The Bridge",sef:"Tiferet",sefD:"Beauty",gen:"Gen 6 — Jared",elem:"Taurus"},
+{name:"The Calendar",hook:"People think you're lucky. You just read the clock better.",text:"You understand timing like nobody else. You know when to move and when to wait. People think you're lucky, but you just read the clock better.",watch:"You wait too long for the perfect moment. Sometimes good enough is the moment.",heb:"\u05D6",let:"Zayin",plane:"The Calendar",sef:"Netzah",sefD:"Eternity",gen:"Gen 7 — Enoch",elem:"Gemini"},
+{name:"The Living",hook:"Your presence changes the temperature of any room.",text:"You burn brighter than most. Your energy is contagious and your presence changes the temperature of any room. People remember you.",watch:"You push too hard and burn out. Then you crash and disappear. Learn the rhythm.",heb:"\u05D7",let:"Het",plane:"The Living",sef:"Hod",sefD:"Splendour",gen:"Gen 8 — Methuselah",elem:"Cancer"},
+{name:"The Foundation",hook:"You're the one people call when it gets serious.",text:"You hold things together when everything shakes. You're the one people call when it's serious. Not flashy, but without you, nothing stands.",watch:"You think you need to be strong for everyone. You don't. Ask for help.",heb:"\u05D8",let:"Tet",plane:"The Foundation",sef:"Yesod",sefD:"Foundation",gen:"Gen 9 — Lamech",elem:"Leo"}
 ];
 const dailies = ["Finish what you already started.","Decide before noon.","Stop thinking. Send it.","Choose one thing and protect it.","Do the small task now.","Keep it simple today.","Close one open loop.","Say what you actually want.","Move instead of waiting.","Act without overthinking.","Let something go.","Start before you're ready.","Trust your first instinct today.","Don't explain yourself.","Rest without guilt.","Be direct with one person.","Do less, but finish it.","Ask the question you've been avoiding.","Make the call.","Write it down. Then do it.","Stop scrolling. Start building.","One honest conversation today.","No new plans. Execute the old one.","Say no to something.","Show up even if it's hard.","Listen more than you speak today.","Forgive one thing.","Create something small.","Surprise someone.","Breathe. Then decide.","End the day with zero inbox."];
 function dr(n){while(n>9)n=String(n).split('').reduce((a,b)=>a+parseInt(b),0);return n;}
@@ -99,6 +101,7 @@ function calculate(){
   const raw=d+m+yD;const root=dr(raw);const p=P[root-1];
   const daily=dailies[new Date().getDate()-1]||dailies[0];
   document.getElementById('rName').textContent=p.name;
+  document.getElementById('rHook').textContent=p.hook;
   document.getElementById('rText').textContent=p.text;
   document.getElementById('rWatch').textContent=p.watch;
   document.getElementById('rDaily').textContent=daily;
