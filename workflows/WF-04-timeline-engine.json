@@ -1,0 +1,142 @@
+{
+    "name": "WF-04: Timeline Engine",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "wf04-timeline",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Manual Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [250, 300]
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "metadata",
+                "returnAll": true
+            },
+            "id": "fetch-all-entries",
+            "name": "Fetch All Entries",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [450, 300],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "supabase-credentials",
+                    "name": "Supabase API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "functionCode": "// Temporal clustering logic\nconst entries = $input.all();\nconst clustered = [];\n\nfor (const item of entries) {\n  const entry = item.json;\n  let timeline_group = '2024-2026'; // default\n  \n  // Parse date_estimated\n  const dateStr = entry.date_estimated || '';\n  \n  if (dateStr) {\n    // Extract year from various formats\n    let year = null;\n    \n    // YYYY format\n    if (/^\\d{4}$/.test(dateStr)) {\n      year = parseInt(dateStr);\n    }\n    // YYYY-MM-DD format\n    else if (/^\\d{4}-\\d{2}-\\d{2}$/.test(dateStr)) {\n      year = parseInt(dateStr.split('-')[0]);\n    }\n    // Other formats - try to extract 4-digit year\n    else {\n      const match = dateStr.match(/\\d{4}/);\n      if (match) year = parseInt(match[0]);\n    }\n    \n    // Assign to timeline_group\n    if (year) {\n      if (year >= 1974 && year <= 1990) {\n        timeline_group = '1974-1990';\n      } else if (year >= 2019 && year <= 2023) {\n        timeline_group = '2019-2023';\n      } else if (year >= 2024 && year <= 2026) {\n        timeline_group = '2024-2026';\n      }\n    }\n  }\n  \n  clustered.push({\n    json: {\n      id: entry.id,\n      file_name: entry.file_name,\n      timeline_group: timeline_group,\n      date_estimated: entry.date_estimated,\n      narrative_role: entry.narrative_role\n    }\n  });\n}\n\nreturn clustered;"
+            },
+            "id": "temporal-clustering",
+            "name": "Temporal Clustering",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [650, 300]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Narrative arc detection\nconst items = $input.all();\n\n// Group by timeline_group\nconst groups = {\n  '1974-1990': [],\n  '2019-2023': [],\n  '2024-2026': []\n};\n\nfor (const item of items) {\n  const group = item.json.timeline_group;\n  if (groups[group]) {\n    groups[group].push(item.json);\n  }\n}\n\n// Detect progression patterns\nconst narrativeOrder = ['setup', 'origin', 'exploration', 'conflict', 'realisation', 'integration'];\n\nconst analysis = {\n  '1974-1990': {\n    count: groups['1974-1990'].length,\n    roles: groups['1974-1990'].map(e => e.narrative_role).filter(Boolean),\n    dominant: 'origin'\n  },\n  '2019-2023': {\n    count: groups['2019-2023'].length,\n    roles: groups['2019-2023'].map(e => e.narrative_role).filter(Boolean),\n    dominant: 'exploration'\n  },\n  '2024-2026': {\n    count: groups['2024-2026'].length,\n    roles: groups['2024-2026'].map(e => e.narrative_role).filter(Boolean),\n    dominant: 'integration'\n  }\n};\n\nreturn [{\"json\": {\"analysis\": analysis, \"total_entries\": items.length, \"entries_to_update\": items}}];"
+            },
+            "id": "narrative-analysis",
+            "name": "Narrative Arc Detection",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [850, 300]
+        },
+        {
+            "parameters": {
+                "batchSize": 1,
+                "options": {}
+            },
+            "id": "split-batches",
+            "name": "Split in Batches",
+            "type": "n8n-nodes-base.splitInBatches",
+            "typeVersion": 1,
+            "position": [1050, 300]
+        },
+        {
+            "parameters": {
+                "functionCode": "const batch = $input.item.json;\nconst entries = batch.entries_to_update || [];\n\nif (entries.length > 0) {\n  const entry = entries[$node['Split in Batches'].context.currentRunIndex];\n  return [{json: entry}];\n}\n\nreturn [];"
+            },
+            "id": "extract-entry",
+            "name": "Extract Entry",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [1250, 300]
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "tableId": "metadata",
+                "filterType": "string",
+                "filterString": "id=eq.{{$json.id}}",
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "timeline_group": "={{$json.timeline_group}}"
+                    }
+                }
+            },
+            "id": "update-timeline-group",
+            "name": "Update Timeline Group",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [1450, 300],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "supabase-credentials",
+                    "name": "Supabase API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\"status\": \"complete\", \"message\": \"Timeline clustering complete\", \"analysis\": {{$node['Narrative Arc Detection'].json.analysis}}, \"entries_updated\": {{$node['Narrative Arc Detection'].json.total_entries}}}"
+            },
+            "id": "respond-summary",
+            "name": "Respond Summary",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [1650, 300]
+        }
+    ],
+    "connections": {
+        "Manual Trigger": {
+            "main": [[{"node": "Fetch All Entries", "type": "main", "index": 0}]]
+        },
+        "Fetch All Entries": {
+            "main": [[{"node": "Temporal Clustering", "type": "main", "index": 0}]]
+        },
+        "Temporal Clustering": {
+            "main": [[{"node": "Narrative Arc Detection", "type": "main", "index": 0}]]
+        },
+        "Narrative Arc Detection": {
+            "main": [[{"node": "Split in Batches", "type": "main", "index": 0}]]
+        },
+        "Split in Batches": {
+            "main": [
+                [{"node": "Extract Entry", "type": "main", "index": 0}],
+                [{"node": "Respond Summary", "type": "main", "index": 0}]
+            ]
+        },
+        "Extract Entry": {
+            "main": [[{"node": "Update Timeline Group", "type": "main", "index": 0}]]
+        },
+        "Update Timeline Group": {
+            "main": [[{"node": "Split in Batches", "type": "main", "index": 0}]]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}
