@@ -1,0 +1,192 @@
+{
+    "name": "WF-01: Ingestion Pipeline",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "wf01-ingest",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [250, 300]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Extract content from webhook payload\nconst body = $input.item.json.body || $input.item.json;\n\nreturn {\n  json: {\n    message_text: body.text || body.message || '',\n    user_id: body.user || body.user_id || 'anonymous',\n    source: body.source || 'manual',\n    timestamp: body.timestamp || new Date().toISOString(),\n    metadata: body.metadata || {}\n  }\n};"
+            },
+            "id": "extract-content",
+            "name": "Extract Content",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [450, 300]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{$json.message_text.length}}",
+                            "operation": "largerEqual",
+                            "value2": "10"
+                        },
+                        {
+                            "value1": "={{$json.message_text}}",
+                            "operation": "notStartsWith",
+                            "value2": "/"
+                        }
+                    ]
+                }
+            },
+            "id": "filter-messages",
+            "name": "Filter Messages",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [650, 300]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.anthropic.com/v1/messages",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "anthropicApi",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "anthropic-version",
+                            "value": "2023-06-01"
+                        },
+                        {
+                            "name": "content-type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "model",
+                            "value": "claude-sonnet-4-20250514"
+                        },
+                        {
+                            "name": "max_tokens",
+                            "value": "1024"
+                        },
+                        {
+                            "name": "messages",
+                            "value": "=[{\"role\": \"user\", \"content\": \"Analyze this message and extract NEYĒN metadata:\\n\\nMessage: {{$json.message_text}}\\nSource: {{$json.source}}\\nTimestamp: {{$json.timestamp}}\\n\\nExtract and return ONLY valid JSON (no markdown, no explanation):\\n{\\n  \\\"tags\\\": [\\\"tag1\\\", \\\"tag2\\\", \\\"tag3\\\"],\\n  \\\"entities\\\": [\\\"entity1\\\", \\\"entity2\\\"],\\n  \\\"summary\\\": \\\"1-2 sentence summary\\\",\\n  \\\"narrative_role\\\": \\\"symbol|system|pilot|origin|exploration|setup|conflict|realisation|integration\\\",\\n  \\\"date_estimated\\\": \\\"YYYY-MM-DD or YYYY\\\",\\n  \\\"timeline_group\\\": \\\"1974-1990|2019-2023|2024-2026\\\"\\n}\\n\\nRules:\\n- Tags: 3-5 keywords\\n- Entities: People, companies, concepts\\n- Summary: Concise, factual\\n- Narrative_role: Best fit from list\\n- Date_estimated: Infer from context or use timestamp\\n- Timeline_group: Map to period\"}]"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "claude-classify",
+            "name": "Claude API Classification",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [850, 300]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Parse Claude API response\nconst response = $input.item.json;\nconst content = response.content && response.content[0] && response.content[0].text;\n\nif (!content) {\n  throw new Error('No content in Claude response');\n}\n\n// Extract JSON from response (remove markdown if present)\nlet jsonText = content.trim();\nif (jsonText.startsWith('```json')) {\n  jsonText = jsonText.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\n}\n\nconst classified = JSON.parse(jsonText);\n\n// Get original message data\nconst originalData = $node['Extract Content'].json;\n\n// Generate file_name\nconst timestamp = new Date().getTime();\nconst file_name = `auto_${originalData.source}_${timestamp}`;\n\nreturn {\n  json: {\n    file_name: file_name,\n    type: null,\n    summary: classified.summary || '',\n    tags: classified.tags || [],\n    entities: classified.entities || [],\n    emotional_tone: null,\n    source: originalData.source,\n    themes: [],\n    concepts: [],\n    keywords: [],\n    mime_type: 'text/plain',\n    cluster: null,\n    related_ids: [],\n    date_estimated: classified.date_estimated || new Date().toISOString().split('T')[0],\n    timeline_group: classified.timeline_group || '2024-2026',\n    narrative_role: classified.narrative_role || 'exploration'\n  }\n};"
+            },
+            "id": "parse-classification",
+            "name": "Parse Classification",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [1050, 300]
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "tableId": "metadata",
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "file_name": "={{$json.file_name}}",
+                        "type": "={{$json.type}}",
+                        "summary": "={{$json.summary}}",
+                        "tags": "={{$json.tags}}",
+                        "entities": "={{$json.entities}}",
+                        "emotional_tone": "={{$json.emotional_tone}}",
+                        "source": "={{$json.source}}",
+                        "themes": "={{$json.themes}}",
+                        "concepts": "={{$json.concepts}}",
+                        "keywords": "={{$json.keywords}}",
+                        "mime_type": "={{$json.mime_type}}",
+                        "cluster": "={{$json.cluster}}",
+                        "related_ids": "={{$json.related_ids}}",
+                        "date_estimated": "={{$json.date_estimated}}",
+                        "timeline_group": "={{$json.timeline_group}}",
+                        "narrative_role": "={{$json.narrative_role}}"
+                    }
+                }
+            },
+            "id": "supabase-insert",
+            "name": "Supabase Insert",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [1250, 300],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "supabase-credentials",
+                    "name": "Supabase API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://n8n-docker-t9sr.onrender.com/webhook/wf02-crosslink",
+                "options": {}
+            },
+            "id": "trigger-crosslink",
+            "name": "Trigger WF-02",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [1450, 300]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\"status\": \"success\", \"message\": \"Entry created and cross-linking triggered\", \"file_name\": \"{{$json.file_name}}\"}"
+            },
+            "id": "respond-success",
+            "name": "Respond Success",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [1650, 300]
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [[{"node": "Extract Content", "type": "main", "index": 0}]]
+        },
+        "Extract Content": {
+            "main": [[{"node": "Filter Messages", "type": "main", "index": 0}]]
+        },
+        "Filter Messages": {
+            "main": [[{"node": "Claude API Classification", "type": "main", "index": 0}]]
+        },
+        "Claude API Classification": {
+            "main": [[{"node": "Parse Classification", "type": "main", "index": 0}]]
+        },
+        "Parse Classification": {
+            "main": [[{"node": "Supabase Insert", "type": "main", "index": 0}]]
+        },
+        "Supabase Insert": {
+            "main": [[{"node": "Trigger WF-02", "type": "main", "index": 0}]]
+        },
+        "Trigger WF-02": {
+            "main": [[{"node": "Respond Success", "type": "main", "index": 0}]]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}
