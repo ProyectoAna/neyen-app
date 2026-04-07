@@ -12,344 +12,79 @@
             "name": "Webhook Trigger",
             "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
-            "position": [
-                250,
-                300
-            ],
+            "position": [250, 300],
             "webhookId": "wf02-crosslink"
         },
         {
             "parameters": {
-                "functionCode": "// Extract file_name from incoming webhook\n// WF-01 Trigger node sends the Supabase Insert output as POST body\nconst body = $input.item.json.body || $input.item.json;\nconst fileName = body.file_name;\n\nif (!fileName) {\n  throw new Error('No file_name received. Keys: ' + Object.keys(body).join(', '));\n}\n\nreturn { json: { file_name: fileName } };"
+                "functionCode": "// Extract file_name from incoming webhook body\nconst body = $input.item.json.body || $input.item.json;\nconst fileName = body.file_name;\n\nif (!fileName) {\n  throw new Error('No file_name in payload. Keys: ' + Object.keys(body).join(', '));\n}\n\nreturn {\n  json: {\n    file_name: fileName,\n    rpcBody: JSON.stringify({ p_file_name: fileName })\n  }\n};"
             },
             "id": "extract-filename",
             "name": "Extract File Name",
             "type": "n8n-nodes-base.function",
             "typeVersion": 1,
-            "position": [
-                450,
-                300
-            ]
+            "position": [450, 300]
         },
         {
             "parameters": {
-                "operation": "getAll",
-                "tableId": "metadata",
-                "filterType": "string",
-                "filterString": "=file_name=eq.{{ $json.file_name }}",
-                "returnAll": false,
-                "limit": 1
-            },
-            "id": "fetch-new-entry",
-            "name": "Fetch New Entry",
-            "type": "n8n-nodes-base.supabase",
-            "typeVersion": 1,
-            "position": [
-                650,
-                300
-            ],
-            "credentials": {
-                "supabaseApi": {
-                    "id": "LNyShFxORsZnx7DR",
-                    "name": "Supabase account"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "functionCode": "// Store the new entry data and check if we have tags/entities to match\nconst entry = $input.item.json;\n\nif (!entry.id) {\n  throw new Error('Entry not found in Supabase for the given file_name');\n}\n\nconst tags = entry.tags || [];\nconst entities = entry.entities || [];\n\nreturn {\n  json: {\n    entry_id: entry.id,\n    file_name: entry.file_name,\n    tags: tags,\n    entities: entities,\n    has_crosslink_data: (tags.length > 0 || entities.length > 0)\n  }\n};"
-            },
-            "id": "check-entry",
-            "name": "Check Entry Data",
-            "type": "n8n-nodes-base.function",
-            "typeVersion": 1,
-            "position": [
-                850,
-                300
-            ]
-        },
-        {
-            "parameters": {
-                "conditions": {
-                    "boolean": [
+                "method": "POST",
+                "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/crosslink_entry",
+                "authentication": "noAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
                         {
-                            "value1": "={{ $json.has_crosslink_data }}",
-                            "value2": true
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
                         }
                     ]
-                }
+                },
+                "sendBody": true,
+                "contentType": "raw",
+                "rawContentType": "application/json",
+                "body": "={{ $json.rpcBody }}",
+                "options": {}
             },
-            "id": "check-skip",
-            "name": "Has Tags/Entities?",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 1,
-            "position": [
-                1050,
-                300
-            ]
+            "id": "call-crosslink-rpc",
+            "name": "Call Crosslink RPC",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [650, 300]
         },
         {
             "parameters": {
                 "respondWith": "json",
-                "responseBody": "={\"status\": \"ok\", \"message\": \"No tags or entities to crosslink\", \"entry_id\": \"{{ $json.entry_id }}\"}"
+                "responseBody": "={{ JSON.stringify($json) }}"
             },
-            "id": "respond-skip",
-            "name": "Respond Skip",
+            "id": "respond-result",
+            "name": "Respond Result",
             "type": "n8n-nodes-base.respondToWebhook",
             "typeVersion": 1,
-            "position": [
-                1250,
-                200
-            ]
-        },
-        {
-            "parameters": {
-                "operation": "getAll",
-                "tableId": "metadata",
-                "returnAll": true
-            },
-            "id": "fetch-all-entries",
-            "name": "Fetch All Entries",
-            "type": "n8n-nodes-base.supabase",
-            "typeVersion": 1,
-            "position": [
-                1250,
-                400
-            ],
-            "credentials": {
-                "supabaseApi": {
-                    "id": "LNyShFxORsZnx7DR",
-                    "name": "Supabase account"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "functionCode": "// Find entries that share at least 1 tag or 1 entity with the new entry\nconst allEntries = $input.all();\nconst checkData = $node['Check Entry Data'].json;\nconst entryId = checkData.entry_id;\nconst myTags = new Set((checkData.tags || []).map(t => String(t).toLowerCase()));\nconst myEntities = new Set((checkData.entities || []).map(e => String(e).toLowerCase()));\n\nconst relatedIds = [];\n\nfor (const item of allEntries) {\n  const other = item.json;\n  if (other.id === entryId) continue; // skip self\n\n  const otherTags = (other.tags || []).map(t => String(t).toLowerCase());\n  const otherEntities = (other.entities || []).map(e => String(e).toLowerCase());\n\n  // Check overlap\n  const tagOverlap = otherTags.some(t => myTags.has(t));\n  const entityOverlap = otherEntities.some(e => myEntities.has(e));\n\n  if (tagOverlap || entityOverlap) {\n    relatedIds.push(other.id);\n  }\n}\n\nreturn {\n  json: {\n    entry_id: entryId,\n    file_name: checkData.file_name,\n    related_ids: relatedIds,\n    match_count: relatedIds.length\n  }\n};"
-            },
-            "id": "find-matches",
-            "name": "Find Matches",
-            "type": "n8n-nodes-base.function",
-            "typeVersion": 1,
-            "position": [
-                1450,
-                400
-            ]
-        },
-        {
-            "parameters": {
-                "conditions": {
-                    "number": [
-                        {
-                            "value1": "={{ $json.match_count }}",
-                            "operation": "largerEqual",
-                            "value2": 1
-                        }
-                    ]
-                }
-            },
-            "id": "has-matches",
-            "name": "Any Matches?",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 1,
-            "position": [
-                1650,
-                400
-            ]
-        },
-        {
-            "parameters": {
-                "respondWith": "json",
-                "responseBody": "={\"status\": \"ok\", \"message\": \"No matching entries found\", \"entry_id\": \"{{ $json.entry_id }}\", \"match_count\": 0}"
-            },
-            "id": "respond-no-matches",
-            "name": "Respond No Matches",
-            "type": "n8n-nodes-base.respondToWebhook",
-            "typeVersion": 1,
-            "position": [
-                1850,
-                300
-            ]
-        },
-        {
-            "parameters": {
-                "functionCode": "// Format the data for the Supabase update\n// Ensure related_ids is a proper JSON array string\nconst data = $input.item.json;\n\nreturn {\n  json: {\n    entry_id: data.entry_id,\n    related_ids: data.related_ids\n  }\n};"
-            },
-            "id": "format-update",
-            "name": "Format for Update",
-            "type": "n8n-nodes-base.function",
-            "typeVersion": 1,
-            "position": [
-                1750,
-                500
-            ]
-        },
-        {
-            "parameters": {
-                "operation": "update",
-                "tableId": "metadata",
-                "filterType": "string",
-                "filterString": "=id=eq.{{ $json.entry_id }}",
-                "columns": {
-                    "mappingMode": "defineBelow",
-                    "value": {
-                        "related_ids": "={{ JSON.stringify($json.related_ids) }}"
-                    }
-                }
-            },
-            "id": "update-related-ids",
-            "name": "Update Related IDs",
-            "type": "n8n-nodes-base.supabase",
-            "typeVersion": 1,
-            "position": [
-                1950,
-                500
-            ],
-            "credentials": {
-                "supabaseApi": {
-                    "id": "LNyShFxORsZnx7DR",
-                    "name": "Supabase account"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "respondWith": "json",
-                "responseBody": "={\"status\": \"ok\", \"entry_id\": \"{{ $json.entry_id }}\", \"related_count\": {{ $node['Find Matches'].json.match_count }}, \"related_ids\": {{ JSON.stringify($node['Find Matches'].json.related_ids) }}}"
-            },
-            "id": "respond-success",
-            "name": "Respond Success",
-            "type": "n8n-nodes-base.respondToWebhook",
-            "typeVersion": 1,
-            "position": [
-                2150,
-                500
-            ]
+            "position": [850, 300]
         }
     ],
     "connections": {
         "Webhook Trigger": {
             "main": [
-                [
-                    {
-                        "node": "Extract File Name",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
+                [{ "node": "Extract File Name", "type": "main", "index": 0 }]
             ]
         },
         "Extract File Name": {
             "main": [
-                [
-                    {
-                        "node": "Fetch New Entry",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
+                [{ "node": "Call Crosslink RPC", "type": "main", "index": 0 }]
             ]
         },
-        "Fetch New Entry": {
+        "Call Crosslink RPC": {
             "main": [
-                [
-                    {
-                        "node": "Check Entry Data",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Check Entry Data": {
-            "main": [
-                [
-                    {
-                        "node": "Has Tags/Entities?",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Has Tags/Entities?": {
-            "main": [
-                [
-                    {
-                        "node": "Fetch All Entries",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Respond Skip",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Fetch All Entries": {
-            "main": [
-                [
-                    {
-                        "node": "Find Matches",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Find Matches": {
-            "main": [
-                [
-                    {
-                        "node": "Any Matches?",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Any Matches?": {
-            "main": [
-                [
-                    {
-                        "node": "Format for Update",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Respond No Matches",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Update Related IDs": {
-            "main": [
-                [
-                    {
-                        "node": "Respond Success",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Format for Update": {
-            "main": [
-                [
-                    {
-                        "node": "Update Related IDs",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
+                [{ "node": "Respond Result", "type": "main", "index": 0 }]
             ]
         }
     },
