@@ -47,13 +47,15 @@ let orphanData = [];
 let selectedNode = null;
 
 // ===== FETCH DATA =====
-async function fetchMetadata() {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/metadata?select=id,file_name,summary,tags,entities,narrative_role,timeline_group,related_ids,created_at&order=created_at.desc`,
-    { headers: HEADERS }
-  );
+// Uses graph_data() RPC (SECURITY DEFINER) since anon key can't read tables directly.
+async function fetchGraphData() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/graph_data`, {
+    method: 'POST',
+    headers: HEADERS,
+    body: '{}'
+  });
   if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
-  return res.json();
+  return res.json(); // { nodes: [], orphan_ids: [], total: N }
 }
 
 async function fetchOrphans() {
@@ -67,8 +69,12 @@ async function fetchOrphans() {
 }
 
 // ===== GRAPH BUILD =====
-function buildGraph(rows, orphansResult) {
-  const orphanIds = new Set((orphansResult.orphans || []).map(o => o.id));
+function buildGraph(graphResult, orphansResult) {
+  const rows = graphResult.nodes || [];
+  const orphanIds = new Set([
+    ...(graphResult.orphan_ids || []),
+    ...(orphansResult.orphans || []).map(o => o.id)
+  ]);
   orphanData = orphansResult.orphans || [];
 
   const nodeMap = new Map();
@@ -370,7 +376,8 @@ async function loadData() {
   document.getElementById('emptyState').classList.add('hidden');
 
   try {
-    const [rows, orphansResult] = await Promise.all([fetchMetadata(), fetchOrphans()]);
+    const [graphResult, orphansResult] = await Promise.all([fetchGraphData(), fetchOrphans()]);
+    const rows = graphResult.nodes || [];
 
     if (!rows.length) {
       document.getElementById('loadingState').classList.add('hidden');
@@ -378,7 +385,7 @@ async function loadData() {
       return;
     }
 
-    const { nodes, links } = buildGraph(rows, orphansResult);
+    const { nodes, links } = buildGraph(graphResult, orphansResult);
 
     // Stats bar
     const orphanCount = orphansResult.orphan_count || 0;
