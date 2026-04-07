@@ -33,41 +33,12 @@
         },
         {
             "parameters": {
-                "method": "POST",
-                "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/crosslink_entry",
-                "authentication": "noAuth",
-                "sendHeaders": true,
-                "headerParameters": {
-                    "parameters": [
-                        {
-                            "name": "apikey",
-                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24"
-                        },
-                        {
-                            "name": "Authorization",
-                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24"
-                        },
-                        {
-                            "name": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ]
-                },
-                "sendBody": true,
-                "bodyParameters": {
-                    "parameters": [
-                        {
-                            "name": "p_file_name",
-                            "value": "={{ $json.file_name }}"
-                        }
-                    ]
-                },
-                "options": {}
+                "functionCode": "// Call Supabase RPC endpoint to crosslink entries\nconst fileName = $input.item.json.file_name;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/crosslink_entry',\n  headers: {\n    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24',\n    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24',\n    'Content-Type': 'application/json'\n  },\n  body: {\n    p_file_name: fileName\n  },\n  json: true\n});\n\nreturn {\n  json: response\n};"
             },
             "id": "call-crosslink-rpc",
             "name": "Call Crosslink RPC",
-            "type": "n8n-nodes-base.httpRequest",
-            "typeVersion": 3,
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
             "position": [
                 650,
                 300
