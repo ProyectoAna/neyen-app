@@ -110,7 +110,9 @@ function buildGraph(graphResult, orphansResult) {
 
   rows.forEach(row => {
     const sourceId = row.id;
-    (row.related_ids || []).forEach(targetId => {
+    const parsedNode = nodeMap.get(sourceId);
+    const relatedIds = (parsedNode && parsedNode.related_ids) || [];
+    relatedIds.forEach(targetId => {
       if (!nodeMap.has(targetId)) return;
       const key = [sourceId, targetId].sort().join('__');
       if (seenEdges.has(key)) return;
