@@ -12,7 +12,10 @@
             "name": "Webhook Trigger",
             "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
-            "position": [250, 300],
+            "position": [
+                250,
+                300
+            ],
             "webhookId": "wf02-crosslink"
         },
         {
@@ -23,7 +26,10 @@
             "name": "Extract File Name",
             "type": "n8n-nodes-base.function",
             "typeVersion": 1,
-            "position": [450, 300]
+            "position": [
+                450,
+                300
+            ]
         },
         {
             "parameters": {
@@ -47,17 +53,20 @@
                         }
                     ]
                 },
-                "sendBody": true,
-                "contentType": "raw",
-                "rawContentType": "application/json",
                 "body": "={{ $json.rpcBody }}",
-                "options": {}
+                "options": {},
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $json.rpcBody }}"
             },
             "id": "call-crosslink-rpc",
             "name": "Call Crosslink RPC",
             "type": "n8n-nodes-base.httpRequest",
-            "typeVersion": 3,
-            "position": [650, 300]
+            "typeVersion": 4.2,
+            "position": [
+                650,
+                300
+            ]
         },
         {
             "parameters": {
@@ -68,23 +77,44 @@
             "name": "Respond Result",
             "type": "n8n-nodes-base.respondToWebhook",
             "typeVersion": 1,
-            "position": [850, 300]
+            "position": [
+                850,
+                300
+            ]
         }
     ],
     "connections": {
         "Webhook Trigger": {
             "main": [
-                [{ "node": "Extract File Name", "type": "main", "index": 0 }]
+                [
+                    {
+                        "node": "Extract File Name",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Extract File Name": {
             "main": [
-                [{ "node": "Call Crosslink RPC", "type": "main", "index": 0 }]
+                [
+                    {
+                        "node": "Call Crosslink RPC",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Call Crosslink RPC": {
             "main": [
-                [{ "node": "Respond Result", "type": "main", "index": 0 }]
+                [
+                    {
+                        "node": "Respond Result",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         }
     },
