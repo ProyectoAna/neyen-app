@@ -67,6 +67,19 @@
         },
         {
             "parameters": {
+                "functionCode": "// Route /tag commands to WF-05 instead of processing as content\nconst msg = $input.item.json;\nconst text = (msg.message_text || '').trim();\n\n// Check for /tag command\nif (text.startsWith('/tag ') || text.startsWith('/tag\\t')) {\n  // Forward to WF-05\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'https://n8n-docker-t9sr.onrender.com/webhook/wf05-slack-tagger',\n    headers: { 'Content-Type': 'application/json' },\n    body: {\n      text: text,\n      user_id: msg.user_id || '',\n      channel_id: msg.channel_id || '',\n      ts: msg.timestamp || ''\n    },\n    json: true\n  });\n  // Return null to stop WF-01 processing this message as content\n  return null;\n}\n\n// Not a /tag command \u2014 pass through normally\nreturn { json: msg };"
+            },
+            "id": "route-tag-command",
+            "name": "Route /tag Command",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                650,
+                350
+            ]
+        },
+        {
+            "parameters": {
                 "conditions": {
                     "string": [
                         {
@@ -108,7 +121,7 @@
         },
         {
             "parameters": {
-                "functionCode": "// Build the Claude API request body\nconst messageText = $input.item.json.message_text || '';\nconst source = $input.item.json.source || 'unknown';\nconst timestamp = $input.item.json.timestamp || new Date().toISOString();\n\nconst prompt = `Analyze this message and extract metadata:\n\nMessage: ${messageText}\nSource: ${source}\nTimestamp: ${timestamp}\n\nExtract and return ONLY valid JSON (no markdown, no explanation):\n{\n  \"tags\": [\"tag1\", \"tag2\", \"tag3\"],\n  \"entities\": [\"entity1\", \"entity2\"],\n  \"summary\": \"1-2 sentence summary\",\n  \"narrative_role\": \"symbol|system|pilot|origin|exploration|setup|conflict|realisation|integration\",\n  \"date_estimated\": \"YYYY-MM-DD or YYYY\",\n  \"timeline_group\": \"1974-1990|2019-2023|2024-2026\"\n}\n\nRules:\n- Tags: 3-5 keywords\n- Entities: People, companies, concepts\n- Summary: Concise, factual\n- Narrative_role: Best fit from list\n- Date_estimated: Infer from context or use timestamp\n- Timeline_group: Map to period`;\n\nreturn {\n  json: {\n    ...$input.item.json,\n    claudeRequestBody: JSON.stringify({\n      model: 'claude-haiku-4-5-20251001',\n      max_tokens: 1024,\n      messages: [{role: 'user', content: prompt}]\n    })\n  }\n};"
+                "functionCode": "// Build the Claude API request body with narrative_role classifier\nconst messageText = $input.item.json.message_text || '';\nconst source = $input.item.json.source || 'unknown';\nconst timestamp = $input.item.json.timestamp || new Date().toISOString();\n\n// Role definitions for accurate classification\nconst roleGuide = `\n- realisation: insight, breakthrough, understanding, clarity, epiphany, aha-moment\n- exploration: question, curiosity, investigation, research, trying, experimenting\n- conflict: tension, problem, contradiction, difficulty, obstacle, error\n- symbol: metaphor, archetype, image, myth, spiritual, dream, ceremony\n- system: architecture, structure, tool, process, rule, protocol, design\n- orphaned: DO NOT assign this \u2014 reserved for entries with no crosslinks after 7 days\n`.trim();\n\nconst prompt = `Analyze this Slack message and extract NEYEN knowledge graph metadata.\n\nMessage: ${messageText}\nSource: ${source}\nTimestamp: ${timestamp}\n\nReturn ONLY valid JSON (no markdown, no explanation):\n{\n  \"tags\": [\"tag1\", \"tag2\", \"tag3\"],\n  \"entities\": [\"entity1\", \"entity2\"],\n  \"summary\": \"1-2 sentence summary\",\n  \"narrative_role\": \"one of the 6 roles below\",\n  \"date_estimated\": \"YYYY-MM-DD or YYYY\",\n  \"timeline_group\": \"1974-1990|2019-2023|2024-2026\"\n}\n\nNarrative role \u2014 choose EXACTLY one (never use orphaned):\n${roleGuide}\n\nRules:\n- tags: 3-5 lowercase keywords capturing the core topic\n- entities: named people, companies, systems, or key concepts\n- summary: factual, present-tense, max 2 sentences\n- narrative_role: best fit from the 6 options above \u2014 if unclear, choose exploration\n- date_estimated: infer from message context or use the timestamp date\n- timeline_group: map to the closest period`;\n\nreturn {\n  json: {\n    ...$input.item.json,\n    claudeRequestBody: JSON.stringify({\n      model: 'claude-haiku-4-5-20251001',\n      max_tokens: 1024,\n      messages: [{ role: 'user', content: prompt }]\n    })\n  }\n};"
             },
             "id": "build-claude-request",
             "name": "Build Claude Request",
@@ -248,7 +261,7 @@
             "main": [
                 [
                     {
-                        "node": "Filter Messages",
+                        "node": "Route /tag Command",
                         "type": "main",
                         "index": 0
                     }
@@ -315,6 +328,17 @@
                 [
                     {
                         "node": "Claude API Classification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Route /tag Command": {
+            "main": [
+                [
+                    {
+                        "node": "Filter Messages",
                         "type": "main",
                         "index": 0
                     }
