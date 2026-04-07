@@ -108,9 +108,23 @@
         },
         {
             "parameters": {
+                "functionCode": "// Build the Claude API request body\nconst messageText = $input.item.json.message_text || '';\nconst source = $input.item.json.source || 'unknown';\nconst timestamp = $input.item.json.timestamp || new Date().toISOString();\n\nconst prompt = `Analyze this message and extract metadata:\n\nMessage: ${messageText}\nSource: ${source}\nTimestamp: ${timestamp}\n\nExtract and return ONLY valid JSON (no markdown, no explanation):\n{\n  \"tags\": [\"tag1\", \"tag2\", \"tag3\"],\n  \"entities\": [\"entity1\", \"entity2\"],\n  \"summary\": \"1-2 sentence summary\",\n  \"narrative_role\": \"symbol|system|pilot|origin|exploration|setup|conflict|realisation|integration\",\n  \"date_estimated\": \"YYYY-MM-DD or YYYY\",\n  \"timeline_group\": \"1974-1990|2019-2023|2024-2026\"\n}\n\nRules:\n- Tags: 3-5 keywords\n- Entities: People, companies, concepts\n- Summary: Concise, factual\n- Narrative_role: Best fit from list\n- Date_estimated: Infer from context or use timestamp\n- Timeline_group: Map to period`;\n\nreturn {\n  json: {\n    ...$input.item.json,\n    claudeRequestBody: JSON.stringify({\n      model: 'claude-haiku-4-5-20251001',\n      max_tokens: 1024,\n      messages: [{role: 'user', content: prompt}]\n    })\n  }\n};"
+            },
+            "id": "build-claude-request",
+            "name": "Build Claude Request",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1050,
+                350
+            ]
+        },
+        {
+            "parameters": {
                 "method": "POST",
                 "url": "https://api.anthropic.com/v1/messages",
                 "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
                 "sendHeaders": true,
                 "headerParameters": {
                     "parameters": [
@@ -124,11 +138,11 @@
                         }
                     ]
                 },
-                "options": {},
-                "genericAuthType": "httpHeaderAuth",
                 "sendBody": true,
-                "contentType": "json",
-                "body": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 1024,\n  \"messages\": [{\"role\": \"user\", \"content\": \"Analyze this message and extract metadata:\\n\\nMessage: {{ $json.message_text }}\\nSource: {{ $json.source }}\\nTimestamp: {{ $json.timestamp }}\\n\\nExtract and return ONLY valid JSON (no markdown, no explanation):\\n{\\n  \\\"tags\\\": [\\\"tag1\\\", \\\"tag2\\\", \\\"tag3\\\"],\\n  \\\"entities\\\": [\\\"entity1\\\", \\\"entity2\\\"],\\n  \\\"summary\\\": \\\"1-2 sentence summary\\\",\\n  \\\"narrative_role\\\": \\\"symbol|system|pilot|origin|exploration|setup|conflict|realisation|integration\\\",\\n  \\\"date_estimated\\\": \\\"YYYY-MM-DD or YYYY\\\",\\n  \\\"timeline_group\\\": \\\"1974-1990|2019-2023|2024-2026\\\"\\n}\\n\\nRules:\\n- Tags: 3-5 keywords\\n- Entities: People, companies, concepts\\n- Summary: Concise, factual\\n- Narrative_role: Best fit from list\\n- Date_estimated: Infer from context or use timestamp\\n- Timeline_group: Map to period\"}]\n}"
+                "contentType": "raw",
+                "rawContentType": "application/json",
+                "body": "={{ $json.claudeRequestBody }}",
+                "options": {}
             },
             "id": "claude-classify",
             "name": "Claude API Classification",
@@ -136,7 +150,7 @@
             "typeVersion": 3,
             "position": [
                 1250,
-                400
+                350
             ]
         },
         {
@@ -265,7 +279,7 @@
             "main": [
                 [
                     {
-                        "node": "Claude API Classification",
+                        "node": "Build Claude Request",
                         "type": "main",
                         "index": 0
                     }
@@ -299,6 +313,17 @@
                 [
                     {
                         "node": "Trigger WF-02",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Build Claude Request": {
+            "main": [
+                [
+                    {
+                        "node": "Claude API Classification",
                         "type": "main",
                         "index": 0
                     }
