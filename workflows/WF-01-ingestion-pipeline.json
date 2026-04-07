@@ -193,6 +193,15 @@
             "parameters": {
                 "method": "POST",
                 "url": "https://n8n-docker-t9sr.onrender.com/webhook/wf02-crosslink",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "file_name",
+                            "value": "={{ $json.file_name }}"
+                        }
+                    ]
+                },
                 "options": {}
             },
             "id": "trigger-crosslink",
