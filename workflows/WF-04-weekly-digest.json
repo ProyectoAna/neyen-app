@@ -1,0 +1,95 @@
+{
+    "name": "WF-04: Weekly Digest",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "triggerAtDay": 1,
+                            "triggerAtHour": 9,
+                            "triggerAtMinute": 0
+                        }
+                    ]
+                }
+            },
+            "id": "wf04-cron",
+            "name": "Every Monday 9:00",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [250, 300]
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "wf04-weekly-digest",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "wf04-webhook",
+            "name": "Manual Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [250, 500],
+            "webhookId": "wf04-weekly-digest"
+        },
+        {
+            "parameters": {
+                "functionCode": "// Call Supabase weekly_digest RPC\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/weekly_digest',\n  headers: {\n    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24',\n    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24',\n    'Content-Type': 'application/json'\n  },\n  body: { p_limit: 10 },\n  json: true\n});\n\nreturn { json: response };"
+            },
+            "id": "fetch-digest",
+            "name": "Fetch Weekly Digest",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [500, 400]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Format the weekly digest as a Slack message\nconst d = $input.item.json;\nconst total = d.total_entries_this_week || 0;\nconst crosslinked = d.total_crosslinked || 0;\nconst entries = d.top_entries || [];\nconst start = d.period_start ? new Date(d.period_start).toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'}) : '?';\nconst end = d.period_end ? new Date(d.period_end).toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'}) : '?';\n\nif (total === 0) {\n  return {\n    json: {\n      message: `:spiral_calendar_pad: *Digest Semanal NEYEN*\\n_${start} — ${end}_\\n\\nSin nuevas entradas esta semana. La espiral descansa.`,\n      has_entries: false\n    }\n  };\n}\n\n// Build entry list\nconst lines = entries.map((e, i) => {\n  const medal = i === 0 ? ':first_place_medal:' : i === 1 ? ':second_place_medal:' : i === 2 ? ':third_place_medal:' : `${i + 1}.`;\n  const tags = (e.tags || []).slice(0, 4).map(t => `\\`${t}\\``).join(' ');\n  const summary = (e.summary || '').substring(0, 120);\n  return `${medal} *${e.crosslink_count} links* — \\`${e.file_name}\\`\\n    _${summary}${summary.length >= 120 ? '...' : ''}_\\n    ${tags}`;\n}).join('\\n\\n');\n\nconst msg = `:spiral_calendar_pad: *Digest Semanal NEYEN*\\n_${start} — ${end}_\\n\\n` +\n  `:bar_chart: *${total}* entradas | *${crosslinked}* con crosslinks\\n\\n` +\n  `*Top entradas por conexiones:*\\n\\n${lines}\\n\\n` +\n  `_La espiral sigue tejiendo conexiones._`;\n\nreturn {\n  json: {\n    message: msg,\n    has_entries: true,\n    total: total,\n    crosslinked: crosslinked\n  }\n};"
+            },
+            "id": "format-message",
+            "name": "Format Digest Message",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [700, 400]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Post to Slack #general-neyen-core via incoming webhook\nconst msg = $input.item.json.message;\n\nconst slackResp = await this.helpers.httpRequest({\n  method: 'POST',\n  url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: msg },\n  json: true,\n  returnFullResponse: false\n});\n\nreturn {\n  json: {\n    status: 'ok',\n    slack_response: slackResp,\n    total: $input.item.json.total || 0,\n    crosslinked: $input.item.json.crosslinked || 0\n  }\n};"
+            },
+            "id": "post-to-slack",
+            "name": "Post to Slack",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [900, 400]
+        }
+    ],
+    "connections": {
+        "Every Monday 9:00": {
+            "main": [
+                [{ "node": "Fetch Weekly Digest", "type": "main", "index": 0 }]
+            ]
+        },
+        "Manual Trigger": {
+            "main": [
+                [{ "node": "Fetch Weekly Digest", "type": "main", "index": 0 }]
+            ]
+        },
+        "Fetch Weekly Digest": {
+            "main": [
+                [{ "node": "Format Digest Message", "type": "main", "index": 0 }]
+            ]
+        },
+        "Format Digest Message": {
+            "main": [
+                [{ "node": "Post to Slack", "type": "main", "index": 0 }]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "timezone": "Europe/Madrid"
+    },
+    "tags": []
+}
