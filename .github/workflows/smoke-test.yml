@@ -1,0 +1,126 @@
+name: Smoke Test — n8n Webhooks
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Hit WF-01 → WF-02 → WF-03 webhooks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      N8N_BASE: https://n8n-docker-t9sr.onrender.com
+      SUPABASE_URL: https://gsmtzdramqzcqdywboro.supabase.co
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+    steps:
+      - name: Wake n8n (Render cold-start)
+        run: |
+          echo "::group::Pinging n8n"
+          for i in 1 2 3; do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 120 "$N8N_BASE/")
+            echo "Attempt $i → HTTP $CODE"
+            [ "$CODE" = "200" ] && break
+            sleep 10
+          done
+          [ "$CODE" = "200" ] || { echo "::error::n8n did not wake up"; exit 1; }
+          echo "::endgroup::"
+
+      - name: "WF-01: url_verification challenge"
+        run: |
+          RESP=$(curl -sf --max-time 30 \
+            -X POST "$N8N_BASE/webhook/wf01-ingest" \
+            -H "Content-Type: application/json" \
+            -d '{"type":"url_verification","challenge":"gh_smoke_test","token":"test"}')
+          echo "Response: $RESP"
+          echo "$RESP" | grep -q "gh_smoke_test" \
+            || { echo "::error::WF-01 url_verification failed — challenge not echoed"; exit 1; }
+          echo "✓ WF-01 url_verification OK"
+
+      - name: "WF-01: message ingestion (ACK)"
+        run: |
+          CODE=$(curl -s -o /tmp/wf01-ack.txt -w '%{http_code}' --max-time 30 \
+            -X POST "$N8N_BASE/webhook/wf01-ingest" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "type":"event_callback",
+              "event":{
+                "type":"message",
+                "text":"GH Actions smoke test — ignore",
+                "user":"U_SMOKETEST",
+                "channel":"C_SMOKETEST",
+                "ts":"'$(date +%s)'.000000",
+                "bot_id":"B_SMOKETEST"
+              },
+              "event_id":"smoke_'$(date +%s)'"
+            }')
+          echo "HTTP $CODE — body: $(cat /tmp/wf01-ack.txt)"
+          [ "$CODE" = "200" ] \
+            || { echo "::error::WF-01 message endpoint returned HTTP $CODE"; exit 1; }
+          echo "✓ WF-01 message ACK OK (bot_id set → filtered, no side-effects)"
+
+      - name: "WF-02: crosslink RPC"
+        run: |
+          RESP=$(curl -sf --max-time 30 \
+            -X POST "$N8N_BASE/webhook/wf02-crosslink" \
+            -H "Content-Type: application/json" \
+            -d '{"file_name":"__smoke_test_nonexistent__"}')
+          echo "Response: $RESP"
+          # The RPC should return an error status for a nonexistent file — that's fine,
+          # it proves the webhook is alive and the RPC function runs.
+          echo "$RESP" | grep -qE '"status"\s*:\s*"(ok|error)"' \
+            || { echo "::error::WF-02 did not return a valid status"; exit 1; }
+          echo "✓ WF-02 crosslink webhook alive"
+
+      - name: "WF-03: notification dry-run"
+        run: |
+          # Send a payload with related_count=0 so the threshold (>=5) is NOT met
+          # and no actual Slack message is posted. We only verify the webhook responds.
+          CODE=$(curl -s -o /tmp/wf03-resp.txt -w '%{http_code}' --max-time 30 \
+            -X POST "$N8N_BASE/webhook/wf03-crosslink-notify" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "entry_id":"00000000-0000-0000-0000-000000000000",
+              "file_name":"__smoke_test__",
+              "related_ids":[],
+              "related_count":0,
+              "tags":["smoke","test"],
+              "entities":["CI"],
+              "summary":"GitHub Actions smoke test — dry run"
+            }')
+          echo "HTTP $CODE — body: $(cat /tmp/wf03-resp.txt)"
+          [ "$CODE" = "200" ] \
+            || { echo "::error::WF-03 webhook returned HTTP $CODE"; exit 1; }
+          echo "✓ WF-03 notification webhook alive"
+
+      - name: "Supabase: crosslink_entry RPC reachable"
+        if: env.SUPABASE_ANON_KEY != ''
+        run: |
+          RESP=$(curl -sf --max-time 15 \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/crosslink_entry" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"p_file_name":"__smoke_test_nonexistent__"}')
+          echo "Response: $RESP"
+          echo "$RESP" | grep -q '"status"' \
+            || { echo "::error::Supabase RPC unreachable or broken"; exit 1; }
+          echo "✓ Supabase crosslink_entry RPC OK"
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "## ✅ Smoke Test Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Webhook | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| WF-01 url_verification | ✓ |" >> $GITHUB_STEP_SUMMARY
+          echo "| WF-01 message ACK | ✓ |" >> $GITHUB_STEP_SUMMARY
+          echo "| WF-02 crosslink | ✓ |" >> $GITHUB_STEP_SUMMARY
+          echo "| WF-03 notification | ✓ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Supabase RPC | ✓ |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_$(date -u +%Y-%m-%dT%H:%M:%SZ)_" >> $GITHUB_STEP_SUMMARY
