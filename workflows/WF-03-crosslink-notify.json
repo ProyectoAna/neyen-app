@@ -1,0 +1,146 @@
+{
+    "name": "WF-03: Crosslink Notify",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "wf03-crosslink-notify",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "wf03-webhook",
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ],
+            "webhookId": "wf03-crosslink-notify"
+        },
+        {
+            "parameters": {
+                "functionCode": "// Extract crosslink data from WF-02's POST body\nconst body = $input.item.json.body || $input.item.json;\n\nconst entryId = body.entry_id;\nconst fileName = body.file_name;\nconst relatedIds = body.related_ids || [];\nconst relatedCount = body.related_count || relatedIds.length;\nconst tags = body.tags || [];\nconst entities = body.entities || [];\nconst summary = body.summary || '';\n\nif (!entryId) {\n  throw new Error('No entry_id in payload');\n}\n\nreturn {\n  json: {\n    entry_id: entryId,\n    file_name: fileName,\n    related_ids: relatedIds,\n    related_count: relatedCount,\n    tags: tags,\n    entities: entities,\n    summary: summary\n  }\n};"
+            },
+            "id": "parse-payload",
+            "name": "Parse Payload",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Fetch names of the related entries from Supabase\nconst data = $input.item.json;\nconst relatedIds = data.related_ids;\n\nif (!relatedIds || relatedIds.length === 0) {\n  return {\n    json: {\n      ...data,\n      related_entries: []\n    }\n  };\n}\n\n// Query Supabase for the related entry details\nconst idsParam = relatedIds.map(id => `\"${id}\"`).join(',');\nconst url = `https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/metadata?id=in.(${relatedIds.join(',')})&select=id,file_name,tags,summary`;\n\nconst response = await this.helpers.httpRequest({\n  method: 'GET',\n  url: url,\n  headers: {\n    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24',\n    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24'\n  },\n  json: true\n});\n\nreturn {\n  json: {\n    ...data,\n    related_entries: response || []\n  }\n};"
+            },
+            "id": "fetch-related-details",
+            "name": "Fetch Related Details",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Build a Slack notification message\nconst data = $input.item.json;\nconst relatedEntries = data.related_entries || [];\nconst count = data.related_count;\nconst fileName = data.file_name || 'unknown';\nconst tags = data.tags || [];\nconst entities = data.entities || [];\nconst summary = data.summary || '';\n\n// Build the matched entries list (top 10)\nconst entryLines = relatedEntries.slice(0, 10).map((e, i) => {\n  const eTags = (e.tags || []).slice(0, 3).join(', ');\n  const shortSummary = (e.summary || '').substring(0, 80);\n  return `${i + 1}. *${e.file_name}* \u2014 _${shortSummary}${shortSummary.length >= 80 ? '...' : ''}_ [${eTags}]`;\n}).join('\\n');\n\nconst moreText = relatedEntries.length > 10 ? `\\n_...y ${relatedEntries.length - 10} mas_` : '';\n\nconst message = `:link: *Crosslink Alert: ${count} conexiones encontradas*\\n\\n` +\n  `*Entrada nueva:* \\`${fileName}\\`\\n` +\n  (summary ? `*Resumen:* ${summary}\\n` : '') +\n  `*Tags:* ${tags.join(', ')}\\n` +\n  `*Entidades:* ${entities.join(', ')}\\n\\n` +\n  `*Entradas relacionadas:*\\n${entryLines}${moreText}\\n\\n` +\n  `_La espiral conecta ${count} nodos._`;\n\nreturn {\n  json: {\n    slack_message: message,\n    entry_id: data.entry_id,\n    related_count: count\n  }\n};"
+            },
+            "id": "build-message",
+            "name": "Build Slack Message",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                850,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.SLACK_WEBHOOK_NEYEN_CORE || \"https://hooks.slack.com/services/CONFIGURE_ME\" }}",
+                "authentication": "noAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "text",
+                            "value": "={{ $json.slack_message }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "post-to-slack",
+            "name": "Post to Slack",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                1050,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Parse Payload",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse Payload": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Related Details",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Related Details": {
+            "main": [
+                [
+                    {
+                        "node": "Build Slack Message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Build Slack Message": {
+            "main": [
+                [
+                    {
+                        "node": "Post to Slack",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": []
+}
