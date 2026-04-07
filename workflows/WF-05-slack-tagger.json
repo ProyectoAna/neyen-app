@@ -12,18 +12,24 @@
             "name": "Webhook Trigger",
             "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
-            "position": [250, 300],
+            "position": [
+                250,
+                300
+            ],
             "webhookId": "wf05-slack-tagger"
         },
         {
             "parameters": {
-                "functionCode": "// Parse the /tag command forwarded from WF-01\n// Expected payload: { text, user_id, channel_id, ts }\nconst body = $input.item.json.body || $input.item.json;\nconst text = (body.text || '').trim();\nconst userId = body.user_id || '';\nconst channelId = body.channel_id || '';\nconst threadTs = body.thread_ts || body.ts || '';\n\n// Syntax: /tag <file_name> <field> <value1> [value2] ...\n// Example: /tag TSW_coherence_protocol narrative_role exploration\n// Example: /tag TSW_coherence_protocol tags philosophy meaning\n// Example: /tag TSW_coherence_protocol entities Ana NEYEN\nconst commandRegex = /^\\/tag\\s+(\\S+)\\s+(\\S+)\\s+(.+)$/i;\nconst match = text.match(commandRegex);\n\nif (!match) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: *Sintaxis incorrecta.*\\n\\`/tag <file_name> <field> <valores>\\`\\n\\nEjemplos:\\n\\`/tag TSW_coherence_protocol narrative_role exploration\\`\\n\\`/tag TSW_coherence_protocol tags filosofia espiral\\`\\n\\`/tag TSW_coherence_protocol entities Ana NEYEN\\`\\n\\n*Campos válidos:* \\`narrative_role\\` · \\`tags\\` · \\`entities\\`\\n*Roles válidos:* \\`realisation\\` · \\`exploration\\` · \\`conflict\\` · \\`symbol\\` · \\`system\\` · \\`orphaned\\``\n    }\n  };\n}\n\nconst [, fileName, field, valuesStr] = match;\nconst values = valuesStr.split(/\\s+/).filter(Boolean);\n\n// Validate field\nconst VALID_FIELDS = ['tags', 'entities', 'narrative_role'];\nif (!VALID_FIELDS.includes(field)) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Campo inválido: \\`${field}\\`\\n*Campos válidos:* \\`narrative_role\\` · \\`tags\\` · \\`entities\\``\n    }\n  };\n}\n\n// Validate narrative_role values\nconst VALID_ROLES = ['realisation','exploration','conflict','symbol','system','orphaned'];\nif (field === 'narrative_role' && !VALID_ROLES.includes(values[0])) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Rol inválido: \\`${values[0]}\\`\\n*Roles válidos:* \\`${VALID_ROLES.join('\\` · \\`')}\\``\n    }\n  };\n}\n\nreturn {\n  json: {\n    error: false,\n    file_name: fileName,\n    field: field,\n    values: values,\n    channel_id: channelId,\n    thread_ts: threadTs,\n    user_id: userId\n  }\n};"
+                "functionCode": "// Parse /tag or /graph commands forwarded from WF-01\nconst body = $input.item.json.body || $input.item.json;\nconst text = (body.text || '').trim();\nconst userId = body.user_id || '';\nconst channelId = body.channel_id || '';\nconst threadTs = body.thread_ts || body.ts || '';\n\n// \u2500\u2500 /graph command \u2500\u2500\nif (text === '/graph' || text.startsWith('/graph ') || text.startsWith('/graph\\t')) {\n  return {\n    json: {\n      command: 'graph',\n      error: false,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /tag command \u2500\u2500\nconst commandRegex = /^\\/tag\\s+(\\S+)\\s+(\\S+)\\s+(.+)$/i;\nconst match = text.match(commandRegex);\n\nif (!match) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: *Sintaxis incorrecta.*\\n\\`/tag <file_name> <field> <valores>\\`\\n\\nEjemplos:\\n\\`/tag TSW_coherence_protocol narrative_role exploration\\`\\n\\`/tag TSW_coherence_protocol tags filosofia espiral\\`\\n\\`/tag TSW_coherence_protocol entities Ana NEYEN\\`\\n\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\`\\n*Roles v\u00e1lidos:* \\`realisation\\` \u00b7 \\`exploration\\` \u00b7 \\`conflict\\` \u00b7 \\`symbol\\` \u00b7 \\`system\\` \u00b7 \\`orphaned\\`\\n\\nUsa tambi\u00e9n \\`/graph\\` para ver el resumen del grafo.`\n    }\n  };\n}\n\nconst [, fileName, field, valuesStr] = match;\nconst values = valuesStr.split(/\\s+/).filter(Boolean);\n\nconst VALID_FIELDS = ['tags', 'entities', 'narrative_role'];\nif (!VALID_FIELDS.includes(field)) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Campo inv\u00e1lido: \\`${field}\\`\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\``\n    }\n  };\n}\n\nconst VALID_ROLES = ['realisation','exploration','conflict','symbol','system','orphaned'];\nif (field === 'narrative_role' && !VALID_ROLES.includes(values[0])) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Rol inv\u00e1lido: \\`${values[0]}\\`\\n*Roles v\u00e1lidos:* \\`${VALID_ROLES.join('\\` \u00b7 \\`')}\\``\n    }\n  };\n}\n\nreturn {\n  json: {\n    command: 'tag',\n    error: false,\n    file_name: fileName,\n    field: field,\n    values: values,\n    channel_id: channelId,\n    thread_ts: threadTs,\n    user_id: userId\n  }\n};"
             },
             "id": "parse-command",
             "name": "Parse Tag Command",
             "type": "n8n-nodes-base.function",
             "typeVersion": 1,
-            "position": [450, 300]
+            "position": [
+                450,
+                300
+            ]
         },
         {
             "parameters": {
@@ -40,7 +46,10 @@
             "name": "Parse Error?",
             "type": "n8n-nodes-base.if",
             "typeVersion": 1,
-            "position": [650, 300]
+            "position": [
+                650,
+                300
+            ]
         },
         {
             "parameters": {
@@ -50,7 +59,10 @@
             "name": "Send Parse Error",
             "type": "n8n-nodes-base.function",
             "typeVersion": 1,
-            "position": [850, 200]
+            "position": [
+                850,
+                200
+            ]
         },
         {
             "parameters": {
@@ -60,17 +72,23 @@
             "name": "Call tag_entry RPC",
             "type": "n8n-nodes-base.function",
             "typeVersion": 1,
-            "position": [850, 400]
+            "position": [
+                850,
+                400
+            ]
         },
         {
             "parameters": {
-                "functionCode": "// Build confirmation or error Slack message\nconst d = $input.item.json;\nconst rpc = d.rpc_result || {};\n\nlet msg;\nif (rpc.status === 'ok') {\n  const fieldEmoji = { tags: ':label:', entities: ':bust_in_silhouette:', narrative_role: ':spiral_note_pad:' };\n  const emoji = fieldEmoji[d.field] || ':white_check_mark:';\n  const valDisplay = Array.isArray(d.values) ? d.values.map(v => '`' + v + '`').join(' ') : String(d.values);\n  const crosslink = rpc.crosslink || {};\n  const crosslinkInfo = crosslink.related_count > 0\n    ? ` · :link: ${crosslink.related_count} conexiones encontradas`\n    : ' · :white_circle: sin conexiones aún';\n  msg = `${emoji} *Tag aplicado*\\n` +\n    `*Entrada:* \\`${d.file_name}\\`\\n` +\n    `*Campo:* \\`${d.field}\\` → ${valDisplay}${crosslinkInfo}\\n` +\n    `_Crosslink ejecutado automáticamente._`;\n} else {\n  msg = `:x: *Error al aplicar tag*\\n` +\n    `\\`${d.file_name}\\` — ${rpc.message || 'Error desconocido'}`;\n}\n\nreturn {\n  json: {\n    message: msg,\n    channel_id: d.channel_id,\n    rpc_ok: rpc.status === 'ok'\n  }\n};"
+                "functionCode": "// Build confirmation or error Slack message\nconst d = $input.item.json;\nconst rpc = d.rpc_result || {};\n\nlet msg;\nif (rpc.status === 'ok') {\n  const fieldEmoji = { tags: ':label:', entities: ':bust_in_silhouette:', narrative_role: ':spiral_note_pad:' };\n  const emoji = fieldEmoji[d.field] || ':white_check_mark:';\n  const valDisplay = Array.isArray(d.values) ? d.values.map(v => '`' + v + '`').join(' ') : String(d.values);\n  const crosslink = rpc.crosslink || {};\n  const crosslinkInfo = crosslink.related_count > 0\n    ? ` \u00b7 :link: ${crosslink.related_count} conexiones encontradas`\n    : ' \u00b7 :white_circle: sin conexiones a\u00fan';\n  msg = `${emoji} *Tag aplicado*\\n` +\n    `*Entrada:* \\`${d.file_name}\\`\\n` +\n    `*Campo:* \\`${d.field}\\` \u2192 ${valDisplay}${crosslinkInfo}\\n` +\n    `_Crosslink ejecutado autom\u00e1ticamente._`;\n} else {\n  msg = `:x: *Error al aplicar tag*\\n` +\n    `\\`${d.file_name}\\` \u2014 ${rpc.message || 'Error desconocido'}`;\n}\n\nreturn {\n  json: {\n    message: msg,\n    channel_id: d.channel_id,\n    rpc_ok: rpc.status === 'ok'\n  }\n};"
             },
             "id": "build-confirmation",
             "name": "Build Confirmation",
             "type": "n8n-nodes-base.function",
             "typeVersion": 1,
-            "position": [1050, 400]
+            "position": [
+                1050,
+                400
+            ]
         },
         {
             "parameters": {
@@ -80,34 +98,172 @@
             "name": "Post Confirmation",
             "type": "n8n-nodes-base.function",
             "typeVersion": 1,
-            "position": [1250, 400]
+            "position": [
+                1250,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.command }}",
+                            "value2": "graph"
+                        }
+                    ]
+                }
+            },
+            "id": "route-by-command",
+            "name": "Route by Command",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Fetch role_distribution() from Supabase\nconst ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24';\nconst result = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/role_distribution',\n  headers: {\n    'apikey': ANON,\n    'Authorization': 'Bearer ' + ANON,\n    'Content-Type': 'application/json'\n  },\n  body: {},\n  json: true\n});\nreturn { json: { ...($input.item.json), stats: result } };"
+            },
+            "id": "fetch-graph-stats",
+            "name": "Fetch Graph Stats",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                850,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Build a visual /graph summary for Slack\nconst d = $input.item.json;\nconst stats = d.stats || {};\nconst total = stats.total || 0;\nconst byRole = stats.by_role || {};\nconst topTags = stats.top_tags || [];\nconst orphaned = stats.orphaned_structural || 0;\n\n// Role config: emoji + display name\nconst ROLE_CONFIG = {\n  realisation:   { emoji: ':bulb:',          label: 'Realisation'   },\n  exploration:   { emoji: ':mag:',            label: 'Exploration'   },\n  conflict:      { emoji: ':zap:',            label: 'Conflict'      },\n  symbol:        { emoji: ':cyclone:',        label: 'Symbol'        },\n  system:        { emoji: ':gear:',           label: 'System'        },\n  orphaned:      { emoji: ':white_circle:',   label: 'Orphaned'      },\n  setup:         { emoji: ':triangular_ruler:', label: 'Setup'       },\n  integration:   { emoji: ':link:',           label: 'Integration'   },\n  inciting_event:{ emoji: ':boom:',           label: 'Inciting event'},\n  pilot:         { emoji: ':rocket:',         label: 'Pilot'         },\n  unclassified:  { emoji: ':question:',       label: 'Unclassified'  },\n};\n\n// Sort roles by count descending\nconst sorted = Object.entries(byRole).sort((a, b) => b[1] - a[1]);\n\n// Build bar chart lines\nconst maxCount = sorted[0]?.[1] || 1;\nconst BAR_WIDTH = 12;\nconst roleLines = sorted.map(([role, count]) => {\n  const cfg = ROLE_CONFIG[role] || { emoji: ':small_blue_diamond:', label: role };\n  const pct = Math.round((count / total) * 100);\n  const bars = Math.round((count / maxCount) * BAR_WIDTH);\n  const bar = '\u2588'.repeat(bars) + '\u2591'.repeat(BAR_WIDTH - bars);\n  return `${cfg.emoji} \\`${bar}\\` *${count}* ${cfg.label} _(${pct}%)_`;\n}).join('\\n');\n\n// Top tags\nconst tagLine = topTags.slice(0, 8).map(t => `\\`${t.tag}\\``).join(' \u00b7 ');\n\nconst msg = `:bar_chart: *NEYEN Knowledge Graph*\\n` +\n  `_${total} entradas \u00b7 ${orphaned} hu\u00e9rfanas sin conectar_\\n\\n` +\n  `*Distribuci\u00f3n por rol narrativo:*\\n${roleLines}\\n\\n` +\n  `*Tags m\u00e1s frecuentes:*\\n${tagLine || '\u2014'}\\n\\n` +\n  `_Usa \\`/tag <file_name> narrative_role <role>\\` para reclasificar._\\n` +\n  `_Ver grafo completo: <https://neyen.thespiralwithin.ai/graph/|neyen.thespiralwithin.ai/graph>_`;\n\nreturn {\n  json: {\n    message: msg,\n    channel_id: d.channel_id\n  }\n};"
+            },
+            "id": "format-graph-stats",
+            "name": "Format Graph Stats",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1050,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Post /graph summary to Slack\nconst d = $input.item.json;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: d.message },\n  json: true\n});\nreturn { json: { status: 'ok', command: 'graph' } };"
+            },
+            "id": "post-graph-stats",
+            "name": "Post Graph Stats",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1250,
+                200
+            ]
         }
     ],
     "connections": {
         "Webhook Trigger": {
             "main": [
-                [{ "node": "Parse Tag Command", "type": "main", "index": 0 }]
+                [
+                    {
+                        "node": "Parse Tag Command",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Parse Tag Command": {
             "main": [
-                [{ "node": "Parse Error?", "type": "main", "index": 0 }]
+                [
+                    {
+                        "node": "Route by Command",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Parse Error?": {
             "main": [
-                [{ "node": "Send Parse Error", "type": "main", "index": 0 }],
-                [{ "node": "Call tag_entry RPC", "type": "main", "index": 0 }]
+                [
+                    {
+                        "node": "Send Parse Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Call tag_entry RPC",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Call tag_entry RPC": {
             "main": [
-                [{ "node": "Build Confirmation", "type": "main", "index": 0 }]
+                [
+                    {
+                        "node": "Build Confirmation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Build Confirmation": {
             "main": [
-                [{ "node": "Post Confirmation", "type": "main", "index": 0 }]
+                [
+                    {
+                        "node": "Post Confirmation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Route by Command": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Graph Stats",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Parse Error?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Graph Stats": {
+            "main": [
+                [
+                    {
+                        "node": "Format Graph Stats",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Graph Stats": {
+            "main": [
+                [
+                    {
+                        "node": "Post Graph Stats",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         }
     },
