@@ -79,16 +79,24 @@ function buildGraph(graphResult, orphansResult) {
 
   const nodeMap = new Map();
   const nodes = rows.map(row => {
+    // related_ids may come back as a JSON string inside the JSONB wrapper — parse it
+    let relIds = row.related_ids || [];
+    if (typeof relIds === 'string') { try { relIds = JSON.parse(relIds); } catch(e) { relIds = []; } }
+    if (!Array.isArray(relIds)) relIds = [];
+    let tags = row.tags || [];
+    if (typeof tags === 'string') { try { tags = JSON.parse(tags); } catch(e) { tags = []; } }
+    let entities = row.entities || [];
+    if (typeof entities === 'string') { try { entities = JSON.parse(entities); } catch(e) { entities = []; } }
     const n = {
       id: row.id,
       file_name: row.file_name || row.id.slice(0, 8),
       summary: row.summary || '',
-      tags: row.tags || [],
-      entities: row.entities || [],
+      tags,
+      entities,
       narrative_role: row.narrative_role || '',
       timeline_group: row.timeline_group || '',
       created_at: row.created_at,
-      related_ids: row.related_ids || [],
+      related_ids: relIds,
       isOrphan: orphanIds.has(row.id),
       linkCount: 0
     };
