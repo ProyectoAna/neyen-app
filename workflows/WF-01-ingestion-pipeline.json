@@ -19,7 +19,7 @@
                 "conditions": {
                     "string": [
                         {
-                            "value1": "={{$json.type}}",
+                            "value1": "={{$json.body.type}}",
                             "operation": "equal",
                             "value2": "url_verification"
                         }
@@ -35,7 +35,7 @@
         {
             "parameters": {
                 "respondWith": "json",
-                "responseBody": "={\"challenge\": \"{{$json.challenge}}\"}"
+                "responseBody": "={\"challenge\": \"{{$json.body.challenge}}}\""
             },
             "id": "respond-challenge",
             "name": "Respond Challenge",
@@ -45,7 +45,7 @@
         },
         {
             "parameters": {
-                "functionCode": "// Extract fields from Slack Events API payload\n// Slack wraps messages under body.event, not body directly\nconst body = $input.item.json;\nconst event = body.event || {};\n\n// Ignore retried events that we may have already processed\n// (Slack adds X-Slack-Retry-Num header on retries, but we handle via event_id dedup in Supabase)\n\n// Skip bot messages to prevent infinite loops\nif (event.bot_id || event.subtype === 'bot_message') {\n  return null;\n}\n\n// Only process standard user messages\nif (event.type !== 'message' || !event.text) {\n  return null;\n}\n\nreturn {\n  json: {\n    message_text: event.text,\n    user_id: event.user || 'anonymous',\n    channel_id: event.channel || '',\n    source: 'slack',\n    event_id: body.event_id || '',\n    timestamp: event.ts\n      ? new Date(parseFloat(event.ts) * 1000).toISOString()\n      : new Date().toISOString(),\n    metadata: {}\n  }\n};"
+                "functionCode": "// Extract fields from Slack Events API payload\n// Slack wraps messages under body.event, not body directly\nconst body = $input.item.json.body || $input.item.json;\nconst event = body.event || {};\n\n// Ignore retried events that we may have already processed\n// (Slack adds X-Slack-Retry-Num header on retries, but we handle via event_id dedup in Supabase)\n\n// Skip bot messages to prevent infinite loops\nif (event.bot_id || event.subtype === 'bot_message') {\n  return null;\n}\n\n// Only process standard user messages\nif (event.type !== 'message' || !event.text) {\n  return null;\n}\n\nreturn {\n  json: {\n    message_text: event.text,\n    user_id: event.user || 'anonymous',\n    channel_id: event.channel || '',\n    source: 'slack',\n    event_id: body.event_id || '',\n    timestamp: event.ts\n      ? new Date(parseFloat(event.ts) * 1000).toISOString()\n      : new Date().toISOString(),\n    metadata: {}\n  }\n};"
             },
             "id": "extract-content",
             "name": "Extract Content",
