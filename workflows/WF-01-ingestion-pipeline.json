@@ -125,9 +125,10 @@
                     ]
                 },
                 "options": {},
-                "specifyBody": "json",
-                "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 1024,\n  \"messages\": [{\"role\": \"user\", \"content\": \"Analyze this message and extract NEY\u0112N metadata:\\n\\nMessage: {{ $json.message_text }}\\nSource: {{ $json.source }}\\nTimestamp: {{ $json.timestamp }}\\n\\nExtract and return ONLY valid JSON (no markdown, no explanation):\\n{\\n  \\\"tags\\\": [\\\"tag1\\\", \\\"tag2\\\", \\\"tag3\\\"],\\n  \\\"entities\\\": [\\\"entity1\\\", \\\"entity2\\\"],\\n  \\\"summary\\\": \\\"1-2 sentence summary\\\",\\n  \\\"narrative_role\\\": \\\"symbol|system|pilot|origin|exploration|setup|conflict|realisation|integration\\\",\\n  \\\"date_estimated\\\": \\\"YYYY-MM-DD or YYYY\\\",\\n  \\\"timeline_group\\\": \\\"1974-1990|2019-2023|2024-2026\\\"\\n}\\n\\nRules:\\n- Tags: 3-5 keywords\\n- Entities: People, companies, concepts\\n- Summary: Concise, factual\\n- Narrative_role: Best fit from list\\n- Date_estimated: Infer from context or use timestamp\\n- Timeline_group: Map to period\"}]\n}",
-                "genericAuthType": "httpHeaderAuth"
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "contentType": "json",
+                "body": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 1024,\n  \"messages\": [{\"role\": \"user\", \"content\": \"Analyze this message and extract metadata:\\n\\nMessage: {{ $json.message_text }}\\nSource: {{ $json.source }}\\nTimestamp: {{ $json.timestamp }}\\n\\nExtract and return ONLY valid JSON (no markdown, no explanation):\\n{\\n  \\\"tags\\\": [\\\"tag1\\\", \\\"tag2\\\", \\\"tag3\\\"],\\n  \\\"entities\\\": [\\\"entity1\\\", \\\"entity2\\\"],\\n  \\\"summary\\\": \\\"1-2 sentence summary\\\",\\n  \\\"narrative_role\\\": \\\"symbol|system|pilot|origin|exploration|setup|conflict|realisation|integration\\\",\\n  \\\"date_estimated\\\": \\\"YYYY-MM-DD or YYYY\\\",\\n  \\\"timeline_group\\\": \\\"1974-1990|2019-2023|2024-2026\\\"\\n}\\n\\nRules:\\n- Tags: 3-5 keywords\\n- Entities: People, companies, concepts\\n- Summary: Concise, factual\\n- Narrative_role: Best fit from list\\n- Date_estimated: Infer from context or use timestamp\\n- Timeline_group: Map to period\"}]\n}"
             },
             "id": "claude-classify",
             "name": "Claude API Classification",
