@@ -12,7 +12,10 @@
             "name": "Webhook Trigger",
             "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
-            "position": [250, 300]
+            "position": [
+                250,
+                300
+            ]
         },
         {
             "parameters": {
@@ -30,18 +33,24 @@
             "name": "Check URL Verification",
             "type": "n8n-nodes-base.if",
             "typeVersion": 1,
-            "position": [450, 300]
+            "position": [
+                450,
+                300
+            ]
         },
         {
             "parameters": {
                 "respondWith": "json",
-                "responseBody": "={\"challenge\": \"{{$json.body.challenge}}}\""
+                "responseBody": "={\"challenge\": \"{{ $json.body.challenge }}\"}"
             },
             "id": "respond-challenge",
             "name": "Respond Challenge",
             "type": "n8n-nodes-base.respondToWebhook",
             "typeVersion": 1,
-            "position": [650, 150]
+            "position": [
+                650,
+                150
+            ]
         },
         {
             "parameters": {
@@ -51,7 +60,10 @@
             "name": "Extract Content",
             "type": "n8n-nodes-base.function",
             "typeVersion": 1,
-            "position": [650, 400]
+            "position": [
+                650,
+                400
+            ]
         },
         {
             "parameters": {
@@ -75,7 +87,10 @@
             "name": "Filter Messages",
             "type": "n8n-nodes-base.if",
             "typeVersion": 1,
-            "position": [850, 400]
+            "position": [
+                850,
+                400
+            ]
         },
         {
             "parameters": {
@@ -86,7 +101,10 @@
             "name": "Respond ACK to Slack",
             "type": "n8n-nodes-base.respondToWebhook",
             "typeVersion": 1,
-            "position": [1050, 400]
+            "position": [
+                1050,
+                400
+            ]
         },
         {
             "parameters": {
@@ -120,7 +138,7 @@
                         },
                         {
                             "name": "messages",
-                            "value": "=[{\"role\": \"user\", \"content\": \"Analyze this message and extract NEYĒN metadata:\\n\\nMessage: {{$json.message_text}}\\nSource: {{$json.source}}\\nTimestamp: {{$json.timestamp}}\\n\\nExtract and return ONLY valid JSON (no markdown, no explanation):\\n{\\n  \\\"tags\\\": [\\\"tag1\\\", \\\"tag2\\\", \\\"tag3\\\"],\\n  \\\"entities\\\": [\\\"entity1\\\", \\\"entity2\\\"],\\n  \\\"summary\\\": \\\"1-2 sentence summary\\\",\\n  \\\"narrative_role\\\": \\\"symbol|system|pilot|origin|exploration|setup|conflict|realisation|integration\\\",\\n  \\\"date_estimated\\\": \\\"YYYY-MM-DD or YYYY\\\",\\n  \\\"timeline_group\\\": \\\"1974-1990|2019-2023|2024-2026\\\"\\n}\\n\\nRules:\\n- Tags: 3-5 keywords\\n- Entities: People, companies, concepts\\n- Summary: Concise, factual\\n- Narrative_role: Best fit from list\\n- Date_estimated: Infer from context or use timestamp\\n- Timeline_group: Map to period\"}]"
+                            "value": "=[{\"role\": \"user\", \"content\": \"Analyze this message and extract NEY\u0112N metadata:\\n\\nMessage: {{$json.message_text}}\\nSource: {{$json.source}}\\nTimestamp: {{$json.timestamp}}\\n\\nExtract and return ONLY valid JSON (no markdown, no explanation):\\n{\\n  \\\"tags\\\": [\\\"tag1\\\", \\\"tag2\\\", \\\"tag3\\\"],\\n  \\\"entities\\\": [\\\"entity1\\\", \\\"entity2\\\"],\\n  \\\"summary\\\": \\\"1-2 sentence summary\\\",\\n  \\\"narrative_role\\\": \\\"symbol|system|pilot|origin|exploration|setup|conflict|realisation|integration\\\",\\n  \\\"date_estimated\\\": \\\"YYYY-MM-DD or YYYY\\\",\\n  \\\"timeline_group\\\": \\\"1974-1990|2019-2023|2024-2026\\\"\\n}\\n\\nRules:\\n- Tags: 3-5 keywords\\n- Entities: People, companies, concepts\\n- Summary: Concise, factual\\n- Narrative_role: Best fit from list\\n- Date_estimated: Infer from context or use timestamp\\n- Timeline_group: Map to period\"}]"
                         }
                     ]
                 },
@@ -130,7 +148,10 @@
             "name": "Claude API Classification",
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 3,
-            "position": [1250, 400]
+            "position": [
+                1250,
+                400
+            ]
         },
         {
             "parameters": {
@@ -140,7 +161,10 @@
             "name": "Parse Classification",
             "type": "n8n-nodes-base.function",
             "typeVersion": 1,
-            "position": [1450, 400]
+            "position": [
+                1450,
+                400
+            ]
         },
         {
             "parameters": {
@@ -172,7 +196,10 @@
             "name": "Supabase Insert",
             "type": "n8n-nodes-base.supabase",
             "typeVersion": 1,
-            "position": [1650, 400],
+            "position": [
+                1650,
+                400
+            ],
             "credentials": {
                 "supabaseApi": {
                     "id": "supabase-credentials",
@@ -190,49 +217,106 @@
             "name": "Trigger WF-02",
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 3,
-            "position": [1850, 400]
+            "position": [
+                1850,
+                400
+            ]
         }
     ],
     "connections": {
         "Webhook Trigger": {
             "main": [
-                [{"node": "Check URL Verification", "type": "main", "index": 0}]
+                [
+                    {
+                        "node": "Check URL Verification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Check URL Verification": {
             "main": [
-                [{"node": "Respond Challenge", "type": "main", "index": 0}],
-                [{"node": "Extract Content", "type": "main", "index": 0}]
+                [
+                    {
+                        "node": "Respond Challenge",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Extract Content",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Extract Content": {
             "main": [
-                [{"node": "Filter Messages", "type": "main", "index": 0}]
+                [
+                    {
+                        "node": "Filter Messages",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Filter Messages": {
             "main": [
-                [{"node": "Respond ACK to Slack", "type": "main", "index": 0}]
+                [
+                    {
+                        "node": "Respond ACK to Slack",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Respond ACK to Slack": {
             "main": [
-                [{"node": "Claude API Classification", "type": "main", "index": 0}]
+                [
+                    {
+                        "node": "Claude API Classification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Claude API Classification": {
             "main": [
-                [{"node": "Parse Classification", "type": "main", "index": 0}]
+                [
+                    {
+                        "node": "Parse Classification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Parse Classification": {
             "main": [
-                [{"node": "Supabase Insert", "type": "main", "index": 0}]
+                [
+                    {
+                        "node": "Supabase Insert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Supabase Insert": {
             "main": [
-                [{"node": "Trigger WF-02", "type": "main", "index": 0}]
+                [
+                    {
+                        "node": "Trigger WF-02",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         }
     },
