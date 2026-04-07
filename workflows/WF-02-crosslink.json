@@ -20,7 +20,7 @@
         },
         {
             "parameters": {
-                "functionCode": "// Extract file_name from incoming webhook body\nconst body = $input.item.json.body || $input.item.json;\nconst fileName = body.file_name;\n\nif (!fileName) {\n  throw new Error('No file_name in payload. Keys: ' + Object.keys(body).join(', '));\n}\n\nreturn {\n  json: {\n    file_name: fileName,\n    rpcBody: JSON.stringify({ p_file_name: fileName })\n  }\n};"
+                "functionCode": "// Extract file_name from incoming webhook body\nconst body = $input.item.json.body || $input.item.json;\nconst fileName = body.file_name;\n\nif (!fileName) {\n  throw new Error('No file_name in payload. Keys: ' + Object.keys(body).join(', '));\n}\n\nreturn {\n  json: { file_name: fileName }\n};"
             },
             "id": "extract-filename",
             "name": "Extract File Name",
@@ -53,16 +53,21 @@
                         }
                     ]
                 },
-                "body": "={{ $json.rpcBody }}",
-                "options": {},
                 "sendBody": true,
-                "specifyBody": "json",
-                "jsonBody": "={{ $json.rpcBody }}"
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "p_file_name",
+                            "value": "={{ $json.file_name }}"
+                        }
+                    ]
+                },
+                "options": {}
             },
             "id": "call-crosslink-rpc",
             "name": "Call Crosslink RPC",
             "type": "n8n-nodes-base.httpRequest",
-            "typeVersion": 4.2,
+            "typeVersion": 3,
             "position": [
                 650,
                 300
