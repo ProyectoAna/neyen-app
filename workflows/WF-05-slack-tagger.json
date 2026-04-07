@@ -1,0 +1,119 @@
+{
+    "name": "WF-05: Slack Tagger",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "wf05-slack-tagger",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "wf05-webhook",
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [250, 300],
+            "webhookId": "wf05-slack-tagger"
+        },
+        {
+            "parameters": {
+                "functionCode": "// Parse the /tag command forwarded from WF-01\n// Expected payload: { text, user_id, channel_id, ts }\nconst body = $input.item.json.body || $input.item.json;\nconst text = (body.text || '').trim();\nconst userId = body.user_id || '';\nconst channelId = body.channel_id || '';\nconst threadTs = body.thread_ts || body.ts || '';\n\n// Syntax: /tag <file_name> <field> <value1> [value2] ...\n// Example: /tag TSW_coherence_protocol narrative_role exploration\n// Example: /tag TSW_coherence_protocol tags philosophy meaning\n// Example: /tag TSW_coherence_protocol entities Ana NEYEN\nconst commandRegex = /^\\/tag\\s+(\\S+)\\s+(\\S+)\\s+(.+)$/i;\nconst match = text.match(commandRegex);\n\nif (!match) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: *Sintaxis incorrecta.*\\n\\`/tag <file_name> <field> <valores>\\`\\n\\nEjemplos:\\n\\`/tag TSW_coherence_protocol narrative_role exploration\\`\\n\\`/tag TSW_coherence_protocol tags filosofia espiral\\`\\n\\`/tag TSW_coherence_protocol entities Ana NEYEN\\`\\n\\n*Campos válidos:* \\`narrative_role\\` · \\`tags\\` · \\`entities\\`\\n*Roles válidos:* \\`realisation\\` · \\`exploration\\` · \\`conflict\\` · \\`symbol\\` · \\`system\\` · \\`orphaned\\``\n    }\n  };\n}\n\nconst [, fileName, field, valuesStr] = match;\nconst values = valuesStr.split(/\\s+/).filter(Boolean);\n\n// Validate field\nconst VALID_FIELDS = ['tags', 'entities', 'narrative_role'];\nif (!VALID_FIELDS.includes(field)) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Campo inválido: \\`${field}\\`\\n*Campos válidos:* \\`narrative_role\\` · \\`tags\\` · \\`entities\\``\n    }\n  };\n}\n\n// Validate narrative_role values\nconst VALID_ROLES = ['realisation','exploration','conflict','symbol','system','orphaned'];\nif (field === 'narrative_role' && !VALID_ROLES.includes(values[0])) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Rol inválido: \\`${values[0]}\\`\\n*Roles válidos:* \\`${VALID_ROLES.join('\\` · \\`')}\\``\n    }\n  };\n}\n\nreturn {\n  json: {\n    error: false,\n    file_name: fileName,\n    field: field,\n    values: values,\n    channel_id: channelId,\n    thread_ts: threadTs,\n    user_id: userId\n  }\n};"
+            },
+            "id": "parse-command",
+            "name": "Parse Tag Command",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [450, 300]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.error }}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "id": "check-parse-error",
+            "name": "Parse Error?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [650, 300]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Send error message to Slack via incoming webhook\nconst d = $input.item.json;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: d.message },\n  json: true\n});\nreturn { json: { status: 'error_sent', message: d.message } };"
+            },
+            "id": "send-parse-error",
+            "name": "Send Parse Error",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [850, 200]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Call Supabase tag_entry() RPC\nconst d = $input.item.json;\nconst ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24';\n\nconst result = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/tag_entry',\n  headers: {\n    'apikey': ANON,\n    'Authorization': 'Bearer ' + ANON,\n    'Content-Type': 'application/json'\n  },\n  body: {\n    p_file_name: d.file_name,\n    p_field: d.field,\n    p_values: d.values\n  },\n  json: true\n});\n\nreturn {\n  json: {\n    ...d,\n    rpc_result: result\n  }\n};"
+            },
+            "id": "call-tag-rpc",
+            "name": "Call tag_entry RPC",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [850, 400]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Build confirmation or error Slack message\nconst d = $input.item.json;\nconst rpc = d.rpc_result || {};\n\nlet msg;\nif (rpc.status === 'ok') {\n  const fieldEmoji = { tags: ':label:', entities: ':bust_in_silhouette:', narrative_role: ':spiral_note_pad:' };\n  const emoji = fieldEmoji[d.field] || ':white_check_mark:';\n  const valDisplay = Array.isArray(d.values) ? d.values.map(v => '`' + v + '`').join(' ') : String(d.values);\n  const crosslink = rpc.crosslink || {};\n  const crosslinkInfo = crosslink.related_count > 0\n    ? ` · :link: ${crosslink.related_count} conexiones encontradas`\n    : ' · :white_circle: sin conexiones aún';\n  msg = `${emoji} *Tag aplicado*\\n` +\n    `*Entrada:* \\`${d.file_name}\\`\\n` +\n    `*Campo:* \\`${d.field}\\` → ${valDisplay}${crosslinkInfo}\\n` +\n    `_Crosslink ejecutado automáticamente._`;\n} else {\n  msg = `:x: *Error al aplicar tag*\\n` +\n    `\\`${d.file_name}\\` — ${rpc.message || 'Error desconocido'}`;\n}\n\nreturn {\n  json: {\n    message: msg,\n    channel_id: d.channel_id,\n    rpc_ok: rpc.status === 'ok'\n  }\n};"
+            },
+            "id": "build-confirmation",
+            "name": "Build Confirmation",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [1050, 400]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Post confirmation to Slack\nconst d = $input.item.json;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: d.message },\n  json: true\n});\nreturn { json: { status: 'ok', message: d.message } };"
+            },
+            "id": "post-confirmation",
+            "name": "Post Confirmation",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [1250, 400]
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [
+                [{ "node": "Parse Tag Command", "type": "main", "index": 0 }]
+            ]
+        },
+        "Parse Tag Command": {
+            "main": [
+                [{ "node": "Parse Error?", "type": "main", "index": 0 }]
+            ]
+        },
+        "Parse Error?": {
+            "main": [
+                [{ "node": "Send Parse Error", "type": "main", "index": 0 }],
+                [{ "node": "Call tag_entry RPC", "type": "main", "index": 0 }]
+            ]
+        },
+        "Call tag_entry RPC": {
+            "main": [
+                [{ "node": "Build Confirmation", "type": "main", "index": 0 }]
+            ]
+        },
+        "Build Confirmation": {
+            "main": [
+                [{ "node": "Post Confirmation", "type": "main", "index": 0 }]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": []
+}
