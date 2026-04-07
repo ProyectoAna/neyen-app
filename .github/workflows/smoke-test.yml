@@ -15,6 +15,7 @@ jobs:
       N8N_BASE: https://n8n-docker-t9sr.onrender.com
       SUPABASE_URL: https://gsmtzdramqzcqdywboro.supabase.co
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_NEYEN_CORE }}
 
     steps:
       - name: Wake n8n (Render cold-start)
@@ -124,3 +125,40 @@ jobs:
           echo "| Supabase RPC | ✓ |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "_$(date -u +%Y-%m-%dT%H:%M:%SZ)_" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK != ''
+        run: |
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          COMMIT_MSG=$(echo '${{ github.event.head_commit.message }}' | head -1 | sed 's/"/\\"/g')
+          COMMIT_SHA="${{ github.sha }}"
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+
+          # Detect which step failed by checking output files
+          FAILED_STEP="unknown"
+          if ! curl -sf --max-time 5 -X POST "$N8N_BASE/webhook/wf01-ingest" \
+            -H "Content-Type: application/json" \
+            -d '{"type":"url_verification","challenge":"probe","token":"x"}' | grep -q probe 2>/dev/null; then
+            FAILED_STEP="WF-01 url_verification"
+          elif ! curl -sf --max-time 5 -o /dev/null "$N8N_BASE/webhook/wf01-ingest" 2>/dev/null; then
+            FAILED_STEP="WF-01 message ACK"
+          elif ! curl -sf --max-time 5 -X POST "$N8N_BASE/webhook/wf02-crosslink" \
+            -H "Content-Type: application/json" \
+            -d '{"file_name":"__probe__"}' 2>/dev/null | grep -q status; then
+            FAILED_STEP="WF-02 crosslink"
+          elif ! curl -sf --max-time 5 -o /dev/null -X POST "$N8N_BASE/webhook/wf03-crosslink-notify" \
+            -H "Content-Type: application/json" \
+            -d '{"entry_id":"00000000-0000-0000-0000-000000000000","related_count":0}' 2>/dev/null; then
+            FAILED_STEP="WF-03 notification"
+          else
+            FAILED_STEP="Supabase RPC"
+          fi
+
+          curl -sf -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$(cat <<EOF
+          {
+            "text": ":red_circle: *Smoke Test Failed*\n\n*Broken step:* ${FAILED_STEP}\n*Commit:* <https://github.com/${{ github.repository }}/commit/${COMMIT_SHA}|${SHORT_SHA}> — ${COMMIT_MSG}\n*Pushed by:* ${{ github.actor }}\n*Run:* <${RUN_URL}|View logs>\n\n_$(date -u +%Y-%m-%dT%H:%M:%SZ)_"
+          }
+          EOF
+          )" || echo "::warning::Slack notification failed (webhook may be misconfigured)"
