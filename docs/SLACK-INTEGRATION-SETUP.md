@@ -7,7 +7,7 @@
 
 This guide documents how to connect Slack channel #neyen-core to the NEYĒN ingestion pipeline (WF-01), enabling automatic classification and insertion of messages into the system metadata.
 
-**Status:** Documentation only — implementation pending WF-01 build (Week 2)
+**Status:** Implemented. App disabled by Slack on March 13 2026 — see **Re-enablement Steps** below.
 
 ---
 
@@ -61,6 +61,38 @@ This guide documents how to connect Slack channel #neyen-core to the NEYĒN inge
 
 ---
 
+## **WHY THE APP WAS DISABLED (March 13 2026)**
+
+Slack disables apps that repeatedly fail to respond within 3 seconds. Five bugs caused this:
+
+| # | Bug | Impact |
+|---|-----|--------|
+| 1 | **Missing `url_verification` handler** | Slack periodically re-verifies the endpoint; without a `{"challenge": "..."}` response the app fails verification and gets disabled |
+| 2 | **Wrong event payload path** | Code read `body.text` instead of `body.event.text` — no Slack messages were ever actually processed |
+| 3 | **Render free-tier cold starts** | n8n on Render sleeps after 15 min of inactivity; cold start takes 30–50 s, far exceeding Slack's 3 s deadline → repeated failures → disable |
+| 4 | **No early ACK to Slack** | Workflow only responded after Claude + Supabase completed (5–15 s even when warm), exceeding Slack's timeout |
+| 5 | **No bot-message filter** | The bot's own messages would trigger the pipeline, risking infinite ingest loops |
+
+**All five issues are fixed in the updated `WF-01-ingestion-pipeline.json` and the new `keep-alive.yml` GitHub Actions workflow.**
+
+---
+
+## **RE-ENABLEMENT STEPS**
+
+1. **Deploy the updated workflow** — import `workflows/WF-01-ingestion-pipeline.json` into n8n and activate it.
+2. **Merge / push to main** — the `keep-alive.yml` GitHub Action will start pinging Render every 10 minutes, preventing cold starts.
+3. **Re-enable the Slack app:**
+   - Go to https://api.slack.com/apps → select "Asistente TheSpiralWithin"
+   - If shown a "disabled" banner, click **"Reactivate app"**
+   - Navigate to **Event Subscriptions** → re-enter the Request URL:
+     `https://n8n-docker-t9sr.onrender.com/webhook/wf01-ingest`
+   - Slack will immediately send a `url_verification` challenge — the updated workflow handles this automatically
+   - Wait for the green **"Verified ✓"** checkmark
+   - Click **"Save Changes"**
+4. **Verify end-to-end** — post a test message in #neyen-core and confirm it appears in Supabase.
+
+---
+
 ## **SETUP STEPS**
 
 ### **1. Create Slack App**
@@ -100,20 +132,19 @@ This guide documents how to connect Slack channel #neyen-core to the NEYĒN inge
   - Path: `/wf01-ingest`
   - Authentication: None (Slack will verify via challenge)
 
-- **Slack Verification Node:** Function
-```javascript
-// Handle Slack URL verification challenge
-if (items[0].json.type === 'url_verification') {
-  return [{ json: { challenge: items[0].json.challenge } }];
-}
-return items;
-```
+- **Check URL Verification Node:** IF
+  - Condition: `{{$json.type}}` equals `url_verification`
+  - TRUE branch → **Respond Challenge** node: `{"challenge": "{{$json.challenge}}"}`
+  - FALSE branch → Extract Content
 
-- **Extract Message Node:** Set
-  - `message_text`: `{{$json.event.text}}`
-  - `user_id`: `{{$json.event.user}}`
-  - `channel_id`: `{{$json.event.channel}}`
-  - `timestamp`: `{{$json.event.ts}}`
+- **Extract Content Node:** Function — reads from `body.event.*` (not `body.*`):
+  - `message_text`: `event.text`
+  - `user_id`: `event.user`
+  - `channel_id`: `event.channel`
+  - `timestamp`: parsed from `event.ts`
+  - Skips bot messages (`event.bot_id` or `event.subtype === 'bot_message'`)
+
+- **Respond ACK Node:** RespondToWebhook — placed BEFORE Claude/Supabase so Slack gets its 200 within 3 s; the workflow continues processing after responding.
 
 ### **6. Test the Integration**
 1. Post a message in #neyen-core: `Test: DINIBA philosophy of no romper`
@@ -215,8 +246,8 @@ Rules:
 ---
 
 ## **SECURITY NOTES**
-- Slack webhook verification: Currently skipped for simplicity
-- For production: Implement Slack signature verification in WF-01
+- Slack webhook verification: Currently not implemented (acceptable for private workspace)
+- For public-facing production: implement Slack signature verification using `X-Slack-Signature` header and the app's Signing Secret in WF-01
 - Bot token (`xoxb-...`) must be stored securely in n8n credentials
 - Webhook endpoint should use HTTPS (already true for Render)
 

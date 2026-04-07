@@ -1,0 +1,19 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    # Ping every 10 minutes to prevent Render free tier cold starts.
+    # Render spins down after 15 min of inactivity; cold starts take 30-50s,
+    # which exceeds Slack's 3-second response timeout and causes the app to be disabled.
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping n8n webhook endpoint
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 60 \
+            https://n8n-docker-t9sr.onrender.com/webhook/system || true
