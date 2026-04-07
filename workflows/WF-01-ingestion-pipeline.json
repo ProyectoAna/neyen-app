@@ -171,25 +171,7 @@
                 "operation": "insert",
                 "tableId": "metadata",
                 "columns": {
-                    "mappingMode": "defineBelow",
-                    "value": {
-                        "file_name": "={{$json.file_name}}",
-                        "type": "={{$json.type}}",
-                        "summary": "={{$json.summary}}",
-                        "tags": "={{$json.tags}}",
-                        "entities": "={{$json.entities}}",
-                        "emotional_tone": "={{$json.emotional_tone}}",
-                        "source": "={{$json.source}}",
-                        "themes": "={{$json.themes}}",
-                        "concepts": "={{$json.concepts}}",
-                        "keywords": "={{$json.keywords}}",
-                        "mime_type": "={{$json.mime_type}}",
-                        "cluster": "={{$json.cluster}}",
-                        "related_ids": "={{$json.related_ids}}",
-                        "date_estimated": "={{$json.date_estimated}}",
-                        "timeline_group": "={{$json.timeline_group}}",
-                        "narrative_role": "={{$json.narrative_role}}"
-                    }
+                    "mappingMode": "autoMapInputData"
                 }
             },
             "id": "supabase-insert",
