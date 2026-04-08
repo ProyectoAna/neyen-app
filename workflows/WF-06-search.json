@@ -1,0 +1,176 @@
+{
+    "name": "WF-06: Search",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "wf06-search",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "wf06-webhook",
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ],
+            "webhookId": "wf06-search"
+        },
+        {
+            "parameters": {
+                "functionCode": "// Parse /search <query> command forwarded from WF-01\nconst body = $input.item.json.body || $input.item.json;\nconst text = (body.text || '').trim();\nconst channelId = body.channel_id || '';\nconst userId = body.user_id || '';\n\n// Strip /search prefix\nconst match = text.match(/^\\/search\\s+(.+)$/i);\nif (!match) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      message: ':x: *Uso:* `/search <consulta>`\\n\\nEjemplos:\\n`/search espiral geometr\u00eda`\\n`/search exploration NEYEN`\\n`/search pipeline realisation`'\n    }\n  };\n}\n\nconst query = match[1].trim();\nif (query.length < 2) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      message: ':x: La consulta debe tener al menos 2 caracteres.'\n    }\n  };\n}\n\nreturn {\n  json: {\n    error: false,\n    query: query,\n    channel_id: channelId,\n    user_id: userId\n  }\n};"
+            },
+            "id": "parse-search",
+            "name": "Parse Search Command",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.error }}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "id": "check-error",
+            "name": "Parse Error?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Send parse error to Slack\nconst d = $input.item.json;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: d.message },\n  json: true\n});\nreturn { json: { status: 'error_sent' } };"
+            },
+            "id": "send-error",
+            "name": "Send Parse Error",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                850,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Call search_entries() RPC\nconst d = $input.item.json;\nconst ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24';\n\nconst result = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/search_entries',\n  headers: {\n    'apikey': ANON,\n    'Authorization': 'Bearer ' + ANON,\n    'Content-Type': 'application/json'\n  },\n  body: { p_query: d.query, p_limit: 5 },\n  json: true\n});\n\nreturn {\n  json: {\n    ...d,\n    search_result: result\n  }\n};"
+            },
+            "id": "call-search-rpc",
+            "name": "Call search_entries RPC",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                850,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Format search results as a Slack message\nconst d = $input.item.json;\nconst sr = d.search_result || {};\nconst results = sr.results || [];\nconst count = sr.count || 0;\nconst query = d.query;\nconst terms = (sr.terms || []).join(', ');\n\nconst ROLE_EMOJI = {\n  realisation: ':bulb:', exploration: ':mag:', conflict: ':zap:',\n  symbol: ':cyclone:', system: ':gear:', orphaned: ':white_circle:',\n  setup: ':triangular_ruler:', integration: ':link:',\n  inciting_event: ':boom:', pilot: ':rocket:'\n};\n\nif (count === 0) {\n  return {\n    json: {\n      message: `:mag: *Sin resultados para \"${query}\"*\\n_T\u00e9rminos buscados: ${terms}_\\n\\nPrueba con otros t\u00e9rminos, o usa \\`/graph\\` para ver la distribuci\u00f3n de roles.`,\n      channel_id: d.channel_id\n    }\n  };\n}\n\nconst lines = results.map((r, i) => {\n  const emoji = ROLE_EMOJI[r.narrative_role] || ':small_blue_diamond:';\n  const tags = (r.tags || []).slice(0, 4).map(t => '`' + t + '`').join(' ');\n  const shortSummary = (r.summary || '').substring(0, 100);\n  const linksStr = r.crosslink_count > 0 ? ` \u00b7 :link: ${r.crosslink_count}` : '';\n  return `*${i + 1}.* ${emoji} \\`${r.file_name}\\` _(${r.score}pts${linksStr})_\\n    _${shortSummary}${shortSummary.length >= 100 ? '...' : ''}_\\n    ${tags}`;\n}).join('\\n\\n');\n\nconst msg = `:mag: *B\u00fasqueda NEYEN: \"${query}\"*\\n_${count} resultado${count !== 1 ? 's' : ''} \u00b7 t\u00e9rminos: ${terms}_\\n\\n${lines}\\n\\n_Usa \\`/tag <file_name> narrative_role <role>\\` para reclasificar cualquier entrada._`;\n\nreturn {\n  json: {\n    message: msg,\n    channel_id: d.channel_id\n  }\n};"
+            },
+            "id": "format-results",
+            "name": "Format Search Results",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1050,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Post search results to Slack\nconst d = $input.item.json;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: d.message },\n  json: true\n});\nreturn { json: { status: 'ok', command: 'search' } };"
+            },
+            "id": "post-results",
+            "name": "Post Search Results",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1250,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Parse Search Command",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse Search Command": {
+            "main": [
+                [
+                    {
+                        "node": "Parse Error?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse Error?": {
+            "main": [
+                [
+                    {
+                        "node": "Send Parse Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Call search_entries RPC",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Call search_entries RPC": {
+            "main": [
+                [
+                    {
+                        "node": "Format Search Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Search Results": {
+            "main": [
+                [
+                    {
+                        "node": "Post Search Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": []
+}
