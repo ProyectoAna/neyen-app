@@ -20,7 +20,7 @@
         },
         {
             "parameters": {
-                "functionCode": "// Parse /tag or /graph commands forwarded from WF-01\nconst body = $input.item.json.body || $input.item.json;\nconst text = (body.text || '').trim();\nconst userId = body.user_id || '';\nconst channelId = body.channel_id || '';\nconst threadTs = body.thread_ts || body.ts || '';\n\n// \u2500\u2500 /graph command \u2500\u2500\nif (text === '/graph' || text.startsWith('/graph ') || text.startsWith('/graph\\t')) {\n  return {\n    json: {\n      command: 'graph',\n      error: false,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /history command \u2500\u2500\nconst histMatch = text.match(/^\\/history\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (histMatch) {\n  return {\n    json: {\n      command: 'history',\n      error: false,\n      file_name: histMatch[1],\n      limit: parseInt(histMatch[2] || '10', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\nif (text === '/history' || text.startsWith('/history ') || text.startsWith('/history\\t')) {\n  return {\n    json: {\n      command: 'history',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: ':x: *Uso:* `/history <file_name> [l\u00edmite]`\\n\\nEjemplos:\\n`/history TSW_coherence_protocol`\\n`/history TSW_timeline_origins 20`\\n\\n_Devuelve el historial de ediciones /tag para una entrada._'\n    }\n  };\n}\n\n// \u2500\u2500 /compare command \u2500\u2500\nconst cmpMatch = text.match(/^\\/compare\\s+(\\S+)\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (cmpMatch || text === '/compare' || (text.startsWith('/compare ') && !cmpMatch)) {\n  if (!cmpMatch) {\n    return {\n      json: {\n        command: 'compare',\n        error: true,\n        channel_id: channelId,\n        thread_ts: threadTs,\n        message: ':x: *Uso:* `/compare <file_a> <file_b> [semanas]`\\n\\nEjemplo:\\n`/compare TSW_coherence_protocol TSW_timeline_origins`\\n`/compare TSW_ops_architecture TSW_serpent_star_symbol 4`'\n      }\n    };\n  }\n  return {\n    json: {\n      command: 'compare',\n      error: false,\n      file_a: cmpMatch[1],\n      file_b: cmpMatch[2],\n      weeks: parseInt(cmpMatch[3] || '8', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /tag command \u2500\u2500\nconst commandRegex = /^\\/tag\\s+(\\S+)\\s+(\\S+)\\s+(.+)$/i;\nconst match = text.match(commandRegex);\n\nif (!match) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: *Sintaxis incorrecta.*\\n\\`/tag <file_name> <field> <valores>\\`\\n\\nEjemplos:\\n\\`/tag TSW_coherence_protocol narrative_role exploration\\`\\n\\`/tag TSW_coherence_protocol tags filosofia espiral\\`\\n\\`/tag TSW_coherence_protocol entities Ana NEYEN\\`\\n\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\`\\n*Roles v\u00e1lidos:* \\`realisation\\` \u00b7 \\`exploration\\` \u00b7 \\`conflict\\` \u00b7 \\`symbol\\` \u00b7 \\`system\\` \u00b7 \\`orphaned\\`\\n\\nUsa tambi\u00e9n \\`/graph\\` para ver el resumen del grafo.`\n    }\n  };\n}\n\nconst [, fileName, field, valuesStr] = match;\nconst values = valuesStr.split(/\\s+/).filter(Boolean);\n\nconst VALID_FIELDS = ['tags', 'entities', 'narrative_role'];\nif (!VALID_FIELDS.includes(field)) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Campo inv\u00e1lido: \\`${field}\\`\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\``\n    }\n  };\n}\n\nconst VALID_ROLES = ['realisation','exploration','conflict','symbol','system','orphaned'];\nif (field === 'narrative_role' && !VALID_ROLES.includes(values[0])) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Rol inv\u00e1lido: \\`${values[0]}\\`\\n*Roles v\u00e1lidos:* \\`${VALID_ROLES.join('\\` \u00b7 \\`')}\\``\n    }\n  };\n}\n\nreturn {\n  json: {\n    command: 'tag',\n    error: false,\n    file_name: fileName,\n    field: field,\n    values: values,\n    channel_id: channelId,\n    thread_ts: threadTs,\n    user_id: userId\n  }\n};"
+                "functionCode": "// Parse /tag or /graph commands forwarded from WF-01\nconst body = $input.item.json.body || $input.item.json;\nconst text = (body.text || '').trim();\nconst userId = body.user_id || '';\nconst channelId = body.channel_id || '';\nconst threadTs = body.thread_ts || body.ts || '';\n\n// \u2500\u2500 /graph command \u2500\u2500\nif (text === '/graph' || text.startsWith('/graph ') || text.startsWith('/graph\\t')) {\n  return {\n    json: {\n      command: 'graph',\n      error: false,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /history command \u2500\u2500\nconst histMatch = text.match(/^\\/history\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (histMatch) {\n  return {\n    json: {\n      command: 'history',\n      error: false,\n      file_name: histMatch[1],\n      limit: parseInt(histMatch[2] || '10', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\nif (text === '/history' || text.startsWith('/history ') || text.startsWith('/history\\t')) {\n  return {\n    json: {\n      command: 'history',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: ':x: *Uso:* `/history <file_name> [l\u00edmite]`\\n\\nEjemplos:\\n`/history TSW_coherence_protocol`\\n`/history TSW_timeline_origins 20`\\n\\n_Devuelve el historial de ediciones /tag para una entrada._'\n    }\n  };\n}\n\n// \u2500\u2500 /trend command \u2500\u2500\nconst trendMatch = text.match(/^\\/trend\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (trendMatch || text === '/trend' || (text.startsWith('/trend ') && !trendMatch)) {\n  if (!trendMatch) {\n    return {\n      json: {\n        command: 'trend',\n        error: true,\n        channel_id: channelId,\n        thread_ts: threadTs,\n        message: ':x: *Uso:* `/trend <file_name> [semanas]`\\n\\nEjemplo:\\n`/trend TSW_timeline_origins`\\n`/trend TSW_coherence_protocol 12`\\n\\n_Muestra la trayectoria semanal de crosslinks con sparkline ASCII._'\n      }\n    };\n  }\n  return {\n    json: {\n      command: 'trend',\n      error: false,\n      file_name: trendMatch[1],\n      weeks: parseInt(trendMatch[2] || '12', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /compare command \u2500\u2500\nconst cmpMatch = text.match(/^\\/compare\\s+(\\S+)\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (cmpMatch || text === '/compare' || (text.startsWith('/compare ') && !cmpMatch)) {\n  if (!cmpMatch) {\n    return {\n      json: {\n        command: 'compare',\n        error: true,\n        channel_id: channelId,\n        thread_ts: threadTs,\n        message: ':x: *Uso:* `/compare <file_a> <file_b> [semanas]`\\n\\nEjemplo:\\n`/compare TSW_coherence_protocol TSW_timeline_origins`\\n`/compare TSW_ops_architecture TSW_serpent_star_symbol 4`'\n      }\n    };\n  }\n  return {\n    json: {\n      command: 'compare',\n      error: false,\n      file_a: cmpMatch[1],\n      file_b: cmpMatch[2],\n      weeks: parseInt(cmpMatch[3] || '8', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /tag command \u2500\u2500\nconst commandRegex = /^\\/tag\\s+(\\S+)\\s+(\\S+)\\s+(.+)$/i;\nconst match = text.match(commandRegex);\n\nif (!match) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: *Sintaxis incorrecta.*\\n\\`/tag <file_name> <field> <valores>\\`\\n\\nEjemplos:\\n\\`/tag TSW_coherence_protocol narrative_role exploration\\`\\n\\`/tag TSW_coherence_protocol tags filosofia espiral\\`\\n\\`/tag TSW_coherence_protocol entities Ana NEYEN\\`\\n\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\`\\n*Roles v\u00e1lidos:* \\`realisation\\` \u00b7 \\`exploration\\` \u00b7 \\`conflict\\` \u00b7 \\`symbol\\` \u00b7 \\`system\\` \u00b7 \\`orphaned\\`\\n\\nUsa tambi\u00e9n \\`/graph\\` para ver el resumen del grafo.`\n    }\n  };\n}\n\nconst [, fileName, field, valuesStr] = match;\nconst values = valuesStr.split(/\\s+/).filter(Boolean);\n\nconst VALID_FIELDS = ['tags', 'entities', 'narrative_role'];\nif (!VALID_FIELDS.includes(field)) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Campo inv\u00e1lido: \\`${field}\\`\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\``\n    }\n  };\n}\n\nconst VALID_ROLES = ['realisation','exploration','conflict','symbol','system','orphaned'];\nif (field === 'narrative_role' && !VALID_ROLES.includes(values[0])) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Rol inv\u00e1lido: \\`${values[0]}\\`\\n*Roles v\u00e1lidos:* \\`${VALID_ROLES.join('\\` \u00b7 \\`')}\\``\n    }\n  };\n}\n\nreturn {\n  json: {\n    command: 'tag',\n    error: false,\n    file_name: fileName,\n    field: field,\n    values: values,\n    channel_id: channelId,\n    thread_ts: threadTs,\n    user_id: userId\n  }\n};"
             },
             "id": "parse-command",
             "name": "Parse Tag Command",
@@ -279,6 +279,65 @@
                 1650,
                 400
             ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.command }}",
+                            "value2": "trend"
+                        }
+                    ]
+                }
+            },
+            "id": "is-trend",
+            "name": "Is Trend?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                1250,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Call trend_sparkline() RPC\nconst d = $input.item.json;\nconst ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24';\nconst result = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/trend_sparkline',\n  headers: { 'apikey': ANON, 'Authorization': 'Bearer ' + ANON, 'Content-Type': 'application/json' },\n  body: { p_file_name: d.file_name, p_limit: d.weeks || 12 },\n  json: true\n});\nreturn { json: { ...d, trend: result } };"
+            },
+            "id": "fetch-trend",
+            "name": "Fetch Trend",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1450,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Format /trend ASCII sparkline\nconst d = $input.item.json;\nconst t = d.trend || {};\n\nif (!t.found) {\n  return {\n    json: {\n      message: `:mag: *Sin datos de tendencia para \\`${d.file_name}\\`*\\n_${t.message || 'No se encontraron snapshots para esta entrada.'}_\\n\\n_La entrada puede no tener crosslinks a\u00fan, o el archivo no existe._`,\n      channel_id: d.channel_id\n    }\n  };\n}\n\nconst weeks = t.weeks || [];\nconst fn = t.file_name;\nconst current = t.current_links;\nconst vel = t.velocity || 0;\nconst velEmoji = vel > 0 ? ':chart_with_upwards_trend:' : vel < 0 ? ':chart_with_downwards_trend:' : ':left_right_arrow:';\nconst velStr = vel > 0 ? `+${vel}` : String(vel);\n\n// ASCII sparkline \u2014 scale to 12 chars wide\nconst BAR_W = 12;\nconst SPARK_CHARS = ['\u2581','\u2582','\u2583','\u2584','\u2585','\u2586','\u2587','\u2588'];\nconst peaks = weeks.map(w => w.peak || 0);\nconst maxP = Math.max(...peaks, 1);\nconst minP = Math.min(...peaks);\n\nconst sparkBars = peaks.map(p => {\n  const level = Math.floor(((p - minP) / (maxP - minP || 1)) * (SPARK_CHARS.length - 1));\n  return SPARK_CHARS[level];\n}).join('');\n\n// Full table \u2014 one row per week\nconst BLOCK = 10;\nconst tableLines = weeks.map(w => {\n  const bars = Math.round(((w.peak || 0) / maxP) * BLOCK);\n  const bar = '\u2588'.repeat(bars) + '\u2591'.repeat(BLOCK - bars);\n  const rangeStr = (w.min != null && w.min !== w.peak)\n    ? ` (${w.min}\u2194${w.peak})`\n    : ` (${w.peak})`;\n  const velW = w.velocity != null ? (w.velocity > 0 ? ` +${w.velocity}` : w.velocity < 0 ? ` ${w.velocity}` : '') : '';\n  const snapStr = w.snap_count > 1 ? ` \u00b7${w.snap_count}` : '';\n  return `\\`${w.week}\\` \\`${bar}\\` *${w.peak}*${rangeStr}${velW}${snapStr}`;\n}).join('\\n');\n\nconst moreNote = weeks.length < (d.weeks || 12)\n  ? `\\n_Solo ${weeks.length} semana${weeks.length !== 1 ? 's' : ''} con datos. El historial crece con cada crosslink update._`\n  : '';\n\nconst msg = `:bar_chart: *Tendencia: \\`${fn}\\`* ${velEmoji}\\n` +\n  `*${current} links* actuales \u00b7 velocidad: *${velStr}* (${t.weeks_count} sem.) \u00b7 rango: ${t.min_ever}\u2013${t.max_peak}\\n\\n` +\n  `Sparkline: \\`${sparkBars}\\`\\n\\n` +\n  `*Semana a semana:*\\n${tableLines}${moreNote}\\n\\n` +\n  `_Usa \\`/compare <file_a> <file_b>\\` para comparar dos entradas._`;\n\nreturn { json: { message: msg, channel_id: d.channel_id } };"
+            },
+            "id": "format-trend",
+            "name": "Format Trend",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1650,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const d = $input.item.json;\nawait this.helpers.httpRequest({\n  method: 'POST', url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: d.message }, json: true\n});\nreturn { json: { status: 'ok', command: 'trend' } };"
+            },
+            "id": "post-trend",
+            "name": "Post Trend",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1850,
+                400
+            ]
         }
     ],
     "connections": {
@@ -435,7 +494,7 @@
                 ],
                 [
                     {
-                        "node": "Parse Error?",
+                        "node": "Is Trend?",
                         "type": "main",
                         "index": 0
                     }
@@ -458,6 +517,46 @@
                 [
                     {
                         "node": "Post Compare",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is Trend?": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Trend",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Parse Error?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Trend": {
+            "main": [
+                [
+                    {
+                        "node": "Format Trend",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Trend": {
+            "main": [
+                [
+                    {
+                        "node": "Post Trend",
                         "type": "main",
                         "index": 0
                     }
