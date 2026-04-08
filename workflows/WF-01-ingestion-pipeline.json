@@ -15,7 +15,8 @@
             "position": [
                 250,
                 300
-            ]
+            ],
+            "webhookId": "fb8569c9-9bd0-4d7d-8ebb-756a40ea3262"
         },
         {
             "parameters": {
@@ -67,7 +68,7 @@
         },
         {
             "parameters": {
-                "functionCode": "// Route /tag commands to WF-05 instead of processing as content\nconst msg = $input.item.json;\nconst text = (msg.message_text || '').trim();\n\n// Check for /tag command\nif (text.startsWith('/tag ') || text.startsWith('/tag\\t') || text === '/graph' || text.startsWith('/graph ') || text.startsWith('/search ') || text.startsWith('/search\\t') || text.startsWith('/history ') || text.startsWith('/history\\t') || text.startsWith('/compare ') || text.startsWith('/compare\\t') || text.startsWith('/trend ') || text.startsWith('/trend\\t') || text === '/leaderboard' || text.startsWith('/leaderboard ') || text.startsWith('/leaderboard\\t')) {\n  // Forward to WF-05\n  await this.helpers.httpRequest({\n    method: 'POST',\n    // Route to correct WF based on command\n    const routeUrl = (text.startsWith('/search ') || text.startsWith('/search\\t') || text.startsWith('/history ') || text.startsWith('/history\\t') || text.startsWith('/compare ') || text.startsWith('/compare\\t') || text.startsWith('/trend ') || text.startsWith('/trend\\t') || text === '/leaderboard' || text.startsWith('/leaderboard ') || text.startsWith('/leaderboard\\t'))\n      ? 'https://n8n-docker-t9sr.onrender.com/webhook/wf06-search'\n      : 'https://n8n-docker-t9sr.onrender.com/webhook/wf05-slack-tagger';\n    url: routeUrl,\n    headers: { 'Content-Type': 'application/json' },\n    body: {\n      text: text,\n      user_id: msg.user_id || '',\n      channel_id: msg.channel_id || '',\n      ts: msg.timestamp || ''\n    },\n    json: true\n  });\n  // Return null to stop WF-01 processing this message as content\n  return null;\n}\n\n// Not a /tag command \u2014 pass through normally\nreturn { json: msg };"
+                "functionCode": "// Route /tag commands to WF-05 instead of processing as content\nconst msg = $input.item.json;\nconst text = (msg.message_text || '').trim();\nconst ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24';\n\n// \u2500\u2500 /slowest-tag: tag entry AND fire WF-02 crosslink re-run \u2500\u2500\nconst slowTagMatch = text.match(/^\\/slowest-tag\\s+(\\S+)\\s+(\\S+)\\s+(.+)$/i);\nif (slowTagMatch || text === '/slowest-tag' || text.startsWith('/slowest-tag ') || text.startsWith('/slowest-tag\\t')) {\n  if (slowTagMatch) {\n    const [, stFileName, stField, stValuesStr] = slowTagMatch;\n    const stValues = stValuesStr.trim().split(/\\s+/).filter(Boolean);\n    const VALID_FIELDS = ['tags', 'entities', 'narrative_role'];\n    const VALID_ROLES = ['realisation','exploration','conflict','symbol','system','orphaned'];\n    \n    let errMsg = null;\n    if (!VALID_FIELDS.includes(stField)) {\n      errMsg = `:x: Campo inv\u00e1lido: \\`${stField}\\`\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\``;\n    } else if (stField === 'narrative_role' && !VALID_ROLES.includes(stValues[0])) {\n      errMsg = `:x: Rol inv\u00e1lido: \\`${stValues[0]}\\`\\n*Roles v\u00e1lidos:* \\`${VALID_ROLES.join('\\` \u00b7 \\`')}\\``;\n    }\n    \n    if (errMsg) {\n      await this.helpers.httpRequest({\n        method: 'POST', url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n        headers: {'Content-Type': 'application/json'}, body: {text: errMsg}, json: true\n      });\n      return null;\n    }\n    \n    // 1. Apply tag via tag_entry() RPC\n    let tagResult = {};\n    try {\n      tagResult = await this.helpers.httpRequest({\n        method: 'POST',\n        url: 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/tag_entry',\n        headers: {'apikey': ANON, 'Authorization': 'Bearer ' + ANON, 'Content-Type': 'application/json'},\n        body: {p_file_name: stFileName, p_field: stField, p_values: stValues}, json: true\n      });\n    } catch(e) { tagResult = {status: 'error', message: e.message}; }\n    \n    if (tagResult.status === 'ok') {\n      const cl = tagResult.crosslink || {};\n      const crosslinkInfo = cl.related_count > 0 ? ` \u00b7 :link: ${cl.related_count} conexiones` : ' \u00b7 :white_circle: sin conexiones a\u00fan';\n      const valDisplay = stValues.map(v => '`' + v + '`').join(' ');\n      const fieldEmoji = {tags: ':label:', entities: ':bust_in_silhouette:', narrative_role: ':spiral_note_pad:'};\n      const emoji = fieldEmoji[stField] || ':white_check_mark:';\n      \n      // 2. Post confirmation to Slack\n      await this.helpers.httpRequest({\n        method: 'POST', url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n        headers: {'Content-Type': 'application/json'},\n        body: {text: `${emoji} *Tag aplicado* (v\u00eda /slowest-tag)\\n*Entrada:* \\`${stFileName}\\`\\n*Campo:* \\`${stField}\\` \u2192 ${valDisplay}${crosslinkInfo}\\n_Crosslink ejecutado \u00b7 :seedling: WF-02 re-run disparado_`},\n        json: true\n      });\n      \n      // 3. Fire WF-02 crosslink re-run (fire-and-forget)\n      this.helpers.httpRequest({\n        method: 'POST', url: 'https://n8n-docker-t9sr.onrender.com/webhook/wf02-crosslink',\n        headers: {'Content-Type': 'application/json'},\n        body: {file_name: stFileName, source: 'slack_slowest_tag', user_id: msg.user_id || null}, json: true\n      }).catch(() => {});\n      \n      // 4. Log to audit (fire-and-forget)\n      this.helpers.httpRequest({\n        method: 'POST', url: 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/log_tag_command',\n        headers: {'apikey': ANON, 'Authorization': 'Bearer ' + ANON, 'Content-Type': 'application/json'},\n        body: {p_file_name: stFileName, p_field: stField, p_values: stValues, p_slack_user_id: msg.user_id || null, p_channel_id: msg.channel_id || null, p_crosslink_count_after: (tagResult.crosslink || {}).related_count || 0}, json: true\n      }).catch(() => {});\n      \n    } else {\n      await this.helpers.httpRequest({\n        method: 'POST', url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n        headers: {'Content-Type': 'application/json'},\n        body: {text: `:x: *Error al aplicar /slowest-tag*\\n\\`${stFileName}\\` \u2014 ${tagResult.message || 'Error desconocido'}`}, json: true\n      });\n    }\n  } else {\n    // No args \u2014 show usage\n    await this.helpers.httpRequest({\n      method: 'POST', url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n      headers: {'Content-Type': 'application/json'},\n      body: {text: ':seedling: *Uso:* `/slowest-tag <file_name> <field> <valores>`\\n\\n_Aplica el tag Y dispara crosslink re-run v\u00eda WF-02._\\n\\nEjemplos:\\n`/slowest-tag TSW_ea_geometry entities NEYEN`\\n`/slowest-tag TSW_ea_portal tags geometria espiral`\\n`/slowest-tag TSW_libro_0 narrative_role inciting_event`\\n\\n*Campos v\u00e1lidos:* `narrative_role` \u00b7 `tags` \u00b7 `entities`'}, json: true\n    });\n  }\n  return null;\n}\n\n// Check for all WF-05/WF-06 commands\nif (text.startsWith('/tag ') || text.startsWith('/tag\\t') || text === '/graph' || text.startsWith('/graph ') || text.startsWith('/history ') || text.startsWith('/history\\t') || text.startsWith('/compare ') || text.startsWith('/compare\\t') || text.startsWith('/trend ') || text.startsWith('/trend\\t') || text === '/leaderboard' || text.startsWith('/leaderboard ') || text.startsWith('/leaderboard\\t')) {\n  const isSearch = false; // these all go to WF-05\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'https://n8n-docker-t9sr.onrender.com/webhook/wf05-slack-tagger',\n    headers: {'Content-Type': 'application/json'},\n    body: {body: {text: text, user_id: msg.user_id || '', channel_id: msg.channel_id || '', ts: msg.timestamp || ''}},\n    json: true\n  }).catch(() => {});\n  return null;\n}\n\n// /search goes to WF-06\nif (text.startsWith('/search ') || text.startsWith('/search\\t')) {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'https://n8n-docker-t9sr.onrender.com/webhook/wf06-search',\n    headers: {'Content-Type': 'application/json'},\n    body: {body: {text: text, user_id: msg.user_id || '', channel_id: msg.channel_id || '', ts: msg.timestamp || ''}},\n    json: true\n  }).catch(() => {});\n  return null;\n}\n\n// Not a slash command \u2014 pass through normally\nreturn { json: msg };\n"
             },
             "id": "route-tag-command",
             "name": "Route /tag Command",
@@ -164,7 +165,13 @@
             "position": [
                 1250,
                 350
-            ]
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "PHmajtpE5pLlA3Ry",
+                    "name": "Header Auth account"
+                }
+            }
         },
         {
             "parameters": {
@@ -197,8 +204,8 @@
             ],
             "credentials": {
                 "supabaseApi": {
-                    "id": "supabase-credentials",
-                    "name": "Supabase API"
+                    "id": "LNyShFxORsZnx7DR",
+                    "name": "Supabase account"
                 }
             }
         },
@@ -348,5 +355,6 @@
     },
     "settings": {
         "executionOrder": "v1"
-    }
+    },
+    "tags": []
 }
