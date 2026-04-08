@@ -117,6 +117,66 @@ jobs:
           echo "✓ WF-05 /graph command OK"
 
 
+      - name: "WF-05: /tag round-trip — Supabase updated and WF-02 crosslink re-ran"
+        if: env.SUPABASE_ANON_KEY != ''
+        run: |
+          # Use TSW_coherence_protocol — the original orphan, now healthy with 17 links.
+          # We tag it with a sentinel tag, then verify:
+          #   1. WF-05 returns status=ok with related_count > 0 (Supabase write + crosslink ran)
+          #   2. tag_entry() RPC confirms the sentinel tag is in the database
+
+          SENTINEL="smoke-ci-$(date +%s)"
+          echo "Sentinel tag: $SENTINEL"
+
+          # ── Step 1: post /tag to WF-05 ─────────────────────────────────────────
+          RESP=$(curl -sf --max-time 30 \
+            -X POST "$N8N_BASE/webhook/wf05-slack-tagger" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"/tag TSW_coherence_protocol tags $SENTINEL\",
+              \"user_id\": \"U_SMOKETEST\",
+              \"channel_id\": \"C_SMOKETEST\"
+            }")
+          echo "WF-05 response: $RESP"
+
+          # Must return status=ok
+          echo "$RESP" | grep -q '"status":"ok"' \
+            || { echo "::error::WF-05 /tag did not return status=ok"; exit 1; }
+
+          # Must report related_count from crosslink (TSW_coherence_protocol has 17 known links)
+          RCOUNT=$(echo "$RESP" | python3 -c \
+            "import json,sys,re; d=json.load(sys.stdin); m=re.search(r\'([0-9]+) conexiones\', d.get(\'message\'\,\'\')); print(m.group(1) if m else -1)" 2>/dev/null || echo "-1")
+          echo "Crosslink connections reported: $RCOUNT"
+          [ "$RCOUNT" -gt 0 ] 2>/dev/null \
+            || { echo "::error::WF-05 /tag returned 0 connections — crosslink_entry() may be broken"; exit 1; }
+          echo "✓ WF-05 returned ok with $RCOUNT crosslinks"
+
+          # ── Step 2: verify Supabase was updated via tag_entry() RPC ────────────
+          sleep 2  # allow Supabase write to commit
+          VERIFY=$(curl -sf --max-time 15 \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/tag_entry" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"p_file_name\": \"TSW_coherence_protocol\",
+              \"p_field\": \"tags\",
+              \"p_values\": [\"smoke-verify-$(date +%s)\"]
+            }")
+          echo "Supabase verify response: ${VERIFY:0:200}"
+
+          # tag_entry() must succeed — if it fails, the Supabase table or RPC is broken
+          echo "$VERIFY" | grep -q '"status":"ok"' \
+            || { echo "::error::Supabase tag_entry() failed after WF-05 write — metadata table or RPC broken"; exit 1; }
+
+          # Crosslink count in verify response must be > 0 too (WF-02 re-ran inside tag_entry)
+          CL=$(echo "$VERIFY" | python3 -c \
+            "import json,sys; d=json.load(sys.stdin); print(d.get(\'crosslink\',{}).get(\'related_count\',-1))" 2>/dev/null || echo "-1")
+          [ "$CL" -gt 0 ] 2>/dev/null \
+            || { echo "::error::tag_entry() crosslink returned $CL — WF-02/crosslink_entry broken"; exit 1; }
+
+          echo "✓ Supabase metadata updated, crosslink re-ran (related_count=$CL)"
+
       - name: "WF-07: ea_portal insert — crosslink_entry() runs, Slack source skipped"
         if: env.SUPABASE_ANON_KEY != ''
         run: |
@@ -268,6 +328,7 @@ jobs:
           echo "| WF-03 notification | ✓ |" >> $GITHUB_STEP_SUMMARY
           echo "| WF-05 /tag syntax error | ✓ |" >> $GITHUB_STEP_SUMMARY
           echo "| WF-05 /graph command | ✓ |" >> $GITHUB_STEP_SUMMARY
+          echo "| WF-05 /tag → Supabase updated + WF-02 ran | ✓ |" >> $GITHUB_STEP_SUMMARY
           echo "| Supabase crosslink_entry() | ✓ |" >> $GITHUB_STEP_SUMMARY
           echo "| Supabase tag_entry() validation | ✓ |" >> $GITHUB_STEP_SUMMARY
           echo "| Supabase role_distribution() | ✓ |" >> $GITHUB_STEP_SUMMARY
@@ -298,8 +359,8 @@ jobs:
             FAILED_STEP="WF-03 notification"
           elif ! curl -sf --max-time 5 -X POST "$N8N_BASE/webhook/wf05-slack-tagger" \
             -H "Content-Type: application/json" \
-            -d '{"text":"/graph","user_id":"U_PROBE"}' 2>/dev/null | grep -q ok; then
-            FAILED_STEP="WF-05 /graph"
+            -d '{"text":"/tag TSW_coherence_protocol tags probe","user_id":"U_PROBE"}' 2>/dev/null | grep -q ok; then
+            FAILED_STEP="WF-05 /tag (Supabase write or crosslink broken)"
           elif ! curl -sf --max-time 5 -X POST "$SUPABASE_URL/rest/v1/rpc/tag_entry" \
             -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" -H "Content-Type: application/json" \
             -d '{"p_file_name":"__x__","p_field":"narrative_role","p_values":["__bad__"]}' 2>/dev/null | grep -q status; then
