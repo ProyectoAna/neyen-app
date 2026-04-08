@@ -225,6 +225,36 @@ jobs:
             || { echo "::error::role_distribution() returned invalid total"; exit 1; }
           echo "✓ Supabase role_distribution() RPC OK ($TOTAL entries)"
 
+      - name: "Supabase: weekly_digest() — orphan_count field present and valid"
+        if: env.SUPABASE_ANON_KEY != ''
+        run: |
+          RESP=$(curl -sf --max-time 20 \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/weekly_digest" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"p_limit": 5}')
+          echo "Response (truncated): ${RESP:0:300}"
+
+          # Must contain top-level digest fields
+          echo "$RESP" | grep -q '"total_entries_this_week"' \
+            || { echo "::error::weekly_digest() missing total_entries_this_week"; exit 1; }
+
+          # Must contain orphaned_nodes key (even if empty)
+          echo "$RESP" | grep -q '"orphaned_nodes"' \
+            || { echo "::error::weekly_digest() missing orphaned_nodes key — orphan alert will be silent"; exit 1; }
+
+          # orphaned_nodes must contain orphan_count as a number
+          ORPHAN_COUNT=$(echo "$RESP" | python3 -c \
+            "import json,sys; d=json.load(sys.stdin); print(d.get('orphaned_nodes',{}).get('orphan_count',-1))" \
+            2>/dev/null || echo "-1")
+          echo "orphan_count = $ORPHAN_COUNT"
+          [ "$ORPHAN_COUNT" -ge 0 ] 2>/dev/null \
+            || { echo "::error::weekly_digest() orphaned_nodes.orphan_count missing or non-numeric (got: $ORPHAN_COUNT)"; exit 1; }
+
+          echo "✓ Supabase weekly_digest() valid — orphan_count=$ORPHAN_COUNT"
+          # Note: role_distribution is fetched separately by WF-04 and covered by the role_distribution() step below
+
       - name: Summary
         if: success()
         run: |
@@ -241,6 +271,7 @@ jobs:
           echo "| Supabase crosslink_entry() | ✓ |" >> $GITHUB_STEP_SUMMARY
           echo "| Supabase tag_entry() validation | ✓ |" >> $GITHUB_STEP_SUMMARY
           echo "| Supabase role_distribution() | ✓ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Supabase weekly_digest() orphan_count | ✓ |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "_$(date -u +%Y-%m-%dT%H:%M:%SZ)_" >> $GITHUB_STEP_SUMMARY
 
