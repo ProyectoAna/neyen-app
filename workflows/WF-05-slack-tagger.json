@@ -20,7 +20,7 @@
         },
         {
             "parameters": {
-                "functionCode": "// Parse /tag or /graph commands forwarded from WF-01\nconst body = $input.item.json.body || $input.item.json;\nconst text = (body.text || '').trim();\nconst userId = body.user_id || '';\nconst channelId = body.channel_id || '';\nconst threadTs = body.thread_ts || body.ts || '';\n\n// \u2500\u2500 /graph command \u2500\u2500\nif (text === '/graph' || text.startsWith('/graph ') || text.startsWith('/graph\\t')) {\n  return {\n    json: {\n      command: 'graph',\n      error: false,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /history command \u2500\u2500\nconst histMatch = text.match(/^\\/history\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (histMatch) {\n  return {\n    json: {\n      command: 'history',\n      error: false,\n      file_name: histMatch[1],\n      limit: parseInt(histMatch[2] || '10', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\nif (text === '/history' || text.startsWith('/history ') || text.startsWith('/history\\t')) {\n  return {\n    json: {\n      command: 'history',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: ':x: *Uso:* `/history <file_name> [l\u00edmite]`\\n\\nEjemplos:\\n`/history TSW_coherence_protocol`\\n`/history TSW_timeline_origins 20`\\n\\n_Devuelve el historial de ediciones /tag para una entrada._'\n    }\n  };\n}\n\n// \u2500\u2500 /trend command \u2500\u2500\nconst trendMatch = text.match(/^\\/trend\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (trendMatch || text === '/trend' || (text.startsWith('/trend ') && !trendMatch)) {\n  if (!trendMatch) {\n    return {\n      json: {\n        command: 'trend',\n        error: true,\n        channel_id: channelId,\n        thread_ts: threadTs,\n        message: ':x: *Uso:* `/trend <file_name> [semanas]`\\n\\nEjemplo:\\n`/trend TSW_timeline_origins`\\n`/trend TSW_coherence_protocol 12`\\n\\n_Muestra la trayectoria semanal de crosslinks con sparkline ASCII._'\n      }\n    };\n  }\n  return {\n    json: {\n      command: 'trend',\n      error: false,\n      file_name: trendMatch[1],\n      weeks: parseInt(trendMatch[2] || '12', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /compare command \u2500\u2500\nconst cmpMatch = text.match(/^\\/compare\\s+(\\S+)\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (cmpMatch || text === '/compare' || (text.startsWith('/compare ') && !cmpMatch)) {\n  if (!cmpMatch) {\n    return {\n      json: {\n        command: 'compare',\n        error: true,\n        channel_id: channelId,\n        thread_ts: threadTs,\n        message: ':x: *Uso:* `/compare <file_a> <file_b> [semanas]`\\n\\nEjemplo:\\n`/compare TSW_coherence_protocol TSW_timeline_origins`\\n`/compare TSW_ops_architecture TSW_serpent_star_symbol 4`'\n      }\n    };\n  }\n  return {\n    json: {\n      command: 'compare',\n      error: false,\n      file_a: cmpMatch[1],\n      file_b: cmpMatch[2],\n      weeks: parseInt(cmpMatch[3] || '8', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /tag command \u2500\u2500\nconst commandRegex = /^\\/tag\\s+(\\S+)\\s+(\\S+)\\s+(.+)$/i;\nconst match = text.match(commandRegex);\n\nif (!match) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: *Sintaxis incorrecta.*\\n\\`/tag <file_name> <field> <valores>\\`\\n\\nEjemplos:\\n\\`/tag TSW_coherence_protocol narrative_role exploration\\`\\n\\`/tag TSW_coherence_protocol tags filosofia espiral\\`\\n\\`/tag TSW_coherence_protocol entities Ana NEYEN\\`\\n\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\`\\n*Roles v\u00e1lidos:* \\`realisation\\` \u00b7 \\`exploration\\` \u00b7 \\`conflict\\` \u00b7 \\`symbol\\` \u00b7 \\`system\\` \u00b7 \\`orphaned\\`\\n\\nUsa tambi\u00e9n \\`/graph\\` para ver el resumen del grafo.`\n    }\n  };\n}\n\nconst [, fileName, field, valuesStr] = match;\nconst values = valuesStr.split(/\\s+/).filter(Boolean);\n\nconst VALID_FIELDS = ['tags', 'entities', 'narrative_role'];\nif (!VALID_FIELDS.includes(field)) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Campo inv\u00e1lido: \\`${field}\\`\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\``\n    }\n  };\n}\n\nconst VALID_ROLES = ['realisation','exploration','conflict','symbol','system','orphaned'];\nif (field === 'narrative_role' && !VALID_ROLES.includes(values[0])) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Rol inv\u00e1lido: \\`${values[0]}\\`\\n*Roles v\u00e1lidos:* \\`${VALID_ROLES.join('\\` \u00b7 \\`')}\\``\n    }\n  };\n}\n\nreturn {\n  json: {\n    command: 'tag',\n    error: false,\n    file_name: fileName,\n    field: field,\n    values: values,\n    channel_id: channelId,\n    thread_ts: threadTs,\n    user_id: userId\n  }\n};"
+                "functionCode": "// Parse /tag or /graph commands forwarded from WF-01\nconst body = $input.item.json.body || $input.item.json;\nconst text = (body.text || '').trim();\nconst userId = body.user_id || '';\nconst channelId = body.channel_id || '';\nconst threadTs = body.thread_ts || body.ts || '';\n\n// \u2500\u2500 /graph command \u2500\u2500\nif (text === '/graph' || text.startsWith('/graph ') || text.startsWith('/graph\\t')) {\n  return {\n    json: {\n      command: 'graph',\n      error: false,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /history command \u2500\u2500\nconst histMatch = text.match(/^\\/history\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (histMatch) {\n  return {\n    json: {\n      command: 'history',\n      error: false,\n      file_name: histMatch[1],\n      limit: parseInt(histMatch[2] || '10', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\nif (text === '/history' || text.startsWith('/history ') || text.startsWith('/history\\t')) {\n  return {\n    json: {\n      command: 'history',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: ':x: *Uso:* `/history <file_name> [l\u00edmite]`\\n\\nEjemplos:\\n`/history TSW_coherence_protocol`\\n`/history TSW_timeline_origins 20`\\n\\n_Devuelve el historial de ediciones /tag para una entrada._'\n    }\n  };\n}\n\n// \u2500\u2500 /leaderboard command \u2500\u2500\nconst lbMatch = text.match(/^\\/leaderboard(?:\\s+(\\d+))?/i);\nif (text === '/leaderboard' || text.startsWith('/leaderboard ') || text.startsWith('/leaderboard\\t')) {\n  return {\n    json: {\n      command: 'leaderboard',\n      error: false,\n      weeks: parseInt(lbMatch?.[1] || '3', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /trend command \u2500\u2500\nconst trendMatch = text.match(/^\\/trend\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (trendMatch || text === '/trend' || (text.startsWith('/trend ') && !trendMatch)) {\n  if (!trendMatch) {\n    return {\n      json: {\n        command: 'trend',\n        error: true,\n        channel_id: channelId,\n        thread_ts: threadTs,\n        message: ':x: *Uso:* `/trend <file_name> [semanas]`\\n\\nEjemplo:\\n`/trend TSW_timeline_origins`\\n`/trend TSW_coherence_protocol 12`\\n\\n_Muestra la trayectoria semanal de crosslinks con sparkline ASCII._'\n      }\n    };\n  }\n  return {\n    json: {\n      command: 'trend',\n      error: false,\n      file_name: trendMatch[1],\n      weeks: parseInt(trendMatch[2] || '12', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /compare command \u2500\u2500\nconst cmpMatch = text.match(/^\\/compare\\s+(\\S+)\\s+(\\S+)(?:\\s+(\\d+))?/i);\nif (cmpMatch || text === '/compare' || (text.startsWith('/compare ') && !cmpMatch)) {\n  if (!cmpMatch) {\n    return {\n      json: {\n        command: 'compare',\n        error: true,\n        channel_id: channelId,\n        thread_ts: threadTs,\n        message: ':x: *Uso:* `/compare <file_a> <file_b> [semanas]`\\n\\nEjemplo:\\n`/compare TSW_coherence_protocol TSW_timeline_origins`\\n`/compare TSW_ops_architecture TSW_serpent_star_symbol 4`'\n      }\n    };\n  }\n  return {\n    json: {\n      command: 'compare',\n      error: false,\n      file_a: cmpMatch[1],\n      file_b: cmpMatch[2],\n      weeks: parseInt(cmpMatch[3] || '8', 10),\n      channel_id: channelId,\n      thread_ts: threadTs,\n      user_id: userId\n    }\n  };\n}\n\n// \u2500\u2500 /tag command \u2500\u2500\nconst commandRegex = /^\\/tag\\s+(\\S+)\\s+(\\S+)\\s+(.+)$/i;\nconst match = text.match(commandRegex);\n\nif (!match) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: *Sintaxis incorrecta.*\\n\\`/tag <file_name> <field> <valores>\\`\\n\\nEjemplos:\\n\\`/tag TSW_coherence_protocol narrative_role exploration\\`\\n\\`/tag TSW_coherence_protocol tags filosofia espiral\\`\\n\\`/tag TSW_coherence_protocol entities Ana NEYEN\\`\\n\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\`\\n*Roles v\u00e1lidos:* \\`realisation\\` \u00b7 \\`exploration\\` \u00b7 \\`conflict\\` \u00b7 \\`symbol\\` \u00b7 \\`system\\` \u00b7 \\`orphaned\\`\\n\\nUsa tambi\u00e9n \\`/graph\\` para ver el resumen del grafo.`\n    }\n  };\n}\n\nconst [, fileName, field, valuesStr] = match;\nconst values = valuesStr.split(/\\s+/).filter(Boolean);\n\nconst VALID_FIELDS = ['tags', 'entities', 'narrative_role'];\nif (!VALID_FIELDS.includes(field)) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Campo inv\u00e1lido: \\`${field}\\`\\n*Campos v\u00e1lidos:* \\`narrative_role\\` \u00b7 \\`tags\\` \u00b7 \\`entities\\``\n    }\n  };\n}\n\nconst VALID_ROLES = ['realisation','exploration','conflict','symbol','system','orphaned'];\nif (field === 'narrative_role' && !VALID_ROLES.includes(values[0])) {\n  return {\n    json: {\n      command: 'tag',\n      error: true,\n      channel_id: channelId,\n      thread_ts: threadTs,\n      message: `:x: Rol inv\u00e1lido: \\`${values[0]}\\`\\n*Roles v\u00e1lidos:* \\`${VALID_ROLES.join('\\` \u00b7 \\`')}\\``\n    }\n  };\n}\n\nreturn {\n  json: {\n    command: 'tag',\n    error: false,\n    file_name: fileName,\n    field: field,\n    values: values,\n    channel_id: channelId,\n    thread_ts: threadTs,\n    user_id: userId\n  }\n};"
             },
             "id": "parse-command",
             "name": "Parse Tag Command",
@@ -338,6 +338,65 @@
                 1850,
                 400
             ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.command }}",
+                            "value2": "leaderboard"
+                        }
+                    ]
+                }
+            },
+            "id": "is-leaderboard",
+            "name": "Is Leaderboard?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                1450,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Call leaderboard() RPC\nconst d = $input.item.json;\nconst ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24';\nconst result = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/leaderboard',\n  headers: { 'apikey': ANON, 'Authorization': 'Bearer ' + ANON, 'Content-Type': 'application/json' },\n  body: { p_weeks: d.weeks || 3 },\n  json: true\n});\nreturn { json: { ...d, lb: result } };"
+            },
+            "id": "fetch-leaderboard",
+            "name": "Fetch Leaderboard",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1650,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Format /leaderboard as Slack message with velocity ranking\nconst d = $input.item.json;\nconst lb = d.lb || {};\nconst entries = lb.entries || [];\nconst total = lb.total_entries || 0;\nconst weeks = lb.window_weeks || 3;\n\nif (total === 0) {\n  return {\n    json: {\n      message: ':bar_chart: *Leaderboard NEYEN*\\n_Sin datos de snapshots a\u00fan. Usa `/trend <file>` para ver la trayectoria de una entrada._',\n      channel_id: d.channel_id\n    }\n  };\n}\n\nconst ROLE_EMOJI = {\n  realisation: ':bulb:', exploration: ':mag:', conflict: ':zap:',\n  symbol: ':cyclone:', system: ':gear:', orphaned: ':white_circle:',\n  setup: ':triangular_ruler:', integration: ':link:', unclassified: ':question:'\n};\n\n// Separate risers, stable, and fallers\nconst risers = entries.filter(e => e.velocity > 0);\nconst fallers = entries.filter(e => e.velocity < 0);\nconst stable = entries.filter(e => e.velocity === 0);\n\nconst maxLinks = Math.max(...entries.map(e => e.current_links), 1);\nconst BAR = 8;\n\nconst formatEntry = (e, rank, medal) => {\n  const re = ROLE_EMOJI[e.narrative_role] || ':small_blue_diamond:';\n  const vel = e.velocity;\n  const sign = vel > 0 ? '+' : '';\n  const velStr = vel !== 0 ? ` *${sign}${vel}* vel` : '';\n  const bars = Math.round((e.current_links / maxLinks) * BAR);\n  const bar = '\u2588'.repeat(bars) + '\u2591'.repeat(BAR - bars);\n  const tags = (e.tags || []).slice(0, 2).map(t => '`'+t+'`').join(' ');\n  return `${medal}${rank}. ${re} \\`${bar}\\` *${e.current_links}*${velStr} \\`${e.file_name}\\` ${tags}`;\n};\n\nlet msg = `:trophy: *Leaderboard NEYEN* \u2014 ${total} entradas \u00b7 ${weeks} semanas\\n\\n`;\n\n// Top 5 by link count / velocity\nconst TOP = Math.min(5, entries.length);\nmsg += `*Top ${TOP} \u2014 m\u00e1s conectados:*\\n`;\nconst medals = [':first_place_medal:', ':second_place_medal:', ':third_place_medal:', '', ''];\nentries.slice(0, TOP).forEach((e, i) => {\n  msg += formatEntry(e, i+1, medals[i] || '') + '\\n';\n});\n\n// Risers section\nif (risers.length > 0) {\n  msg += `\\n:chart_with_upwards_trend: *En ascenso (${risers.length}):*\\n`;\n  risers.forEach(e => {\n    const re = ROLE_EMOJI[e.narrative_role] || ':small_blue_diamond:';\n    msg += `  ${re} \\`${e.file_name}\\` *+${e.velocity}* links vs semana inicial\\n`;\n  });\n}\n\n// Fallers section\nif (fallers.length > 0) {\n  msg += `\\n:chart_with_downwards_trend: *En declive (${fallers.length}):*\\n`;\n  fallers.forEach(e => {\n    const re = ROLE_EMOJI[e.narrative_role] || ':small_blue_diamond:';\n    msg += `  ${re} \\`${e.file_name}\\` *${e.velocity}* links vs semana inicial\\n`;\n  });\n}\n\n// Bottom 3 (lowest link count)\nconst BOTTOM = Math.min(3, entries.length);\nif (entries.length > TOP) {\n  msg += `\\n*Nodos menos conectados:*\\n`;\n  entries.slice(-BOTTOM).forEach((e, i) => {\n    const re = ROLE_EMOJI[e.narrative_role] || ':small_blue_diamond:';\n    const vel = e.velocity; const sign = vel > 0 ? '+' : '';\n    const velStr = vel !== 0 ? ` (${sign}${vel} vel)` : '';\n    msg += `  ${re} \\`${e.file_name}\\` *${e.current_links}* links${velStr}\\n`;\n  });\n}\n\nif (risers.length === 0 && fallers.length === 0) {\n  msg += `\\n_Velocidad 0 para todos los nodos \u2014 el grafo es estable esta semana._\\n`;\n  msg += `_El leaderboard mostrar\u00e1 tendencias reales a partir de la pr\u00f3xima semana._\\n`;\n}\n\nmsg += `\\n_Usa \\`/trend <file>\\` para la trayectoria completa \u00b7 \\`/compare <a> <b>\\` para comparar._`;\n\nreturn { json: { message: msg, channel_id: d.channel_id } };"
+            },
+            "id": "format-leaderboard",
+            "name": "Format Leaderboard",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1850,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const d = $input.item.json;\nawait this.helpers.httpRequest({\n  method: 'POST', url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: d.message }, json: true\n});\nreturn { json: { status: 'ok', command: 'leaderboard' } };"
+            },
+            "id": "post-leaderboard",
+            "name": "Post Leaderboard",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                2050,
+                400
+            ]
         }
     ],
     "connections": {
@@ -534,7 +593,7 @@
                 ],
                 [
                     {
-                        "node": "Parse Error?",
+                        "node": "Is Leaderboard?",
                         "type": "main",
                         "index": 0
                     }
@@ -557,6 +616,46 @@
                 [
                     {
                         "node": "Post Trend",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is Leaderboard?": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Leaderboard",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Parse Error?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Leaderboard": {
+            "main": [
+                [
+                    {
+                        "node": "Format Leaderboard",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Leaderboard": {
+            "main": [
+                [
+                    {
+                        "node": "Post Leaderboard",
                         "type": "main",
                         "index": 0
                     }
