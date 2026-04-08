@@ -134,7 +134,7 @@ jobs:
           echo "WF-05 response: $RESP"
 
           # status=ok means: parse OK, tag_entry RPC succeeded, Slack message sent
-          echo "$RESP" | grep -q '"status":"ok"' \
+          echo "$RESP" | grep -qE '"status"\s*:\s*"ok"' \
             || { echo "::error::WF-05 /tag did not return status=ok (parse error or tag_entry failed)"; exit 1; }
           echo "✓ WF-05 /tag returned status=ok"
 
@@ -148,8 +148,8 @@ jobs:
             -d '{"p_file_name":"TSW_coherence_protocol","p_field":"tags","p_values":["smoke-ci-roundtrip"]}')
           echo "tag_entry verify: ${VERIFY:0:250}"
 
-          # tag_entry() must succeed
-          echo "$VERIFY" | grep -q '"status":"ok"' \
+          # tag_entry() must succeed (handles both "status":"ok" and "status": "ok")
+          echo "$VERIFY" | grep -qE '"status"\s*:\s*"ok"' \
             || { echo "::error::tag_entry() RPC failed — Supabase metadata table or RPC broken"; exit 1; }
 
           # crosslink.related_count must be > 0 (crosslink_entry ran and found matches)
