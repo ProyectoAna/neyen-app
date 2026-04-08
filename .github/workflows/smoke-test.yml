@@ -7,7 +7,7 @@ on:
 
 jobs:
   smoke:
-    name: Hit WF-01 → WF-05 webhooks + Supabase RPCs
+    name: Hit WF-01 → WF-07 webhooks + Supabase RPCs
     runs-on: ubuntu-latest
     timeout-minutes: 8
 
@@ -116,6 +116,32 @@ jobs:
             || { echo "::error::WF-05 /graph did not return ok"; exit 1; }
           echo "✓ WF-05 /graph command OK"
 
+
+      - name: "WF-07: auto-crosslink — non-Slack source runs crosslink"
+        run: |
+          RESP=$(curl -sf --max-time 30 \
+            -X POST "$N8N_BASE/webhook/wf07-auto-crosslink" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "type": "INSERT",
+              "table": "metadata",
+              "schema": "public",
+              "record": {
+                "id": "00000000-0000-0000-0000-000000000000",
+                "file_name": "__smoke_test_wf07__",
+                "source": "manual",
+                "tags": ["smoke","test"],
+                "entities": ["CI"],
+                "narrative_role": "system"
+              }
+            }')
+          echo "Response: $RESP"
+          # Should return status=ok (crosslink RPC ran but found no matches for nonexistent file)
+          # OR it might return error from crosslink_entry for nonexistent file — both acceptable
+          echo "$RESP" | grep -qE '"status"\s*:\s*"(ok|skipped)"' \
+            || { echo "::error::WF-07 did not return ok or skipped status"; exit 1; }
+          echo "✓ WF-07 auto-crosslink webhook alive"
+
       - name: "Supabase: crosslink_entry RPC reachable"
         if: env.SUPABASE_ANON_KEY != ''
         run: |
@@ -219,6 +245,10 @@ jobs:
             -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" -H "Content-Type: application/json" \
             -d '{}' 2>/dev/null | grep -q total; then
             FAILED_STEP="Supabase role_distribution() RPC"
+          elif ! curl -sf --max-time 5 -X POST "$N8N_BASE/webhook/wf07-auto-crosslink" \
+            -H "Content-Type: application/json" \
+            -d '{"type":"INSERT","table":"metadata","record":{"file_name":"__probe__","source":"manual"}}' 2>/dev/null | grep -qE '"status"'; then
+            FAILED_STEP="WF-07 auto-crosslink"
           else
             FAILED_STEP="Supabase crosslink_entry() RPC"
           fi
