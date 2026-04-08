@@ -1,0 +1,109 @@
+{
+    "name": "WF-07: Auto Crosslink",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "wf07-auto-crosslink",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "wf07-webhook",
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [250, 300],
+            "webhookId": "wf07-auto-crosslink"
+        },
+        {
+            "parameters": {
+                "functionCode": "// Parse the Supabase Database Webhook INSERT payload\n// Supabase sends: { type: 'INSERT', table: 'metadata', record: {...}, schema: 'public' }\n// The record is the full new row\nconst body = $input.item.json.body || $input.item.json;\n\n// Handle both direct Supabase webhook format and manual triggers\nconst eventType = body.type;\nconst record = body.record || body;  // Supabase sends record under 'record' key\n\nconst fileName = record.file_name;\nconst source = record.source || 'unknown';\nconst entryId = record.id;\n\n// Skip if triggered from Slack — WF-02 already handles those\nif (source === 'slack') {\n  return {\n    json: {\n      skip: true,\n      reason: 'slack entries handled by WF-02',\n      file_name: fileName,\n      source: source\n    }\n  };\n}\n\nif (!fileName) {\n  throw new Error('No file_name in webhook payload. Keys: ' + Object.keys(body).join(', '));\n}\n\nreturn {\n  json: {\n    skip: false,\n    file_name: fileName,\n    entry_id: entryId,\n    source: source,\n    event_type: eventType || 'INSERT'\n  }\n};"
+            },
+            "id": "parse-insert-event",
+            "name": "Parse Insert Event",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [450, 300]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.skip }}",
+                            "value2": false
+                        }
+                    ]
+                }
+            },
+            "id": "check-skip",
+            "name": "Should Crosslink?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [650, 300]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Skip — log and return\nconst d = $input.item.json;\nreturn {\n  json: {\n    status: 'skipped',\n    reason: d.reason,\n    file_name: d.file_name,\n    source: d.source\n  }\n};"
+            },
+            "id": "skip-node",
+            "name": "Skip (Slack source)",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [850, 200]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Small delay to allow the INSERT transaction to fully commit\n// before we read the row back in crosslink_entry()\nawait new Promise(resolve => setTimeout(resolve, 500));\nreturn { json: $input.item.json };"
+            },
+            "id": "commit-delay",
+            "name": "Wait for Commit",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [850, 400]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Call Supabase crosslink_entry() RPC\nconst d = $input.item.json;\nconst ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzbXR6ZHJhbXF6Y3FkeXdib3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDg4NTIsImV4cCI6MjA4OTAyNDg1Mn0.0EWXPtw2A9darfVDBgCwyGw0oWGtHdKBokCf2c1Ku24';\n\nconst result = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/crosslink_entry',\n  headers: {\n    'apikey': ANON,\n    'Authorization': 'Bearer ' + ANON,\n    'Content-Type': 'application/json'\n  },\n  body: { p_file_name: d.file_name },\n  json: true\n});\n\nreturn {\n  json: {\n    ...d,\n    crosslink_result: result\n  }\n};"
+            },
+            "id": "run-crosslink",
+            "name": "Run Crosslink",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [1050, 400]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Check if 5+ crosslinks found — trigger WF-03 notification\nconst d = $input.item.json;\nconst cl = d.crosslink_result || {};\nconst relatedCount = cl.related_count || 0;\n\nif (relatedCount >= 5) {\n  // Fire WF-03 async\n  this.helpers.httpRequest({\n    method: 'POST',\n    url: 'https://n8n-docker-t9sr.onrender.com/webhook/wf03-crosslink-notify',\n    headers: { 'Content-Type': 'application/json' },\n    body: {\n      entry_id: cl.entry_id || d.entry_id,\n      file_name: d.file_name,\n      related_ids: cl.related_ids || [],\n      related_count: relatedCount,\n      tags: cl.tags || [],\n      entities: cl.entities || [],\n      summary: cl.summary || ''\n    },\n    json: true\n  }).catch(() => {}); // fire-and-forget\n}\n\nreturn {\n  json: {\n    status: 'ok',\n    file_name: d.file_name,\n    source: d.source,\n    event_type: d.event_type,\n    related_count: relatedCount,\n    wf03_triggered: relatedCount >= 5\n  }\n};"
+            },
+            "id": "check-notify",
+            "name": "Check Notify Threshold",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [1250, 400]
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [[{"node": "Parse Insert Event", "type": "main", "index": 0}]]
+        },
+        "Parse Insert Event": {
+            "main": [[{"node": "Should Crosslink?", "type": "main", "index": 0}]]
+        },
+        "Should Crosslink?": {
+            "main": [
+                [{"node": "Wait for Commit", "type": "main", "index": 0}],
+                [{"node": "Skip (Slack source)", "type": "main", "index": 0}]
+            ]
+        },
+        "Wait for Commit": {
+            "main": [[{"node": "Run Crosslink", "type": "main", "index": 0}]]
+        },
+        "Run Crosslink": {
+            "main": [[{"node": "Check Notify Threshold", "type": "main", "index": 0}]]
+        }
+    },
+    "active": false,
+    "settings": {"executionOrder": "v1"},
+    "tags": []
+}
