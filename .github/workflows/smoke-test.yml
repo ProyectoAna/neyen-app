@@ -1,8 +1,9 @@
 name: Smoke Test — n8n Webhooks
 
+# Manual only (2026-10-13): n8n moved off Render and the NEYEN workflows are not yet
+# re-activated on the VPS. The anon-key write checks (tag_entry) are expected to fail
+# after the Supabase hardening; they must be rewritten before re-enabling on push.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -12,7 +13,7 @@ jobs:
     timeout-minutes: 8
 
     env:
-      N8N_BASE: https://n8n-docker-t9sr.onrender.com
+      N8N_BASE: https://n8n.thespiralwithin.ai
       SUPABASE_URL: https://gsmtzdramqzcqdywboro.supabase.co
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_NEYEN_CORE }}
