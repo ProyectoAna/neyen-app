@@ -1,369 +1,79 @@
-name: Smoke Test — n8n Webhooks
+name: Smoke Test — Read-only Services
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   smoke:
-    name: Hit WF-01 → WF-07 webhooks + Supabase RPCs
+    name: Check web, n8n health and Supabase reads
     runs-on: ubuntu-latest
-    timeout-minutes: 8
-
+    timeout-minutes: 4
     env:
-      N8N_BASE: https://n8n-docker-t9sr.onrender.com
+      N8N_BASE: https://n8n.thespiralwithin.ai
+      APP_BASE: https://neyen.thespiralwithin.ai
       SUPABASE_URL: https://gsmtzdramqzcqdywboro.supabase.co
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_NEYEN_CORE }}
-
     steps:
-      - name: Wake n8n (Render cold-start)
+      - name: Check published application pages
         run: |
-          echo "::group::Pinging n8n"
-          for i in 1 2 3; do
-            CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 120 "$N8N_BASE/")
-            echo "Attempt $i → HTTP $CODE"
-            [ "$CODE" = "200" ] && break
-            sleep 10
+          set -euo pipefail
+          for path in / /graph/ /system.html; do
+            CODE=$(curl --silent --show-error --output /dev/null \
+              --write-out '%{http_code}' --max-time 30 "$APP_BASE$path")
+            [ "$CODE" = '200' ] || { echo "::error::Application $path returned HTTP $CODE"; exit 1; }
           done
-          [ "$CODE" = "200" ] || { echo "::error::n8n did not wake up"; exit 1; }
-          echo "::endgroup::"
+          echo 'Application pages: HTTP 200. UI behaviour has not been tested.' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: "WF-01: url_verification challenge"
+      - name: Check n8n health without invoking workflows
         run: |
-          RESP=$(curl -sf --max-time 30 \
-            -X POST "$N8N_BASE/webhook/wf01-ingest" \
-            -H "Content-Type: application/json" \
-            -d '{"type":"url_verification","challenge":"gh_smoke_test","token":"test"}')
-          echo "Response: $RESP"
-          echo "$RESP" | grep -q "gh_smoke_test" \
-            || { echo "::error::WF-01 url_verification failed — challenge not echoed"; exit 1; }
-          echo "✓ WF-01 url_verification OK"
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 \
+            "$N8N_BASE/healthz" > /tmp/n8n-health.txt
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          body = Path('/tmp/n8n-health.txt').read_text().strip()
+          assert body == 'ok' or json.loads(body).get('status') == 'ok', 'Unexpected n8n health response'
+          PYTHON
+          echo 'n8n /healthz: ok. Slack commands and workflow execution have not been tested.' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: "WF-01: message ingestion (ACK)"
-        run: |
-          CODE=$(curl -s -o /tmp/wf01-ack.txt -w '%{http_code}' --max-time 30 \
-            -X POST "$N8N_BASE/webhook/wf01-ingest" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "type":"event_callback",
-              "event":{
-                "type":"message",
-                "text":"GH Actions smoke test — ignore",
-                "user":"U_SMOKETEST",
-                "channel":"C_SMOKETEST",
-                "ts":"'$(date +%s)'.000000",
-                "bot_id":"B_SMOKETEST"
-              },
-              "event_id":"smoke_'$(date +%s)'"
-            }')
-          echo "HTTP $CODE — body: $(cat /tmp/wf01-ack.txt)"
-          [ "$CODE" = "200" ] \
-            || { echo "::error::WF-01 message endpoint returned HTTP $CODE"; exit 1; }
-          echo "✓ WF-01 message ACK OK (bot_id set → filtered, no side-effects)"
-
-      - name: "WF-02: crosslink RPC"
-        run: |
-          RESP=$(curl -sf --max-time 30 \
-            -X POST "$N8N_BASE/webhook/wf02-crosslink" \
-            -H "Content-Type: application/json" \
-            -d '{"file_name":"__smoke_test_nonexistent__"}')
-          echo "Response: $RESP"
-          echo "$RESP" | grep -qE '"status"\s*:\s*"(ok|error)"' \
-            || { echo "::error::WF-02 did not return a valid status"; exit 1; }
-          echo "✓ WF-02 crosslink webhook alive"
-
-      - name: "WF-03: notification dry-run"
-        run: |
-          CODE=$(curl -s -o /tmp/wf03-resp.txt -w '%{http_code}' --max-time 30 \
-            -X POST "$N8N_BASE/webhook/wf03-crosslink-notify" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "entry_id":"00000000-0000-0000-0000-000000000000",
-              "file_name":"__smoke_test__",
-              "related_ids":[],
-              "related_count":0,
-              "tags":["smoke","test"],
-              "entities":["CI"],
-              "summary":"GitHub Actions smoke test — dry run"
-            }')
-          echo "HTTP $CODE — body: $(cat /tmp/wf03-resp.txt)"
-          [ "$CODE" = "200" ] \
-            || { echo "::error::WF-03 webhook returned HTTP $CODE"; exit 1; }
-          echo "✓ WF-03 notification webhook alive"
-
-      - name: "WF-05: /tag command — invalid syntax returns error"
-        run: |
-          RESP=$(curl -sf --max-time 30 \
-            -X POST "$N8N_BASE/webhook/wf05-slack-tagger" \
-            -H "Content-Type: application/json" \
-            -d '{"text":"/tag","user_id":"U_SMOKE","channel_id":"C_SMOKE"}')
-          echo "Response: $RESP"
-          # Malformed /tag should return status=error_sent (parse error path)
-          echo "$RESP" | grep -qE '"status"\s*:\s*"error_sent"' \
-            || { echo "::error::WF-05 /tag syntax error path not returning error_sent"; exit 1; }
-          echo "✓ WF-05 /tag syntax error handled correctly"
-
-      - name: "WF-05: /graph command — returns ok"
-        run: |
-          RESP=$(curl -sf --max-time 30 \
-            -X POST "$N8N_BASE/webhook/wf05-slack-tagger" \
-            -H "Content-Type: application/json" \
-            -d '{"text":"/graph","user_id":"U_SMOKE","channel_id":"C_SMOKE"}')
-          echo "Response: $RESP"
-          echo "$RESP" | grep -qE '"status"\s*:\s*"ok"' \
-            || { echo "::error::WF-05 /graph did not return ok"; exit 1; }
-          echo "✓ WF-05 /graph command OK"
-
-
-      - name: "WF-05: /tag round-trip — Supabase updated and WF-02 crosslink re-ran"
+      - name: Check read-only Supabase RPCs
         if: env.SUPABASE_ANON_KEY != ''
         run: |
-          # TSW_coherence_protocol: original orphan, now 17 links post-backfill.
-          # The test:
-          #   1. Posts /tag to WF-05 → must return status=ok
-          #   2. Separately calls tag_entry() RPC → must return status=ok AND related_count > 0
-          #      (tag_entry always re-runs crosslink_entry, so this confirms WF-02 would work)
+          set -euo pipefail
+          # These POST requests invoke read-only RPCs used by the application.
+          # Never invoke tagging, crosslinking, ingestion or Slack webhooks here.
+          for rpc in role_distribution graph_data; do
+            curl --fail --silent --show-error --max-time 30 \
+              -X POST "$SUPABASE_URL/rest/v1/rpc/$rpc" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+              -H 'Content-Type: application/json' \
+              -d '{}' > "/tmp/$rpc.json"
+          done
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          roles = json.loads(Path('/tmp/role_distribution.json').read_text())
+          graph = json.loads(Path('/tmp/graph_data.json').read_text())
+          for name, data in [('role_distribution', roles), ('graph_data', graph)]:
+              assert isinstance(data, dict), f'{name}: expected JSON object'
+              assert type(data.get('total')) is int and data['total'] >= 0, f'{name}: invalid total'
+          assert 'by_role' in roles, 'role_distribution: missing by_role'
+          assert isinstance(graph.get('nodes'), list), 'graph_data: missing nodes array'
+          assert graph['total'] == len(graph['nodes']), 'graph_data: total does not match nodes'
+          PYTHON
+          echo 'Supabase role_distribution and graph_data: valid responses. No write RPCs invoked.' >> "$GITHUB_STEP_SUMMARY"
 
-          # ── Step 1: WF-05 /tag webhook ─────────────────────────────────────────
-          RESP=$(curl -sf --max-time 30 \
-            -X POST "$N8N_BASE/webhook/wf05-slack-tagger" \
-            -H "Content-Type: application/json" \
-            -d '{"text":"/tag TSW_coherence_protocol tags smoke-sentinel","user_id":"U_SMOKETEST","channel_id":"C_SMOKETEST"}')
-          echo "WF-05 response: $RESP"
-
-          # status=ok means: parse OK, tag_entry RPC succeeded, Slack message sent
-          echo "$RESP" | grep -qE '"status"\s*:\s*"ok"' \
-            || { echo "::error::WF-05 /tag did not return status=ok (parse error or tag_entry failed)"; exit 1; }
-          echo "✓ WF-05 /tag returned status=ok"
-
-          # ── Step 2: call tag_entry() directly → confirms Supabase write + crosslink ──
-          sleep 1
-          VERIFY=$(curl -sf --max-time 20 \
-            -X POST "$SUPABASE_URL/rest/v1/rpc/tag_entry" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"p_file_name":"TSW_coherence_protocol","p_field":"tags","p_values":["smoke-ci-roundtrip"]}')
-          echo "tag_entry verify: ${VERIFY:0:250}"
-
-          # tag_entry() must succeed (handles both "status":"ok" and "status": "ok")
-          echo "$VERIFY" | grep -qE '"status"\s*:\s*"ok"' \
-            || { echo "::error::tag_entry() RPC failed — Supabase metadata table or RPC broken"; exit 1; }
-
-          # crosslink.related_count must be > 0 (crosslink_entry ran and found matches)
-          CL=$(echo "$VERIFY" | python3 -c \
-            "import json,sys; d=json.load(sys.stdin); print(d.get('crosslink',{}).get('related_count',-1))" \
-            2>/dev/null || echo "-1")
-          echo "crosslink related_count: $CL"
-          [ "$CL" -gt 0 ] 2>/dev/null \
-            || { echo "::error::tag_entry() crosslink returned $CL — crosslink_entry() or WF-02 broken (expected >0 for TSW_coherence_protocol)"; exit 1; }
-
-          echo "✓ Supabase write confirmed, crosslink re-ran (related_count=$CL)"
-
-
-      - name: "WF-07: ea_portal insert — crosslink_entry() runs, Slack source skipped"
-        if: env.SUPABASE_ANON_KEY != ''
+      - name: Report unavailable Supabase check
+        if: env.SUPABASE_ANON_KEY == ''
         run: |
-          # ── Part A: ea_portal source → should run crosslink_entry() ──────────────
-          RESP=$(curl -sf --max-time 30 \
-            -X POST "$N8N_BASE/webhook/wf07-auto-crosslink" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "type": "INSERT",
-              "table": "metadata",
-              "schema": "public",
-              "record": {
-                "id": "00000000-0000-0000-0000-000000000001",
-                "file_name": "TSW_ea_geometry",
-                "source": "ea_portal",
-                "tags": ["geometry","astronomy","E\u0027A Axiom"],
-                "entities": ["E\u0027A","NEYEN System"],
-                "narrative_role": "exploration"
-              }
-            }')
-          echo "ea_portal response: $RESP"
-
-          # Must return status=ok (crosslink_entry ran)
-          echo "$RESP" | grep -q '"status":"ok"' \
-            || { echo "::error::WF-07 ea_portal source did not return status=ok"; exit 1; }
-
-          # Must return a numeric related_count (crosslink_entry() actually queried Supabase)
-          RCOUNT=$(echo "$RESP" | python3 -c \
-            "import json,sys; d=json.load(sys.stdin); print(d.get('related_count',-1))" 2>/dev/null || echo "-1")
-          echo "related_count from ea_portal insert: $RCOUNT"
-          [ "$RCOUNT" -ge 0 ] 2>/dev/null \
-            || { echo "::error::WF-07 response missing or invalid related_count (got: $RCOUNT)"; exit 1; }
-
-          # Real TSW_ea_geometry has 4 known links after backfill — verify crosslink ran
-          [ "$RCOUNT" -gt 0 ] 2>/dev/null \
-            || { echo "::error::WF-07 crosslink_entry() returned 0 links for TSW_ea_geometry — RPC may be broken"; exit 1; }
-          echo "✓ WF-07 ea_portal → crosslink ran, related_count=$RCOUNT"
-
-          # ── Part B: slack source → must be skipped ──────────────────────────────
-          RESP2=$(curl -sf --max-time 30 \
-            -X POST "$N8N_BASE/webhook/wf07-auto-crosslink" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "type": "INSERT",
-              "table": "metadata",
-              "schema": "public",
-              "record": {
-                "id": "00000000-0000-0000-0000-000000000002",
-                "file_name": "auto_slack_smoke_test",
-                "source": "slack"
-              }
-            }')
-          echo "slack source response: $RESP2"
-          echo "$RESP2" | grep -q '"status":"skipped"' \
-            || { echo "::error::WF-07 slack source was not skipped (WF-02 dedup broken)"; exit 1; }
-          echo "✓ WF-07 slack source correctly skipped"
-
-      - name: "Supabase: crosslink_entry RPC reachable"
-        if: env.SUPABASE_ANON_KEY != ''
-        run: |
-          RESP=$(curl -sf --max-time 15 \
-            -X POST "$SUPABASE_URL/rest/v1/rpc/crosslink_entry" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"p_file_name":"__smoke_test_nonexistent__"}')
-          echo "Response: $RESP"
-          echo "$RESP" | grep -q '"status"' \
-            || { echo "::error::Supabase crosslink_entry RPC unreachable or broken"; exit 1; }
-          echo "✓ Supabase crosslink_entry RPC OK"
-
-      - name: "Supabase: tag_entry() RPC — validates bad role and returns error"
-        if: env.SUPABASE_ANON_KEY != ''
-        run: |
-          RESP=$(curl -sf --max-time 15 \
-            -X POST "$SUPABASE_URL/rest/v1/rpc/tag_entry" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"p_file_name":"__nonexistent__","p_field":"narrative_role","p_values":["__bad_role__"]}')
-          echo "Response: $RESP"
-          # Should return status=error (bad role validation or entry not found — both valid RPC responses)
-          echo "$RESP" | grep -q '"status"' \
-            || { echo "::error::tag_entry() RPC unreachable or broken — no status in response"; exit 1; }
-          echo "$RESP" | grep -q '"error"' \
-            || { echo "::error::tag_entry() RPC did not return an error for bad role + nonexistent entry"; exit 1; }
-          echo "✓ Supabase tag_entry() RPC validation OK"
-
-      - name: "Supabase: role_distribution() RPC reachable"
-        if: env.SUPABASE_ANON_KEY != ''
-        run: |
-          RESP=$(curl -sf --max-time 15 \
-            -X POST "$SUPABASE_URL/rest/v1/rpc/role_distribution" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{}')
-          echo "Response (truncated): ${RESP:0:200}"
-          echo "$RESP" | grep -q '"total"' \
-            || { echo "::error::role_distribution() RPC unreachable or broken — no total field"; exit 1; }
-          echo "$RESP" | grep -q '"by_role"' \
-            || { echo "::error::role_distribution() RPC missing by_role field"; exit 1; }
-          TOTAL=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin).get('total', -1))" 2>/dev/null || echo "-1")
-          echo "Total entries: $TOTAL"
-          [ "$TOTAL" -ge 0 ] 2>/dev/null \
-            || { echo "::error::role_distribution() returned invalid total"; exit 1; }
-          echo "✓ Supabase role_distribution() RPC OK ($TOTAL entries)"
-
-      - name: "Supabase: weekly_digest() — orphan_count field present and valid"
-        if: env.SUPABASE_ANON_KEY != ''
-        run: |
-          RESP=$(curl -sf --max-time 20 \
-            -X POST "$SUPABASE_URL/rest/v1/rpc/weekly_digest" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"p_limit": 5}')
-          echo "Response (truncated): ${RESP:0:300}"
-
-          # Must contain top-level digest fields
-          echo "$RESP" | grep -q '"total_entries_this_week"' \
-            || { echo "::error::weekly_digest() missing total_entries_this_week"; exit 1; }
-
-          # Must contain orphaned_nodes key (even if empty)
-          echo "$RESP" | grep -q '"orphaned_nodes"' \
-            || { echo "::error::weekly_digest() missing orphaned_nodes key — orphan alert will be silent"; exit 1; }
-
-          # orphaned_nodes must contain orphan_count as a number
-          ORPHAN_COUNT=$(echo "$RESP" | python3 -c \
-            "import json,sys; d=json.load(sys.stdin); print(d.get('orphaned_nodes',{}).get('orphan_count',-1))" \
-            2>/dev/null || echo "-1")
-          echo "orphan_count = $ORPHAN_COUNT"
-          [ "$ORPHAN_COUNT" -ge 0 ] 2>/dev/null \
-            || { echo "::error::weekly_digest() orphaned_nodes.orphan_count missing or non-numeric (got: $ORPHAN_COUNT)"; exit 1; }
-
-          echo "✓ Supabase weekly_digest() valid — orphan_count=$ORPHAN_COUNT"
-          # Note: role_distribution is fetched separately by WF-04 and covered by the role_distribution() step below
-
-      - name: Summary
-        if: success()
-        run: |
-          echo "## ✅ Smoke Test Passed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| WF-01 url_verification | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "| WF-01 message ACK | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "| WF-02 crosslink | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "| WF-03 notification | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "| WF-05 /tag syntax error | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "| WF-05 /graph command | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "| WF-05 /tag → Supabase updated + WF-02 ran | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "| Supabase crosslink_entry() | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "| Supabase tag_entry() validation | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "| Supabase role_distribution() | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "| Supabase weekly_digest() orphan_count | ✓ |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "_$(date -u +%Y-%m-%dT%H:%M:%SZ)_" >> $GITHUB_STEP_SUMMARY
-
-      - name: Notify Slack on failure
-        if: failure() && env.SLACK_WEBHOOK != ''
-        run: |
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          COMMIT_MSG=$(echo '${{ github.event.head_commit.message }}' | head -1 | sed 's/"/\\"/g')
-          COMMIT_SHA="${{ github.sha }}"
-          SHORT_SHA="${COMMIT_SHA:0:7}"
-
-          FAILED_STEP="unknown"
-          if ! curl -sf --max-time 5 -X POST "$N8N_BASE/webhook/wf01-ingest" \
-            -H "Content-Type: application/json" \
-            -d '{"type":"url_verification","challenge":"probe","token":"x"}' | grep -q probe 2>/dev/null; then
-            FAILED_STEP="WF-01 url_verification"
-          elif ! curl -sf --max-time 5 -X POST "$N8N_BASE/webhook/wf02-crosslink" \
-            -H "Content-Type: application/json" \
-            -d '{"file_name":"__probe__"}' 2>/dev/null | grep -q status; then
-            FAILED_STEP="WF-02 crosslink"
-          elif ! curl -sf --max-time 5 -o /dev/null -X POST "$N8N_BASE/webhook/wf03-crosslink-notify" \
-            -H "Content-Type: application/json" \
-            -d '{"entry_id":"00000000-0000-0000-0000-000000000000","related_count":0}' 2>/dev/null; then
-            FAILED_STEP="WF-03 notification"
-          elif ! curl -sf --max-time 5 -X POST "$N8N_BASE/webhook/wf05-slack-tagger" \
-            -H "Content-Type: application/json" \
-            -d '{"text":"/tag TSW_coherence_protocol tags probe","user_id":"U_PROBE"}' 2>/dev/null | grep -q ok; then
-            FAILED_STEP="WF-05 /tag (Supabase write or crosslink broken)"
-          elif ! curl -sf --max-time 5 -X POST "$SUPABASE_URL/rest/v1/rpc/tag_entry" \
-            -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" -H "Content-Type: application/json" \
-            -d '{"p_file_name":"__x__","p_field":"narrative_role","p_values":["__bad__"]}' 2>/dev/null | grep -q status; then
-            FAILED_STEP="Supabase tag_entry() RPC"
-          elif ! curl -sf --max-time 5 -X POST "$SUPABASE_URL/rest/v1/rpc/role_distribution" \
-            -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" -H "Content-Type: application/json" \
-            -d '{}' 2>/dev/null | grep -q total; then
-            FAILED_STEP="Supabase role_distribution() RPC"
-          elif ! curl -sf --max-time 5 -X POST "$N8N_BASE/webhook/wf07-auto-crosslink" \
-            -H "Content-Type: application/json" \
-            -d '{"type":"INSERT","table":"metadata","record":{"file_name":"__probe__","source":"manual"}}' 2>/dev/null | grep -qE '"status"'; then
-            FAILED_STEP="WF-07 auto-crosslink (ea_portal or slack routing)"
-          else
-            FAILED_STEP="Supabase crosslink_entry() RPC"
-          fi
-
-          curl -sf -X POST "$SLACK_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "{\"text\": \":red_circle: *Smoke Test Failed*\n\n*Broken step:* ${FAILED_STEP}\n*Commit:* <https://github.com/${{ github.repository }}/commit/${COMMIT_SHA}|${SHORT_SHA}> — ${COMMIT_MSG}\n*Pushed by:* ${{ github.actor }}\n*Run:* <${RUN_URL}|View logs>\n\n_$(date -u +%Y-%m-%dT%H:%M:%SZ)_\"}" \
-            || echo "::warning::Slack notification failed"
+          echo '::warning::SUPABASE_ANON_KEY unavailable; Supabase checks skipped.'
+          echo 'Supabase: NOT CHECKED (SUPABASE_ANON_KEY unavailable).' >> "$GITHUB_STEP_SUMMARY"
