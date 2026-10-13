@@ -1,19 +1,27 @@
-name: Keep Render Alive
+name: n8n Health Check
 
 on:
   schedule:
-    # Ping every 10 minutes to prevent Render free tier cold starts.
-    # Render spins down after 15 min of inactivity; cold starts take 30-50s,
-    # which exceeds Slack's 3-second response timeout and causes the app to be disabled.
-    - cron: "*/10 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  ping:
+  health:
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
-      - name: Ping n8n webhook endpoint
+      - name: Check Hostinger n8n health (read only)
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 60 \
-            https://n8n-docker-t9sr.onrender.com/webhook/system || true
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 \
+            https://n8n.thespiralwithin.ai/healthz > /tmp/n8n-health.txt
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          body = Path('/tmp/n8n-health.txt').read_text().strip()
+          assert body == 'ok' or json.loads(body).get('status') == 'ok', 'Unexpected n8n health response'
+          PYTHON
+          echo 'n8n /healthz returned ok. Workflow execution has not been tested.' >> "$GITHUB_STEP_SUMMARY"
