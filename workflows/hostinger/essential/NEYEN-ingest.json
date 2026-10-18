@@ -543,7 +543,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ file_name: $json.file_name, source: 'slack_slowest_tag', user_id: $json.user_id || null }) }}",
+        "jsonBody": "={{ JSON.stringify({ file_name: $json.file_name, source: 'slack_slowest_tag', channel_id: $json.channel_id || '', user_id: $json.user_id || null }) }}",
         "options": {}
       },
       "id": "fire-wf02",
@@ -620,7 +620,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ file_name: $json.file_name || ('auto_slack_' + $json.event_id), source: 'slack', event_id: $json.event_id }) }}",
+        "jsonBody": "={{ JSON.stringify({ file_name: $json.file_name || ('auto_slack_' + $json.event_id), source: 'slack', event_id: $json.event_id, channel_id: $json.channel_id || '' }) }}",
         "options": {}
       },
       "id": "notify-only",
@@ -721,6 +721,36 @@
       "position": [
         1280,
         680
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-slack-notice",
+      "name": "Verificar Slack - Avisar Slack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1670,
+        510
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-slack-slowest",
+      "name": "Verificar Slack - Publicar resultado Slack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2190,
+        430
       ]
     }
   ],
@@ -1022,6 +1052,28 @@
         [
           {
             "node": "Notificar paso pendiente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar Slack": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Avisar Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publicar resultado Slack": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Publicar resultado Slack",
             "type": "main",
             "index": 0
           }

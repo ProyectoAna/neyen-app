@@ -29,7 +29,7 @@
       "parameters": {
         "mode": "runOnceForEachItem",
         "language": "javaScript",
-        "jsCode": "// Extract crosslink data from WF-02's POST body\nconst body = $input.item.json.body || $input.item.json;\n\nconst entryId = body.entry_id;\nconst fileName = body.file_name;\nconst relatedIds = body.related_ids || [];\nconst relatedCount = body.related_count || relatedIds.length;\nconst tags = body.tags || [];\nconst entities = body.entities || [];\nconst summary = body.summary || '';\n\nif (!entryId) {\n  throw new Error('No entry_id in payload');\n}\n\nreturn {\n  json: {\n    entry_id: entryId,\n    file_name: fileName,\n    related_ids: relatedIds,\n    related_count: relatedCount,\n    tags: tags,\n    entities: entities,\n    summary: summary\n  }\n};"
+        "jsCode": "// Extract crosslink data from WF-02's POST body\n// Canal de destino: el channel_id del evento de origen. Si no hay, SOLO el canal\n// configurado aqui. Nunca hay canal por defecto: sin canal no se publica.\nconst CONFIGURED_CHANNEL = '';\nconst body = $input.item.json.body || $input.item.json;\n\nconst entryId = body.entry_id;\nconst fileName = body.file_name;\nconst relatedIds = body.related_ids || [];\nconst relatedCount = body.related_count || relatedIds.length;\nconst tags = body.tags || [];\nconst entities = body.entities || [];\nconst summary = body.summary || '';\nconst channelId = body.channel_id || CONFIGURED_CHANNEL;\n\nif (!entryId) {\n  throw new Error('No entry_id in payload');\n}\n\nreturn {\n  json: {\n    entry_id: entryId,\n    file_name: fileName,\n    channel_id: channelId,\n    related_ids: relatedIds,\n    related_count: relatedCount,\n    tags: tags,\n    entities: entities,\n    summary: summary\n  }\n};"
       },
       "id": "parse-payload",
       "name": "Parse Payload",
@@ -59,7 +59,7 @@
       "parameters": {
         "mode": "runOnceForEachItem",
         "language": "javaScript",
-        "jsCode": "// Build a Slack notification message\nconst data = $input.item.json;\nconst relatedEntries = data.related_entries || [];\nconst count = data.related_count;\nconst fileName = data.file_name || 'unknown';\nconst tags = data.tags || [];\nconst entities = data.entities || [];\nconst summary = data.summary || '';\n\n// Build the matched entries list (top 10)\nconst entryLines = relatedEntries.slice(0, 10).map((e, i) => {\n  const eTags = (e.tags || []).slice(0, 3).join(', ');\n  const shortSummary = (e.summary || '').substring(0, 80);\n  return `${i + 1}. *${e.file_name}* — _${shortSummary}${shortSummary.length >= 80 ? '...' : ''}_ [${eTags}]`;\n}).join('\\n');\n\nconst moreText = relatedEntries.length > 10 ? `\\n_...y ${relatedEntries.length - 10} mas_` : '';\n\nconst message = `:link: *Crosslink Alert: ${count} conexiones encontradas*\\n\\n` +\n  `*Entrada nueva:* \\`${fileName}\\`\\n` +\n  (summary ? `*Resumen:* ${summary}\\n` : '') +\n  `*Tags:* ${tags.join(', ')}\\n` +\n  `*Entidades:* ${entities.join(', ')}\\n\\n` +\n  `*Entradas relacionadas:*\\n${entryLines}${moreText}\\n\\n` +\n  `_La espiral conecta ${count} nodos._`;\n\nreturn {\n  json: {\n    slack_message: message,\n    entry_id: data.entry_id,\n    related_count: count\n  }\n};"
+        "jsCode": "// Build a Slack notification message\nconst data = $input.item.json;\nconst relatedEntries = data.related_entries || [];\nconst count = data.related_count;\nconst fileName = data.file_name || 'unknown';\nconst tags = data.tags || [];\nconst entities = data.entities || [];\nconst summary = data.summary || '';\n\n// Build the matched entries list (top 10)\nconst entryLines = relatedEntries.slice(0, 10).map((e, i) => {\n  const eTags = (e.tags || []).slice(0, 3).join(', ');\n  const shortSummary = (e.summary || '').substring(0, 80);\n  return `${i + 1}. *${e.file_name}* — _${shortSummary}${shortSummary.length >= 80 ? '...' : ''}_ [${eTags}]`;\n}).join('\\n');\n\nconst moreText = relatedEntries.length > 10 ? `\\n_...y ${relatedEntries.length - 10} mas_` : '';\n\nconst message = `:link: *Crosslink Alert: ${count} conexiones encontradas*\\n\\n` +\n  `*Entrada nueva:* \\`${fileName}\\`\\n` +\n  (summary ? `*Resumen:* ${summary}\\n` : '') +\n  `*Tags:* ${tags.join(', ')}\\n` +\n  `*Entidades:* ${entities.join(', ')}\\n\\n` +\n  `*Entradas relacionadas:*\\n${entryLines}${moreText}\\n\\n` +\n  `_La espiral conecta ${count} nodos._`;\n\nreturn {\n  json: {\n    slack_message: message,\n    channel_id: data.channel_id,\n    file_name: fileName,\n    entry_id: data.entry_id,\n    related_count: count\n  }\n};"
       },
       "id": "build-message",
       "name": "Build Slack Message",
@@ -94,7 +94,8 @@
           "id": "pending-hostinger",
           "name": "Slack account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -140,6 +141,121 @@
         }
       },
       "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Proteccion frente a duplicados en n8n (cubre llamadas directas): un aviso por entry_id.\nconst sd = $getWorkflowStaticData('global');\nsd.notified = sd.notified || {};\nconst item = $input.item.json;\nconst key = String(item.entry_id);\nconst prev = sd.notified[key];\nconst now = Date.now();\nif (prev && (prev.state === 'done' || (prev.state === 'inflight' && now - prev.at < 300000))) {\n  return { json: { ...item, duplicate: true } };\n}\nsd.notified[key] = { state: 'inflight', at: now };\nreturn { json: { ...item, duplicate: false } };\n"
+      },
+      "id": "reserve-notice",
+      "name": "Reservar aviso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.duplicate }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-dup",
+      "name": "Es duplicado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "return { json: { ok: true, duplicate: true, status: 'duplicate', entry_id: $input.item.json.entry_id, file_name: $input.item.json.file_name } };\n"
+      },
+      "id": "dup-response",
+      "name": "Respuesta duplicado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Cada llamada a Slack debe devolver ok:true. Si no, se libera la reserva (para permitir\n// reintento) y el nodo siguiente hace fallar la ejecucion.\nconst r = $input.item.json;\nconst sd = $getWorkflowStaticData('global');\nsd.notified = sd.notified || {};\nconst built = $('Build Slack Message').item.json;\nconst key = String(built.entry_id);\nif (r.ok !== true) {\n  delete sd.notified[key];\n  return { json: { slack_failed: true, slack_error: r.error || 'respuesta sin ok:true' } };\n}\nsd.notified[key] = { state: 'done', at: Date.now() };\nreturn { json: { ...r, entry_id: built.entry_id, file_name: built.file_name, channel_id: built.channel_id } };\n"
+      },
+      "id": "close-notice",
+      "name": "Verificar Slack y cerrar aviso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !!$json.channel_id }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-channel",
+      "name": "Hay canal de destino",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Sin canal de origen ni canal configurado: se registra el bloqueo y NO se publica.\nreturn { json: { ok: false, status: 'blocked', blocker: 'sin_canal_de_destino', detail: 'Ni channel_id de origen ni canal configurado en Parse Payload. No se publica.', entry_id: $input.item.json.entry_id, file_name: $input.item.json.file_name } };\n"
+      },
+      "id": "blocked-no-channel",
+      "name": "Registrar bloqueo sin canal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.slack_failed) {\n  throw new Error('Slack rechazo el mensaje: ' + r.slack_error);\n}\nreturn { json: r };\n"
+      },
+      "id": "fail-if-slack",
+      "name": "Fallar si Slack rechazo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        300
+      ]
     }
   ],
   "connections": {
@@ -158,7 +274,7 @@
       "main": [
         [
           {
-            "node": "Hay relacionadas",
+            "node": "Hay canal de destino",
             "type": "main",
             "index": 0
           }
@@ -210,6 +326,75 @@
         [
           {
             "node": "Fetch Related Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservar aviso": {
+      "main": [
+        [
+          {
+            "node": "Es duplicado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es duplicado": {
+      "main": [
+        [
+          {
+            "node": "Respuesta duplicado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Hay relacionadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Slack": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack y cerrar aviso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay canal de destino": {
+      "main": [
+        [
+          {
+            "node": "Reservar aviso",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar bloqueo sin canal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Slack y cerrar aviso": {
+      "main": [
+        [
+          {
+            "node": "Fallar si Slack rechazo",
             "type": "main",
             "index": 0
           }

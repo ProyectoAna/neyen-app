@@ -167,6 +167,36 @@
           "name": "Supabase account"
         }
       }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-send-error",
+      "name": "Verificar Slack - Send Parse Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1110,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-post-results",
+      "name": "Verificar Slack - Post Search Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1510,
+        400
+      ]
     }
   ],
   "connections": {
@@ -237,6 +267,28 @@
         [
           {
             "node": "Call search_entries RPC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Parse Error": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Send Parse Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Search Results": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Post Search Results",
             "type": "main",
             "index": 0
           }
