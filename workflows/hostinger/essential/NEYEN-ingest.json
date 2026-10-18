@@ -5,9 +5,9 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "wf01-ingest",
-        "responseMode": "responseNode",
+        "responseMode": "lastNode",
         "options": {},
-        "authentication": "none"
+        "authentication": "headerAuth"
       },
       "id": "webhook-trigger",
       "name": "Webhook Trigger",
@@ -17,7 +17,13 @@
         250,
         300
       ],
-      "webhookId": "fb8569c9-9bd0-4d7d-8ebb-756a40ea3262"
+      "webhookId": "fb8569c9-9bd0-4d7d-8ebb-756a40ea3262",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      }
     },
     {
       "parameters": {
@@ -56,7 +62,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Extract fields from Slack Events API payload\n// Slack wraps messages under body.event, not body directly\nconst body = $input.item.json.body || $input.item.json;\nconst event = body.event || {};\n\n// Ignore retried events that we may have already processed\n// (Slack adds X-Slack-Retry-Num header on retries, but we handle via event_id dedup in Supabase)\n\n// Skip bot messages to prevent infinite loops\nif (event.bot_id || event.subtype === 'bot_message') {\n  return null;\n}\n\n// Only process standard user messages\nif (event.type !== 'message' || !event.text) {\n  return null;\n}\n\nreturn {\n  json: {\n    message_text: event.text,\n    user_id: event.user || 'anonymous',\n    channel_id: event.channel || '',\n    source: 'slack',\n    event_id: body.event_id || '',\n    timestamp: event.ts\n      ? new Date(parseFloat(event.ts) * 1000).toISOString()\n      : new Date().toISOString(),\n    metadata: {}\n  }\n};"
+        "functionCode": "const envelope = $input.item.json.body || $input.item.json;\nif (envelope.verifier !== 'slack-verifier' || !envelope.event_id) {\n  return null;\n}\nconst event = envelope.event || {};\nif (event.bot_id || event.subtype === 'bot_message') return null;\nif (event.type !== 'message' || !event.text) return null;\nreturn {\n  json: {\n    verifier: envelope.verifier,\n    event_id: envelope.event_id,\n    only_step: envelope.only_step,\n    classification: envelope.classification || null,\n    message_text: event.text,\n    user_id: event.user || 'anonymous',\n    channel_id: event.channel || '',\n    source: 'slack',\n    timestamp: event.ts ? new Date(parseFloat(event.ts) * 1000).toISOString() : new Date().toISOString(),\n    metadata: {}\n  }\n};\n"
       },
       "id": "extract-content",
       "name": "Extract Content",
@@ -176,7 +182,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Parse Claude API response\nconst response = $input.item.json;\nconst content = response.content && response.content[0] && response.content[0].text;\n\nif (!content) {\n  throw new Error('No content in Claude response');\n}\n\n// Strip markdown code fences if Claude added them\nlet jsonText = content.trim();\nif (jsonText.startsWith('```json')) {\n  jsonText = jsonText.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\n} else if (jsonText.startsWith('```')) {\n  jsonText = jsonText.replace(/```\\n?/g, '').trim();\n}\n\nconst classified = JSON.parse(jsonText);\n\n// Pull original message data from Extract Content node\nconst originalData = $node['Extract Content'].json;\n\n// Generate a stable file_name using event_id when available\nconst suffix = originalData.event_id || new Date().getTime();\nconst file_name = `auto_slack_${suffix}`;\n\nreturn {\n  json: {\n    file_name: file_name,\n    type: null,\n    summary: classified.summary || '',\n    tags: classified.tags || [],\n    entities: classified.entities || [],\n    emotional_tone: null,\n    source: originalData.source,\n    themes: [],\n    concepts: [],\n    keywords: [],\n    mime_type: 'text/plain',\n    cluster: null,\n    related_ids: [],\n    date_estimated: classified.date_estimated || new Date().toISOString().split('T')[0],\n    timeline_group: classified.timeline_group || '2024-2026',\n    narrative_role: classified.narrative_role || 'exploration'\n  }\n};"
+        "functionCode": "// Parse Claude API response\nconst response = $input.item.json;\nconst content = response.content && response.content[0] && response.content[0].text;\n\nif (!content) {\n  throw new Error('No content in Claude response');\n}\n\n// Strip markdown code fences if Claude added them\nlet jsonText = content.trim();\nif (jsonText.startsWith('```json')) {\n  jsonText = jsonText.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\n} else if (jsonText.startsWith('```')) {\n  jsonText = jsonText.replace(/```\\n?/g, '').trim();\n}\n\nconst classified = JSON.parse(jsonText);\n\n// Pull original message data from Extract Content node\nconst originalData = $node['Extract Content'].json;\nconst chosen = $node['Elegir paso'].json || {};\n\n// Generate a stable file_name using event_id when available\nconst suffix = originalData.event_id || new Date().getTime();\nconst file_name = `auto_slack_${suffix}`;\n\nreturn {\n  json: {\n    file_name: file_name,\n    type: null,\n    summary: classified.summary || '',\n    tags: classified.tags || [],\n    entities: classified.entities || [],\n    emotional_tone: null,\n    source: originalData.source,\n    themes: [],\n    concepts: [],\n    keywords: [],\n    mime_type: 'text/plain',\n    cluster: null,\n    related_ids: [],\n    date_estimated: classified.date_estimated || new Date().toISOString().split('T')[0],\n    timeline_group: classified.timeline_group || '2024-2026',\n    narrative_role: classified.narrative_role || 'exploration',\n    event_id: originalData.event_id,\n    only_step: chosen.only_step || originalData.only_step || ''\n  }\n};"
       },
       "id": "parse-classification",
       "name": "Parse Classification",
@@ -545,6 +551,165 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "functionCode": "const item = $input.item.json;\nconst step = item.only_step || 'classify';\nreturn { json: { ...item, route: step } };\n"
+      },
+      "id": "elegir-paso",
+      "name": "Elegir paso",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/metadata?on_conflict=file_name",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.classification || $json) }}",
+        "options": {}
+      },
+      "id": "upsert-event",
+      "name": "Insertar sin duplicar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        520
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.thespiralwithin.ai/webhook/wf02-crosslink",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ file_name: $json.file_name || ('auto_slack_' + $json.event_id), source: 'slack', event_id: $json.event_id }) }}",
+        "options": {}
+      },
+      "id": "notify-only",
+      "name": "Notificar paso pendiente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        680
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.route}}",
+              "operation": "equal",
+              "value2": "classify"
+            }
+          ]
+        }
+      },
+      "id": "if-paso",
+      "name": "IF Paso",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        940,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.route}}",
+              "operation": "equal",
+              "value2": "insert"
+            }
+          ]
+        }
+      },
+      "id": "if-insert-step",
+      "name": "IF Insertar",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.only_step}}",
+              "operation": "equal",
+              "value2": "classify"
+            }
+          ]
+        }
+      },
+      "id": "if-classify-only",
+      "name": "IF Clasificacion sola",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.message_text}}",
+              "operation": "startsWith",
+              "value2": "/"
+            }
+          ]
+        }
+      },
+      "id": "if-command",
+      "name": "IF Es comando",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        680
+      ]
     }
   ],
   "connections": {
@@ -561,13 +726,7 @@
     },
     "Check URL Verification": {
       "main": [
-        [
-          {
-            "node": "Respond Challenge",
-            "type": "main",
-            "index": 0
-          }
-        ],
+        [],
         [
           {
             "node": "Extract Content",
@@ -581,7 +740,7 @@
       "main": [
         [
           {
-            "node": "Route /tag Command",
+            "node": "Elegir paso",
             "type": "main",
             "index": 0
           }
@@ -592,7 +751,7 @@
       "main": [
         [
           {
-            "node": "Respond ACK to Slack",
+            "node": "Build Claude Request",
             "type": "main",
             "index": 0
           }
@@ -625,7 +784,7 @@
       "main": [
         [
           {
-            "node": "Supabase Insert",
+            "node": "IF Clasificacion sola",
             "type": "main",
             "index": 0
           }
@@ -774,6 +933,83 @@
           },
           {
             "node": "Disparar crosslink",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Elegir paso": {
+      "main": [
+        [
+          {
+            "node": "IF Paso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Paso": {
+      "main": [
+        [
+          {
+            "node": "Route /tag Command",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF Insertar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Insertar": {
+      "main": [
+        [
+          {
+            "node": "Insertar sin duplicar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF Es comando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Clasificacion sola": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Insertar sin duplicar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Es comando": {
+      "main": [
+        [
+          {
+            "node": "Route /tag Command",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notificar paso pendiente",
             "type": "main",
             "index": 0
           }

@@ -64,15 +64,14 @@ def main():
             if node["type"].endswith("webhook"):
                 path = (node.get("parameters") or {}).get("path")
                 auth = (node.get("parameters") or {}).get("authentication")
-                if path == "wf01-ingest":
-                    blockers.append("wf01-ingest no verifica la firma de Slack")
-                elif auth != "headerAuth":
+                if path == "wf01-ingest" and auth != "headerAuth":
+                    errors.append("wf01-ingest aceptaría una petición que evite el verificador")
+                elif path != "wf01-ingest" and auth != "headerAuth":
                     errors.append(f"{p.name}/{node['name']}: webhook interno sin headerAuth")
         if p.name == "NEYEN-weekly-digest.json":
             blockers.append("Weekly Digest no trae channel_id; chat.postMessage fallará cerrado")
-        if p.name == "NEYEN-ingest.json":
-            blockers.append("las rutas de comandos de wf01 no responden antes del trabajo largo")
     blockers.append("las credenciales pending-hostinger aún no existen en Hostinger")
+    blockers.append("el verificador de Slack está preparado pero no desplegado")
     blockers.append("Drive Watch no está incluido")
     print(f"archivos {len(files)}")
     print(f"errores {len(errors)}")
