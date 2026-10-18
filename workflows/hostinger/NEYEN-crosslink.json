@@ -1,0 +1,165 @@
+{
+  "name": "NEYEN Crosslink",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf02-crosslink",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wf02-webhook",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "wf02-crosslink"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract file_name from incoming webhook body\nconst body = $input.item.json.body || $input.item.json;\nconst fileName = body.file_name;\n\nif (!fileName) {\n  throw new Error('No file_name in payload. Keys: ' + Object.keys(body).join(', '));\n}\n\nreturn {\n  json: { file_name: fileName }\n};"
+      },
+      "id": "extract-filename",
+      "name": "Extract File Name",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Call Supabase RPC endpoint to crosslink entries\nconst fileName = $input.item.json.file_name;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://REPLACE_WITH_SUPABASE_HOST.supabase.co/rest/v1/rpc/crosslink_entry',\n  headers: {\n    'apikey': 'REPLACE_WITH_SUPABASE_KEY',\n    'Authorization': 'Bearer REPLACE_WITH_SUPABASE_KEY',\n    'Content-Type': 'application/json'\n  },\n  body: {\n    p_file_name: fileName\n  },\n  json: true\n});\n\nreturn {\n  json: response\n};"
+      },
+      "id": "call-crosslink-rpc",
+      "name": "Call Crosslink RPC",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "respond-result",
+      "name": "Respond Result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.related_count }}",
+              "operation": "largerEqual",
+              "value2": 5
+            }
+          ]
+        }
+      },
+      "id": "check-threshold",
+      "name": "5+ Crosslinks?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Trigger WF-03 notification — RPC result already has all data\nconst rpcResult = $input.item.json;\n\n// Fire WF-03 webhook with full crosslink data\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://n8n.thespiralwithin.ai/webhook/wf03-crosslink-notify',\n  headers: { 'Content-Type': 'application/json' },\n  body: rpcResult,\n  json: true\n});\n\nreturn {\n  json: {\n    ...rpcResult,\n    wf03_triggered: true\n  }\n};"
+      },
+      "id": "trigger-wf03",
+      "name": "Trigger WF-03 Notify",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract File Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract File Name": {
+      "main": [
+        [
+          {
+            "node": "Call Crosslink RPC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Crosslink RPC": {
+      "main": [
+        [
+          {
+            "node": "5+ Crosslinks?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5+ Crosslinks?": {
+      "main": [
+        [
+          {
+            "node": "Trigger WF-03 Notify",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger WF-03 Notify": {
+      "main": [
+        [
+          {
+            "node": "Respond Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
