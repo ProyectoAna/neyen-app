@@ -4,7 +4,7 @@ Llama a n8n solo con la cabecera interna y un paso cada vez.
 """
 from queue import Empty
 import json
-from urllib import request
+from urllib import error, request
 
 from verifier import forward_body, process
 
@@ -26,7 +26,10 @@ class N8nProcessor:
             body,
         )
         if int(response.get("status", 200)) >= 400:
-            raise RuntimeError("n8n rechazo el paso")
+            detail = ""
+            if isinstance(response.get("body"), dict):
+                detail = str(response["body"].get("message") or "")[:200]
+            raise RuntimeError("n8n rechazo el paso" + (": " + detail if detail else ""))
         body = response.get("body") or {}
         if isinstance(body, list):
             body = {"items": body}
@@ -34,11 +37,12 @@ class N8nProcessor:
             raise RuntimeError("n8n devolvio una respuesta no valida")
         if (
             body.get("error")
-            or body.get("status") == "error"
+            or body.get("status") in ("error", "blocked")
             or body.get("ok") is False
             or (body.get("code") and body.get("message"))
         ):
-            raise RuntimeError("n8n devolvio 200 con error funcional")
+            detail = str(body.get("blocker") or body.get("error") or body.get("message") or "")[:200]
+            raise RuntimeError("n8n devolvio 200 con error funcional" + (": " + detail if detail else ""))
         if step == "classify" and not all(body.get(k) for k in ("file_name", "event_id")):
             raise RuntimeError("clasificacion incompleta")
         return body
@@ -56,9 +60,16 @@ class N8nProcessor:
 def urllib_transport(url, headers, body):
     data = json.dumps(body).encode()
     req = request.Request(url, data=data, headers=headers, method="POST")
-    with request.urlopen(req, timeout=30) as response:
-        raw = response.read().decode() or "{}"
-        return {"status": response.status, "body": json.loads(raw)}
+    try:
+        with request.urlopen(req, timeout=30) as response:
+            raw = response.read().decode() or "{}"
+            return {"status": response.status, "body": json.loads(raw)}
+    except error.HTTPError as exc:
+        try:
+            body = json.loads(exc.read().decode() or "{}")
+        except ValueError:
+            body = {}
+        return {"status": exc.code, "body": body}
 
 
 def work_available(store, processor):

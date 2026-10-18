@@ -773,6 +773,111 @@
         1280,
         520
       ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-send-parse-error",
+      "name": "Verificar Slack - Send Parse Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1110,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-post-confirmation",
+      "name": "Verificar Slack - Post Confirmation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1510,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-post-graph-stats",
+      "name": "Verificar Slack - Post Graph Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1510,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-post-history",
+      "name": "Verificar Slack - Post History",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1510,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-post-compare",
+      "name": "Verificar Slack - Post Compare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1910,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-post-trend",
+      "name": "Verificar Slack - Post Trend",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2110,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const r = $input.item.json;\nif (r.ok !== true) {\n  throw new Error('Slack rechazo el mensaje: ' + (r.error || 'respuesta sin ok:true'));\n}\nreturn { json: r };\n"
+      },
+      "id": "verify-post-leaderboard",
+      "name": "Verificar Slack - Post Leaderboard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2310,
+        400
+      ]
     }
   ],
   "connections": {
@@ -1142,6 +1247,83 @@
           }
         ],
         []
+      ]
+    },
+    "Send Parse Error": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Send Parse Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Post Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Graph Stats": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Post Graph Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post History": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Post History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Compare": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Post Compare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Trend": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Post Trend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Leaderboard": {
+      "main": [
+        [
+          {
+            "node": "Verificar Slack - Post Leaderboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },

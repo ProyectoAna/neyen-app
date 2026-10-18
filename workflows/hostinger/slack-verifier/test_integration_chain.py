@@ -8,6 +8,7 @@ import json
 import os
 import sys
 import tempfile
+import uuid
 import unittest
 import urllib.error
 import urllib.request
@@ -32,6 +33,10 @@ def post(path, body, header=HDR[1]):
         return e.code, {}
 
 
+def uid(prefix):
+    return prefix + uuid.uuid4().hex[:8]
+
+
 def reset(**mode):
     base = {"supabase": "ok", "anthropic": "ok", "notify": "ok", "rpc": "five", "slack": "ok"}
     base.update(mode)
@@ -40,21 +45,34 @@ def reset(**mode):
 
 @unittest.skipUnless(os.environ.get("NEYEN_IT") == "1", "integración opt-in")
 class Crosslink(unittest.TestCase):
-    def test_five_related_notifies_once_with_entries(self):
+    def test_five_related_notifies_once_in_origin_channel(self):
         reset()
-        status, body = post("/webhook/wf02-crosslink", {"file_name": "auto_slack_A"})
+        fn = uid("auto_slack_A")
+        status, body = post("/webhook/wf02-crosslink", {"file_name": fn, "channel_id": "CORIGIN"})
         self.assertEqual(status, 200)
-        self.assertEqual(calls("/supabase-rpc")[0]["body"], {"p_file_name": "auto_slack_A"})
+        self.assertEqual(calls("/supabase-rpc")[0]["body"], {"p_file_name": fn})
         slack = calls("/slack")
         self.assertEqual(len(slack), 1)
-        self.assertIn("auto_slack_A", slack[0]["body"]["text"])
+        self.assertEqual(slack[0]["body"]["channel"], "CORIGIN")
+        self.assertIn(fn, slack[0]["body"]["text"])
         self.assertIn("old_0", slack[0]["body"]["text"])
+
+    def test_direct_duplicate_calls_do_not_repeat_notification(self):
+        reset()
+        fn = uid("auto_slack_DUP")
+        first = post("/webhook/wf02-crosslink", {"file_name": fn, "channel_id": "CORIGIN"})
+        second = post("/webhook/wf02-crosslink", {"file_name": fn, "channel_id": "CORIGIN"})
+        third = post("/webhook/wf02-crosslink", {"file_name": fn, "channel_id": "CORIGIN"})
+        self.assertEqual(first[0], 200)
+        self.assertTrue(second[1].get("duplicate") and third[1].get("duplicate"))
+        self.assertEqual(len(calls("/slack")), 1)
 
     def test_fewer_than_five_does_not_notify(self):
         reset(rpc="two")
-        status, body = post("/webhook/wf02-crosslink", {"file_name": "auto_slack_B"})
+        fn = uid("auto_slack_B")
+        status, body = post("/webhook/wf02-crosslink", {"file_name": fn, "channel_id": "CORIGIN"})
         self.assertEqual(status, 200)
-        self.assertEqual(body.get("file_name"), "auto_slack_B")
+        self.assertEqual(body.get("file_name"), fn)
         self.assertEqual(calls("/slack"), [])
 
     def test_missing_file_name_fails_without_calls(self):
@@ -65,118 +83,212 @@ class Crosslink(unittest.TestCase):
 
     def test_rpc_functional_error_is_visible_and_not_notified(self):
         reset(rpc="err200")
-        status, body = post("/webhook/wf02-crosslink", {"file_name": "auto_slack_C"})
+        status, body = post("/webhook/wf02-crosslink", {"file_name": uid("auto_slack_C"), "channel_id": "CORIGIN"})
         self.assertEqual(status, 200)
         self.assertTrue(body.get("code") and body.get("message"))
         self.assertEqual(calls("/slack"), [])
 
+    def test_rpc_entry_not_found_is_error_status_and_not_notified(self):
+        reset(rpc="notfound")
+        status, body = post("/webhook/wf02-crosslink", {"file_name": uid("auto_slack_NF"), "channel_id": "CORIGIN"})
+        self.assertEqual((status, body.get("status")), (200, "error"))
+        self.assertEqual(calls("/slack"), [])
+
     def test_bad_header_rejected(self):
         reset()
-        status, _ = post("/webhook/wf02-crosslink", {"file_name": "auto_slack_D"}, header="wrong")
+        status, _ = post("/webhook/wf02-crosslink", {"file_name": uid("auto_slack_D")}, header="wrong")
         self.assertIn(status, (401, 403))
         self.assertEqual(calls("/supabase-rpc"), [])
+
+    def test_no_origin_channel_and_no_configured_channel_is_blocked_not_posted(self):
+        reset()
+        status, body = post("/webhook/wf02-crosslink-nofb", {"file_name": uid("auto_slack_NC")})
+        self.assertEqual(status, 200)
+        self.assertEqual(body.get("status"), "blocked")
+        self.assertEqual(body.get("blocker"), "sin_canal_de_destino")
+        self.assertEqual(calls("/slack"), [])
+
+    def test_no_origin_channel_uses_only_explicit_configured_channel(self):
+        reset()
+        status, _ = post("/webhook/wf02-crosslink", {"file_name": uid("auto_slack_CF")})
+        self.assertEqual(status, 200)
+        self.assertEqual(calls("/slack")[0]["body"]["channel"], "CTESTFALLBACK")
 
 
 @unittest.skipUnless(os.environ.get("NEYEN_IT") == "1", "integración opt-in")
 class CrosslinkNotify(unittest.TestCase):
-    PAYLOAD = {"entry_id": "e1", "file_name": "auto_slack_N", "related_ids": ["r0", "r1", "r2", "r3", "r4"],
-               "related_count": 5, "tags": ["a"], "entities": ["X"], "summary": "S"}
+    def payload(self, **extra):
+        p = {"entry_id": uid("e"), "file_name": uid("auto_slack_N"), "related_ids": ["r0", "r1", "r2", "r3", "r4"],
+             "related_count": 5, "tags": ["a"], "entities": ["X"], "summary": "S", "channel_id": "CORIGIN"}
+        p.update(extra)
+        return p
 
-    def test_single_slack_post_with_file_name_and_entries(self):
+    def test_single_slack_post_with_file_name_entries_and_channel(self):
         reset()
-        status, body = post("/webhook/wf03-crosslink-notify", self.PAYLOAD)
+        p = self.payload()
+        status, body = post("/webhook/wf03-crosslink-notify", p)
         self.assertEqual(status, 200)
+        self.assertIs(body.get("ok"), True)
         slack = calls("/slack")
         self.assertEqual(len(slack), 1)
-        self.assertIn("auto_slack_N", slack[0]["body"]["text"])
+        self.assertEqual(slack[0]["body"]["channel"], "CORIGIN")
+        self.assertIn(p["file_name"], slack[0]["body"]["text"])
         self.assertIn("old_4", slack[0]["body"]["text"])
 
     def test_without_related_ids_skips_supabase_read(self):
         reset()
-        post("/webhook/wf03-crosslink-notify", dict(self.PAYLOAD, related_ids=[], related_count=0))
+        post("/webhook/wf03-crosslink-notify", self.payload(related_ids=[], related_count=0))
         self.assertEqual(calls("/supabase-related"), [])
         self.assertEqual(len(calls("/slack")), 1)
 
     def test_missing_entry_id_fails_without_post(self):
         reset()
-        status, _ = post("/webhook/wf03-crosslink-notify", {"file_name": "x"})
+        status, _ = post("/webhook/wf03-crosslink-notify", {"file_name": "x", "channel_id": "C1"})
         self.assertGreaterEqual(status, 400)
         self.assertEqual(calls("/slack"), [])
 
-    def test_slack_ok_false_is_returned_not_hidden(self):
+    def test_slack_ok_false_is_failure_and_allows_retry_without_duplicating(self):
+        p = self.payload()
         reset(slack="err200")
-        status, body = post("/webhook/wf03-crosslink-notify", self.PAYLOAD)
-        self.assertEqual(status, 200)
-        self.assertIs(body.get("ok"), False)
+        status, _ = post("/webhook/wf03-crosslink-notify", p)
+        self.assertGreaterEqual(status, 400)
+        mock("/control", {"mode": {"slack": "ok"}})
+        status, body = post("/webhook/wf03-crosslink-notify", p)
+        self.assertEqual((status, body.get("ok")), (200, True))
+        again = post("/webhook/wf03-crosslink-notify", p)
+        self.assertTrue(again[1].get("duplicate"))
+        self.assertEqual(len(calls("/slack")), 2)  # 1 fallido + 1 correcto, ningun duplicado
+
+    def test_direct_duplicate_posts_once(self):
+        reset()
+        p = self.payload()
+        post("/webhook/wf03-crosslink-notify", p)
+        again = post("/webhook/wf03-crosslink-notify", p)
+        self.assertTrue(again[1].get("duplicate"))
+        self.assertEqual(len(calls("/slack")), 1)
+
+    def test_no_channel_anywhere_blocks_without_post(self):
+        reset()
+        status, body = post("/webhook/wf03-notify-nofb", self.payload(channel_id=""))
+        self.assertEqual((status, body.get("status")), (200, "blocked"))
+        self.assertEqual(calls("/slack"), [])
+
+    def test_configured_channel_used_only_when_origin_missing(self):
+        reset()
+        post("/webhook/wf03-crosslink-notify", self.payload(channel_id=""))
+        post("/webhook/wf03-crosslink-notify", self.payload(channel_id="CORIGIN"))
+        self.assertEqual([c["body"]["channel"] for c in calls("/slack")], ["CTESTFALLBACK", "CORIGIN"])
+
+
+def signed(eid, channel="C1"):
+    from verifier import sign
+    body = {"type": "event_callback", "event_id": eid,
+            "event": {"type": "message", "text": "una nota larga sobre arquitectura", "user": "U1", "channel": channel}}
+    raw = json.dumps(body).encode()
+    return raw, {"X-Slack-Request-Timestamp": str(NOW), "X-Slack-Signature": sign(raw, str(NOW), SECRET)}
 
 
 @unittest.skipUnless(os.environ.get("NEYEN_IT") == "1", "integración opt-in")
 class Chain(unittest.TestCase):
+    PATH = "/webhook/wf01-ingest-chain"
+
     def setUp(self):
         reset()
         self.tmp = tempfile.TemporaryDirectory()
         self.store = EventStore(Path(self.tmp.name) / "q.db")
         self.proc = N8nProcessor(N8N, HDR[0], HDR[1], urllib_transport)
-        self.proc.url = N8N + "/webhook/wf01-ingest-chain"
+        self.proc.url = N8N + self.PATH
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def persist(self, eid):
-        raw, headers = envelope(event_id=eid, text="una nota larga sobre arquitectura")
+    def persist(self, eid, channel="C1"):
+        raw, headers = signed(eid, channel)
         receive(raw, headers, SECRET, self.store, now=NOW)
 
-    def test_chain_delivers_data_end_to_end(self):
-        self.persist("EvCH1")
-        self.assertTrue(process("EvCH1", self.store, self.proc)["complete"])
-        self.assertEqual(len(calls("/anthropic")), 1)
-        self.assertEqual(calls("/supabase-insert")[0]["body"]["file_name"], "auto_slack_EvCH1")
-        self.assertEqual(calls("/supabase-rpc")[0]["body"], {"p_file_name": "auto_slack_EvCH1"})
-        slack = calls("/slack")
-        self.assertEqual(len(slack), 1)
-        self.assertIn("auto_slack_EvCH1", slack[0]["body"]["text"])
+    def counts(self):
+        return tuple(len(calls(p)) for p in ("/anthropic", "/supabase-insert", "/supabase-rpc", "/slack"))
+
+    def test_chain_delivers_data_and_origin_channel_end_to_end(self):
+        eid = uid("EvCH")
+        self.persist(eid, "CORIGIN")
+        self.assertTrue(process(eid, self.store, self.proc)["complete"])
+        self.assertEqual(self.counts(), (1, 1, 1, 1))
+        self.assertEqual(calls("/supabase-insert")[0]["body"]["file_name"], "auto_slack_" + eid)
+        self.assertEqual(calls("/supabase-rpc")[0]["body"], {"p_file_name": "auto_slack_" + eid})
+        slack = calls("/slack")[0]["body"]
+        self.assertEqual(slack["channel"], "CORIGIN")
+        self.assertIn("auto_slack_" + eid, slack["text"])
 
     def test_chain_fewer_than_five_completes_without_slack(self):
         reset(rpc="two")
-        self.persist("EvCH2")
-        self.assertTrue(process("EvCH2", self.store, self.proc)["complete"])
+        eid = uid("EvCH")
+        self.persist(eid)
+        self.assertTrue(process(eid, self.store, self.proc)["complete"])
         self.assertEqual(calls("/slack"), [])
 
-    def test_slack_functional_error_not_success_and_retry_does_not_duplicate(self):
+    def test_slack_ok_false_not_success_and_retry_does_not_duplicate(self):
         reset(slack="err200")
-        self.persist("EvCH3")
+        eid = uid("EvCH")
+        self.persist(eid)
         with self.assertRaises(Exception):
-            process("EvCH3", self.store, self.proc)
-        row = self.store.get("EvCH3")
-        self.assertNotEqual(row["status"], "processed")
-        self.assertEqual(self.store.state("EvCH3", "notify"), "uncertain")
-        before = (len(calls("/anthropic")), len(calls("/supabase-insert")),
-                  len(calls("/supabase-rpc")), len(calls("/slack")))
-        reset_mode = {"mode": {"slack": "ok"}}
-        mock("/control", reset_mode)
-        r = process("EvCH3", self.store, self.proc)
+            process(eid, self.store, self.proc)
+        self.assertNotEqual(self.store.get(eid)["status"], "processed")
+        self.assertEqual(self.store.state(eid, "notify"), "uncertain")
+        before = self.counts()
+        mock("/control", {"mode": {"slack": "ok"}})
+        r = process(eid, self.store, self.proc)
         self.assertFalse(r["complete"])
         self.assertEqual(r.get("blocked"), "notify")
-        after = (len(calls("/anthropic")), len(calls("/supabase-insert")),
-                 len(calls("/supabase-rpc")), len(calls("/slack")))
-        self.assertEqual(before, after)
+        self.assertEqual(before, self.counts())
 
     def test_rpc_functional_error_not_success(self):
         reset(rpc="err200")
-        self.persist("EvCH4")
+        eid = uid("EvCH")
+        self.persist(eid)
         with self.assertRaises(Exception):
-            process("EvCH4", self.store, self.proc)
-        self.assertNotEqual(self.store.get("EvCH4")["status"], "processed")
+            process(eid, self.store, self.proc)
+        self.assertNotEqual(self.store.get(eid)["status"], "processed")
+        self.assertEqual(calls("/slack"), [])
+
+    def test_rpc_entry_not_found_not_success(self):
+        reset(rpc="notfound")
+        eid = uid("EvCH")
+        self.persist(eid)
+        with self.assertRaises(Exception):
+            process(eid, self.store, self.proc)
+        self.assertNotEqual(self.store.get(eid)["status"], "processed")
         self.assertEqual(calls("/slack"), [])
 
     def test_duplicate_event_does_not_repeat_anything(self):
-        self.persist("EvCH5")
-        self.assertTrue(process("EvCH5", self.store, self.proc)["complete"])
-        raw, headers = envelope(event_id="EvCH5", text="una nota larga sobre arquitectura")
+        eid = uid("EvCH")
+        self.persist(eid)
+        self.assertTrue(process(eid, self.store, self.proc)["complete"])
+        raw, headers = signed(eid)
         self.assertTrue(receive(raw, headers, SECRET, self.store, now=NOW)["duplicate"])
-        process("EvCH5", self.store, self.proc)
-        for p in ("/anthropic", "/supabase-insert", "/supabase-rpc", "/slack"):
-            self.assertEqual(len(calls(p)), 1, p)
+        process(eid, self.store, self.proc)
+        self.assertEqual(self.counts(), (1, 1, 1, 1))
+
+    def test_replayed_notify_step_bypassing_worker_does_not_duplicate(self):
+        eid = uid("EvCH")
+        self.persist(eid, "CORIGIN")
+        self.assertTrue(process(eid, self.store, self.proc)["complete"])
+        payload = json.loads(self.store.get(eid)["payload"])
+        again = self.proc.notify(payload, None)
+        self.assertTrue(again.get("duplicate"))
+        self.assertEqual(len(calls("/slack")), 1)
+
+    def test_event_without_channel_and_without_config_is_blocked_and_recorded(self):
+        self.proc.url = N8N + "/webhook/wf01-ingest-chain-nofb"
+        eid = uid("EvCH")
+        self.persist(eid, "")
+        with self.assertRaises(Exception) as ctx:
+            process(eid, self.store, self.proc)
+        self.assertIn("sin_canal_de_destino", str(ctx.exception))
+        self.assertEqual(calls("/slack"), [])
+        row = self.store.get(eid)
+        self.assertNotEqual(row["status"], "processed")
+        self.assertIn("sin_canal_de_destino", row["last_error"] or "")
 
 
 if __name__ == "__main__":
