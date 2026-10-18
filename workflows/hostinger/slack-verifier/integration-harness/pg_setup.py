@@ -23,7 +23,9 @@ create table if not exists public.metadata (
   mime_type text, created_at timestamptz default now(), cluster text, related_ids jsonb,
   date_estimated text, timeline_group text, narrative_role text);
 grant usage on schema public to anon, authenticated, service_role;
-grant all on public.metadata to service_role;
+-- Imita los privilegios por defecto de Supabase: toda tabla nueva en public nace con ALL para anon/authenticated/service_role.
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+grant all on public.metadata to anon, authenticated, service_role;
 """
 
 
