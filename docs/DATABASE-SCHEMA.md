@@ -31,19 +31,19 @@ The NEYĒN metadata system uses **5 core tables** in Supabase PostgreSQL:
 ```sql
 CREATE TABLE metadata (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    file_name TEXT UNIQUE NOT NULL,
+    file_name TEXT NOT NULL,  -- UNIQUE: NO existe en produccion (verificado 18/10/2026); ver db/prepared-migrations/001
     type TEXT,
     summary TEXT,
-    tags TEXT[] DEFAULT '{}',
-    entities TEXT[] DEFAULT '{}',
+    tags JSONB,
+    entities JSONB,
     emotional_tone TEXT,
-    source TEXT NOT NULL,
-    themes TEXT[] DEFAULT '{}',
-    concepts TEXT[] DEFAULT '{}',
-    keywords TEXT[] DEFAULT '{}',
+    source TEXT,  -- admite NULL en produccion
+    themes JSONB,
+    concepts JSONB,
+    keywords JSONB,
     mime_type TEXT,
     cluster TEXT,
-    related_ids UUID[] DEFAULT '{}',
+    related_ids JSONB,  -- lista JSON de ids (uuid como texto)
     date_estimated TEXT,
     timeline_group TEXT,
     narrative_role TEXT,
@@ -52,7 +52,13 @@ CREATE TABLE metadata (
 );
 ```
 
-**Indexes:**
+> **Verificado contra la base real el 18/10/2026 (solo lectura, proyecto neyen-mvp).** Los tipos de abajo son los reales:
+> `tags`, `entities`, `themes`, `concepts`, `keywords` y `related_ids` son `jsonb` (no `text[]`/`uuid[]`); `source` admite NULL;
+> solo `id` y `file_name` son NOT NULL. **No hay restriccion UNIQUE sobre `file_name`**: solo existe la clave primaria `id`.
+> Los valores por defecto y las politicas RLS no se han verificado. La restriccion UNIQUE y la tabla `notification_reservations`
+> estan preparadas (sin aplicar) en `db/prepared-migrations/`.
+
+**Indexes (segun el diseno original; en produccion solo se verifico `metadata_pkey`, el resto NO existe):**
 ```sql
 CREATE INDEX idx_metadata_file_name ON metadata(file_name);
 CREATE INDEX idx_metadata_source ON metadata(source);
