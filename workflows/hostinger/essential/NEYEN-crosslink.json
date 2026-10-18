@@ -27,12 +27,14 @@
     },
     {
       "parameters": {
-        "functionCode": "// Extract file_name from incoming webhook body\nconst body = $input.item.json.body || $input.item.json;\nconst fileName = body.file_name;\n\nif (!fileName) {\n  throw new Error('No file_name in payload. Keys: ' + Object.keys(body).join(', '));\n}\n\nreturn {\n  json: { file_name: fileName }\n};"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Extract file_name from incoming webhook body\nconst body = $input.item.json.body || $input.item.json;\nconst fileName = body.file_name;\n\nif (!fileName) {\n  throw new Error('No file_name in payload. Keys: ' + Object.keys(body).join(', '));\n}\n\nreturn {\n  json: { file_name: fileName }\n};"
       },
       "id": "extract-filename",
       "name": "Extract File Name",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         450,
         300
@@ -40,12 +42,14 @@
     },
     {
       "parameters": {
-        "functionCode": "const prev = $('Extract File Name').item.json;\nconst result = $input.item.json;\nreturn { json: { ...prev, ...result, crosslink_result: result } };\n"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const prev = $('Extract File Name').item.json;\nconst result = $input.item.json;\nreturn { json: { ...prev, ...result, crosslink_result: result } };\n"
       },
       "id": "call-crosslink-rpc",
       "name": "Call Crosslink RPC",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         650,
         300
@@ -88,12 +92,14 @@
     },
     {
       "parameters": {
-        "functionCode": "const rpcResult = $input.item.json;\nreturn { json: { ...rpcResult, route: 'notify' } };\n"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const rpcResult = $input.item.json;\nreturn { json: { ...rpcResult, route: 'notify' } };\n"
       },
       "id": "trigger-wf03",
       "name": "Trigger WF-03 Notify",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1050,
         200

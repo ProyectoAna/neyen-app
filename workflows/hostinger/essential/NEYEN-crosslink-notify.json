@@ -27,12 +27,14 @@
     },
     {
       "parameters": {
-        "functionCode": "// Extract crosslink data from WF-02's POST body\nconst body = $input.item.json.body || $input.item.json;\n\nconst entryId = body.entry_id;\nconst fileName = body.file_name;\nconst relatedIds = body.related_ids || [];\nconst relatedCount = body.related_count || relatedIds.length;\nconst tags = body.tags || [];\nconst entities = body.entities || [];\nconst summary = body.summary || '';\n\nif (!entryId) {\n  throw new Error('No entry_id in payload');\n}\n\nreturn {\n  json: {\n    entry_id: entryId,\n    file_name: fileName,\n    related_ids: relatedIds,\n    related_count: relatedCount,\n    tags: tags,\n    entities: entities,\n    summary: summary\n  }\n};"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Extract crosslink data from WF-02's POST body\nconst body = $input.item.json.body || $input.item.json;\n\nconst entryId = body.entry_id;\nconst fileName = body.file_name;\nconst relatedIds = body.related_ids || [];\nconst relatedCount = body.related_count || relatedIds.length;\nconst tags = body.tags || [];\nconst entities = body.entities || [];\nconst summary = body.summary || '';\n\nif (!entryId) {\n  throw new Error('No entry_id in payload');\n}\n\nreturn {\n  json: {\n    entry_id: entryId,\n    file_name: fileName,\n    related_ids: relatedIds,\n    related_count: relatedCount,\n    tags: tags,\n    entities: entities,\n    summary: summary\n  }\n};"
       },
       "id": "parse-payload",
       "name": "Parse Payload",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         450,
         300
@@ -40,12 +42,14 @@
     },
     {
       "parameters": {
-        "functionCode": "const prev = $('Parse Payload').item.json;\nconst fromHttp = $input.item.json;\nconst related = Array.isArray(fromHttp) ? fromHttp : (prev.related_entries || []);\nif (!prev.related_ids || prev.related_ids.length === 0) {\n  return { json: { ...prev, related_entries: [] } };\n}\nreturn { json: { ...prev, related_entries: related } };\n"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const prev = $('Parse Payload').item.json;\nconst fromHttp = $input.item.json;\nconst related = Array.isArray(fromHttp) ? fromHttp : (prev.related_entries || []);\nif (!prev.related_ids || prev.related_ids.length === 0) {\n  return { json: { ...prev, related_entries: [] } };\n}\nreturn { json: { ...prev, related_entries: related } };\n"
       },
       "id": "fetch-related-details",
       "name": "Fetch Related Details",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         650,
         300
@@ -53,12 +57,14 @@
     },
     {
       "parameters": {
-        "functionCode": "// Build a Slack notification message\nconst data = $input.item.json;\nconst relatedEntries = data.related_entries || [];\nconst count = data.related_count;\nconst fileName = data.file_name || 'unknown';\nconst tags = data.tags || [];\nconst entities = data.entities || [];\nconst summary = data.summary || '';\n\n// Build the matched entries list (top 10)\nconst entryLines = relatedEntries.slice(0, 10).map((e, i) => {\n  const eTags = (e.tags || []).slice(0, 3).join(', ');\n  const shortSummary = (e.summary || '').substring(0, 80);\n  return `${i + 1}. *${e.file_name}* — _${shortSummary}${shortSummary.length >= 80 ? '...' : ''}_ [${eTags}]`;\n}).join('\\n');\n\nconst moreText = relatedEntries.length > 10 ? `\\n_...y ${relatedEntries.length - 10} mas_` : '';\n\nconst message = `:link: *Crosslink Alert: ${count} conexiones encontradas*\\n\\n` +\n  `*Entrada nueva:* \\`${fileName}\\`\\n` +\n  (summary ? `*Resumen:* ${summary}\\n` : '') +\n  `*Tags:* ${tags.join(', ')}\\n` +\n  `*Entidades:* ${entities.join(', ')}\\n\\n` +\n  `*Entradas relacionadas:*\\n${entryLines}${moreText}\\n\\n` +\n  `_La espiral conecta ${count} nodos._`;\n\nreturn {\n  json: {\n    slack_message: message,\n    entry_id: data.entry_id,\n    related_count: count\n  }\n};"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Build a Slack notification message\nconst data = $input.item.json;\nconst relatedEntries = data.related_entries || [];\nconst count = data.related_count;\nconst fileName = data.file_name || 'unknown';\nconst tags = data.tags || [];\nconst entities = data.entities || [];\nconst summary = data.summary || '';\n\n// Build the matched entries list (top 10)\nconst entryLines = relatedEntries.slice(0, 10).map((e, i) => {\n  const eTags = (e.tags || []).slice(0, 3).join(', ');\n  const shortSummary = (e.summary || '').substring(0, 80);\n  return `${i + 1}. *${e.file_name}* — _${shortSummary}${shortSummary.length >= 80 ? '...' : ''}_ [${eTags}]`;\n}).join('\\n');\n\nconst moreText = relatedEntries.length > 10 ? `\\n_...y ${relatedEntries.length - 10} mas_` : '';\n\nconst message = `:link: *Crosslink Alert: ${count} conexiones encontradas*\\n\\n` +\n  `*Entrada nueva:* \\`${fileName}\\`\\n` +\n  (summary ? `*Resumen:* ${summary}\\n` : '') +\n  `*Tags:* ${tags.join(', ')}\\n` +\n  `*Entidades:* ${entities.join(', ')}\\n\\n` +\n  `*Entradas relacionadas:*\\n${entryLines}${moreText}\\n\\n` +\n  `_La espiral conecta ${count} nodos._`;\n\nreturn {\n  json: {\n    slack_message: message,\n    entry_id: data.entry_id,\n    related_count: count\n  }\n};"
       },
       "id": "build-message",
       "name": "Build Slack Message",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         850,
         300

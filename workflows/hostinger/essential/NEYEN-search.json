@@ -27,12 +27,14 @@
     },
     {
       "parameters": {
-        "functionCode": "// Parse /search <query> command forwarded from WF-01\nconst body = $input.item.json.body || $input.item.json;\nconst text = (body.text || '').trim();\nconst channelId = body.channel_id || '';\nconst userId = body.user_id || '';\n\n// Strip /search prefix\nconst match = text.match(/^\\/search\\s+(.+)$/i);\nif (!match) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      message: ':x: *Uso:* `/search <consulta>`\\n\\nEjemplos:\\n`/search espiral geometría`\\n`/search exploration NEYEN`\\n`/search pipeline realisation`'\n    }\n  };\n}\n\nconst query = match[1].trim();\nif (query.length < 2) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      message: ':x: La consulta debe tener al menos 2 caracteres.'\n    }\n  };\n}\n\nreturn {\n  json: {\n    error: false,\n    query: query,\n    channel_id: channelId,\n    user_id: userId\n  }\n};"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Parse /search <query> command forwarded from WF-01\nconst body = $input.item.json.body || $input.item.json;\nconst text = (body.text || '').trim();\nconst channelId = body.channel_id || '';\nconst userId = body.user_id || '';\n\n// Strip /search prefix\nconst match = text.match(/^\\/search\\s+(.+)$/i);\nif (!match) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      message: ':x: *Uso:* `/search <consulta>`\\n\\nEjemplos:\\n`/search espiral geometría`\\n`/search exploration NEYEN`\\n`/search pipeline realisation`'\n    }\n  };\n}\n\nconst query = match[1].trim();\nif (query.length < 2) {\n  return {\n    json: {\n      error: true,\n      channel_id: channelId,\n      message: ':x: La consulta debe tener al menos 2 caracteres.'\n    }\n  };\n}\n\nreturn {\n  json: {\n    error: false,\n    query: query,\n    channel_id: channelId,\n    user_id: userId\n  }\n};"
       },
       "id": "parse-search",
       "name": "Parse Search Command",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         450,
         300
@@ -86,12 +88,14 @@
     },
     {
       "parameters": {
-        "functionCode": "const prev = $('Parse Error?').item.json;\nconst result = $input.item.json;\nreturn { json: { ...prev, search_result: result } };\n"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const prev = $('Parse Error?').item.json;\nconst result = $input.item.json;\nreturn { json: { ...prev, search_result: result } };\n"
       },
       "id": "call-search-rpc",
       "name": "Call search_entries RPC",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         850,
         400
@@ -99,12 +103,14 @@
     },
     {
       "parameters": {
-        "functionCode": "// Format search results as a Slack message\nconst d = $input.item.json;\nconst sr = d.search_result || {};\nconst results = sr.results || [];\nconst count = sr.count || 0;\nconst query = d.query;\nconst terms = (sr.terms || []).join(', ');\n\nconst ROLE_EMOJI = {\n  realisation: ':bulb:', exploration: ':mag:', conflict: ':zap:',\n  symbol: ':cyclone:', system: ':gear:', orphaned: ':white_circle:',\n  setup: ':triangular_ruler:', integration: ':link:',\n  inciting_event: ':boom:', pilot: ':rocket:'\n};\n\nif (count === 0) {\n  return {\n    json: {\n      message: `:mag: *Sin resultados para \"${query}\"*\\n_Términos buscados: ${terms}_\\n\\nPrueba con otros términos, o usa \\`/graph\\` para ver la distribución de roles.`,\n      channel_id: d.channel_id\n    }\n  };\n}\n\nconst lines = results.map((r, i) => {\n  const emoji = ROLE_EMOJI[r.narrative_role] || ':small_blue_diamond:';\n  const tags = (r.tags || []).slice(0, 4).map(t => '`' + t + '`').join(' ');\n  const shortSummary = (r.summary || '').substring(0, 100);\n  const linksStr = r.crosslink_count > 0 ? ` · :link: ${r.crosslink_count}` : '';\n  return `*${i + 1}.* ${emoji} \\`${r.file_name}\\` _(${r.score}pts${linksStr})_\\n    _${shortSummary}${shortSummary.length >= 100 ? '...' : ''}_\\n    ${tags}`;\n}).join('\\n\\n');\n\nconst msg = `:mag: *Búsqueda NEYEN: \"${query}\"*\\n_${count} resultado${count !== 1 ? 's' : ''} · términos: ${terms}_\\n\\n${lines}\\n\\n_Usa \\`/tag <file_name> narrative_role <role>\\` para reclasificar cualquier entrada._`;\n\nreturn {\n  json: {\n    message: msg,\n    channel_id: d.channel_id\n  }\n};"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Format search results as a Slack message\nconst d = $input.item.json;\nconst sr = d.search_result || {};\nconst results = sr.results || [];\nconst count = sr.count || 0;\nconst query = d.query;\nconst terms = (sr.terms || []).join(', ');\n\nconst ROLE_EMOJI = {\n  realisation: ':bulb:', exploration: ':mag:', conflict: ':zap:',\n  symbol: ':cyclone:', system: ':gear:', orphaned: ':white_circle:',\n  setup: ':triangular_ruler:', integration: ':link:',\n  inciting_event: ':boom:', pilot: ':rocket:'\n};\n\nif (count === 0) {\n  return {\n    json: {\n      message: `:mag: *Sin resultados para \"${query}\"*\\n_Términos buscados: ${terms}_\\n\\nPrueba con otros términos, o usa \\`/graph\\` para ver la distribución de roles.`,\n      channel_id: d.channel_id\n    }\n  };\n}\n\nconst lines = results.map((r, i) => {\n  const emoji = ROLE_EMOJI[r.narrative_role] || ':small_blue_diamond:';\n  const tags = (r.tags || []).slice(0, 4).map(t => '`' + t + '`').join(' ');\n  const shortSummary = (r.summary || '').substring(0, 100);\n  const linksStr = r.crosslink_count > 0 ? ` · :link: ${r.crosslink_count}` : '';\n  return `*${i + 1}.* ${emoji} \\`${r.file_name}\\` _(${r.score}pts${linksStr})_\\n    _${shortSummary}${shortSummary.length >= 100 ? '...' : ''}_\\n    ${tags}`;\n}).join('\\n\\n');\n\nconst msg = `:mag: *Búsqueda NEYEN: \"${query}\"*\\n_${count} resultado${count !== 1 ? 's' : ''} · términos: ${terms}_\\n\\n${lines}\\n\\n_Usa \\`/tag <file_name> narrative_role <role>\\` para reclasificar cualquier entrada._`;\n\nreturn {\n  json: {\n    message: msg,\n    channel_id: d.channel_id\n  }\n};"
       },
       "id": "format-results",
       "name": "Format Search Results",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1050,
         400
