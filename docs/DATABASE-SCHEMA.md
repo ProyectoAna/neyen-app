@@ -55,7 +55,7 @@ CREATE TABLE metadata (
 > **Verificado contra la base real el 18/10/2026 (solo lectura, proyecto neyen-mvp).** Los tipos de abajo son los reales:
 > `tags`, `entities`, `themes`, `concepts`, `keywords` y `related_ids` son `jsonb` (no `text[]`/`uuid[]`); `source` admite NULL;
 > solo `id` y `file_name` son NOT NULL. **No hay restriccion UNIQUE sobre `file_name`**: solo existe la clave primaria `id`.
-> Los valores por defecto y las politicas RLS no se han verificado. La restriccion UNIQUE y la tabla `notification_reservations`
+> RLS esta activado en `metadata` y no tiene politicas; `anon`, `authenticated` y `service_role` tienen privilegios de tabla. `crosslink_entry` (SECURITY DEFINER) solo es ejecutable por `authenticated`, `service_role` y `postgres`: los workflows deben usar la clave `service_role`. Los valores por defecto de columnas no se han verificado. La restriccion UNIQUE y la tabla `notification_reservations`
 > estan preparadas (sin aplicar) en `db/prepared-migrations/`.
 
 **Indexes (segun el diseno original; en produccion solo se verifico `metadata_pkey`, el resto NO existe):**

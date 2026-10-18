@@ -39,7 +39,7 @@ Sustituye a los datos estáticos de n8n (no atómicos con varias réplicas).
 Los seis workflows de `essential/` importan sin error.
 
 ### 2. Pruebas unitarias (offline)
-`python3 -m unittest test_verifier test_workflows` → 26 de 26 (20 del verificador/trabajador + 6 estructurales: sin Function, comprobación de `ok` tras cada Slack, reserva externa sin datos estáticos, migraciones preparadas fuera de `supabase/migrations`, sin canal por defecto, `channel_id` reenviado). `validate.py` → `VALIDATION_OK`.
+`python3 -m unittest test_verifier test_workflows` → 30 de 30 offline (20 del verificador/trabajador + 6 estructurales: sin Function, comprobación de `ok` tras cada Slack, reserva externa sin datos estáticos, migraciones preparadas fuera de `supabase/migrations`, sin canal por defecto, `channel_id` reenviado; + 1 de migración RLS/revoke y 3 de las recetas de reconciliación). `validate.py` → `VALIDATION_OK`.
 
 ### 3. Integración (n8n 2.43.7 real, dos réplicas, PostgreSQL y PostgREST locales, credenciales ficticias, Anthropic/Slack/RPC simulados)
 | Workflow / cadena | Pruebas | Resultado |
@@ -49,6 +49,7 @@ Los seis workflows de `essential/` importan sin error.
 | NEYEN-crosslink-notify | 7 | 7 de 7 |
 | Cadena ingest → crosslink → aviso | 8 | 8 de 8 |
 | Reserva atómica (14 llamadas simultáneas a 2 réplicas, wf02 directo simultáneo, rechazo libera, incierto bloquea, inflight abandonado, 409 de la clave primaria, upsert con `on_conflict`, reinicio de n8n) | 10 | 10 de 10 |
+| Acceso a `notification_reservations` (RLS sin políticas, sin privilegios para anon/authenticated; acceso real por PostgREST con anon, authenticated y service_role) | 4 | 4 de 4 |
 | Migraciones en PostgreSQL local (precheck, up, idempotencia, aborto con duplicados/vacíos, down, reservas) | 7 | 7 de 7 |
 
 ### Pendientes de prueba de ejecución
@@ -67,6 +68,10 @@ Los seis workflows de `essential/` importan sin error.
 ## Verificación de solo lectura en Supabase (neyen-mvp, 18/10/2026)
 
 `crosslink_entry(p_file_name text)` devuelve `{status:'ok',…}` o `{status:'error', message:'Entry not found'}`. `metadata`: solo `id` y `file_name` NOT NULL; columnas de lista `jsonb`; sin UNIQUE sobre `file_name`; el único índice es `metadata_pkey`; 19 filas, 0 duplicados. `docs/DATABASE-SCHEMA.md` actualizado con esto.
+
+## Procedimiento de despliegue y hallazgos de solo lectura (18/10/2026)
+
+El procedimiento único está en `docs/DEPLOYMENT-PROCEDURE.md` (pre-comprobaciones, copias, migraciones, credenciales, despliegue, prueba controlada, rollback, reconciliación y puntos de PARAR). Hallazgos clave de la lectura de Supabase: `crosslink_entry` no es ejecutable por `anon`; la base contiene las tablas de un n8n con los mismos webhooks activos (`wf01-ingest`, `wf02-crosslink`, `wf03-crosslink-notify`…) y `wf07-auto-crosslink` llama a `wf03` sin canal; el único JWT del repo es `anon` (sin `service_role`). Imagen `n8nio/n8n:2.43.7` con Node 24 propio: no hace falta subir Node en el servidor si se usa Docker.
 
 ## Límites de lo probado
 
