@@ -172,7 +172,7 @@ class VerifierTests(unittest.TestCase):
         def transport(url, request_headers, body):
             seen.append((url, request_headers, body))
             if body["only_step"] == "classify":
-                return {"status": 200, "body": {"summary": "ok"}}
+                return {"status": 200, "body": {"summary": "ok", "file_name": "auto_slack_EvWORK", "event_id": "EvWORK"}}
             return {"status": 200, "body": {}}
 
         processor = N8nProcessor(
@@ -186,6 +186,13 @@ class VerifierTests(unittest.TestCase):
         self.assertEqual([item[2]["only_step"] for item in seen], ["classify", "insert", "notify"])
         self.assertEqual(seen[0][1]["X-Internal-Webhook"], "cabecera-de-prueba")
         self.assertTrue(seen[0][0].endswith("/webhook/wf01-ingest"))
+
+    def test_worker_rejects_http200_with_functional_error(self):
+        for step, body in (("classify", {"summary": "x"}), ("insert", {"code": "23502", "message": "x"}), ("notify", {"status": "error"})):
+            processor = N8nProcessor("http://x", "H", "v", lambda u, h, b, body=body: {"status": 200, "body": body})
+            payload = {"event_id": "E", "event": {"text": "t"}}
+            with self.assertRaises(RuntimeError):
+                getattr(processor, step)(payload, {"file_name": "f"}) if step != "classify" else processor.classify(payload)
 
     def test_local_server_rejects_bad_signature(self):
         queue = Queue()

@@ -62,12 +62,14 @@
     },
     {
       "parameters": {
-        "functionCode": "const envelope = $input.item.json.body || $input.item.json;\nif (envelope.verifier !== 'slack-verifier' || !envelope.event_id) {\n  return null;\n}\nconst event = envelope.event || {};\nif (event.bot_id || event.subtype === 'bot_message') return null;\nif (event.type !== 'message' || !event.text) return null;\nreturn {\n  json: {\n    verifier: envelope.verifier,\n    event_id: envelope.event_id,\n    only_step: envelope.only_step,\n    classification: envelope.classification || null,\n    message_text: event.text,\n    user_id: event.user || 'anonymous',\n    channel_id: event.channel || '',\n    source: 'slack',\n    timestamp: event.ts ? new Date(parseFloat(event.ts) * 1000).toISOString() : new Date().toISOString(),\n    metadata: {}\n  }\n};\n"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const envelope = $input.item.json.body || $input.item.json;\nif (envelope.verifier !== 'slack-verifier' || !envelope.event_id) {\n  return null;\n}\nconst event = envelope.event || {};\nif (event.bot_id || event.subtype === 'bot_message') return null;\nif (event.type !== 'message' || !event.text) return null;\nreturn {\n  json: {\n    verifier: envelope.verifier,\n    event_id: envelope.event_id,\n    only_step: envelope.only_step,\n    classification: envelope.classification || null,\n    message_text: event.text,\n    user_id: event.user || 'anonymous',\n    channel_id: event.channel || '',\n    source: 'slack',\n    timestamp: event.ts ? new Date(parseFloat(event.ts) * 1000).toISOString() : new Date().toISOString(),\n    metadata: {}\n  }\n};\n"
       },
       "id": "extract-content",
       "name": "Extract Content",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         650,
         400
@@ -75,12 +77,14 @@
     },
     {
       "parameters": {
-        "functionCode": "const msg = $input.item.json;\nconst text = (msg.message_text || '').trim();\nconst slowTagMatch = text.match(/^\\/slowest-tag\\s+(\\S+)\\s+(\\S+)\\s+(.+)$/i);\n\nif (slowTagMatch || text === '/slowest-tag' || text.startsWith('/slowest-tag ') || text.startsWith('/slowest-tag\\t')) {\n  if (!slowTagMatch) {\n    return { json: { ...msg, route: 'slack', slack_text: ':seedling: *Uso:* `/slowest-tag <file_name> <field> <valores>`' } };\n  }\n  const [, fileName, field, valuesStr] = slowTagMatch;\n  const values = valuesStr.trim().split(/\\s+/).filter(Boolean);\n  const validFields = ['tags', 'entities', 'narrative_role'];\n  const validRoles = ['realisation', 'exploration', 'conflict', 'symbol', 'system', 'orphaned'];\n  let errMsg = null;\n  if (!validFields.includes(field)) errMsg = `:x: Campo inválido: \\`${field}\\``;\n  else if (field === 'narrative_role' && !validRoles.includes(values[0])) errMsg = `:x: Rol inválido: \\`${values[0]}\\``;\n  if (errMsg) return { json: { ...msg, route: 'slack', slack_text: errMsg } };\n  return { json: { ...msg, route: 'slowest', file_name: fileName, field, values } };\n}\n\nconst toTagger = text.startsWith('/tag ') || text.startsWith('/tag\\t') || text === '/graph' || text.startsWith('/graph ') || text.startsWith('/history ') || text.startsWith('/history\\t') || text.startsWith('/compare ') || text.startsWith('/compare\\t') || text.startsWith('/trend ') || text.startsWith('/trend\\t') || text === '/leaderboard' || text.startsWith('/leaderboard ') || text.startsWith('/leaderboard\\t');\nif (toTagger) {\n  return { json: { ...msg, route: 'wf05', forward: { body: { text, user_id: msg.user_id || '', channel_id: msg.channel_id || '', ts: msg.timestamp || '' } } } };\n}\nif (text.startsWith('/search ') || text.startsWith('/search\\t')) {\n  return { json: { ...msg, route: 'wf06', forward: { body: { text, user_id: msg.user_id || '', channel_id: msg.channel_id || '', ts: msg.timestamp || '' } } } };\n}\nreturn { json: { ...msg, route: 'content' } };\n"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const msg = $input.item.json;\nconst text = (msg.message_text || '').trim();\nconst slowTagMatch = text.match(/^\\/slowest-tag\\s+(\\S+)\\s+(\\S+)\\s+(.+)$/i);\n\nif (slowTagMatch || text === '/slowest-tag' || text.startsWith('/slowest-tag ') || text.startsWith('/slowest-tag\\t')) {\n  if (!slowTagMatch) {\n    return { json: { ...msg, route: 'slack', slack_text: ':seedling: *Uso:* `/slowest-tag <file_name> <field> <valores>`' } };\n  }\n  const [, fileName, field, valuesStr] = slowTagMatch;\n  const values = valuesStr.trim().split(/\\s+/).filter(Boolean);\n  const validFields = ['tags', 'entities', 'narrative_role'];\n  const validRoles = ['realisation', 'exploration', 'conflict', 'symbol', 'system', 'orphaned'];\n  let errMsg = null;\n  if (!validFields.includes(field)) errMsg = `:x: Campo inválido: \\`${field}\\``;\n  else if (field === 'narrative_role' && !validRoles.includes(values[0])) errMsg = `:x: Rol inválido: \\`${values[0]}\\``;\n  if (errMsg) return { json: { ...msg, route: 'slack', slack_text: errMsg } };\n  return { json: { ...msg, route: 'slowest', file_name: fileName, field, values } };\n}\n\nconst toTagger = text.startsWith('/tag ') || text.startsWith('/tag\\t') || text === '/graph' || text.startsWith('/graph ') || text.startsWith('/history ') || text.startsWith('/history\\t') || text.startsWith('/compare ') || text.startsWith('/compare\\t') || text.startsWith('/trend ') || text.startsWith('/trend\\t') || text === '/leaderboard' || text.startsWith('/leaderboard ') || text.startsWith('/leaderboard\\t');\nif (toTagger) {\n  return { json: { ...msg, route: 'wf05', forward: { body: { text, user_id: msg.user_id || '', channel_id: msg.channel_id || '', ts: msg.timestamp || '' } } } };\n}\nif (text.startsWith('/search ') || text.startsWith('/search\\t')) {\n  return { json: { ...msg, route: 'wf06', forward: { body: { text, user_id: msg.user_id || '', channel_id: msg.channel_id || '', ts: msg.timestamp || '' } } } };\n}\nreturn { json: { ...msg, route: 'content' } };\n"
       },
       "id": "route-tag-command",
       "name": "Route /tag Command",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         650,
         350
@@ -129,12 +133,14 @@
     },
     {
       "parameters": {
-        "functionCode": "// Build the Claude API request body with narrative_role classifier\nconst messageText = $input.item.json.message_text || '';\nconst source = $input.item.json.source || 'unknown';\nconst timestamp = $input.item.json.timestamp || new Date().toISOString();\n\n// Role definitions for accurate classification\nconst roleGuide = `\n- realisation: insight, breakthrough, understanding, clarity, epiphany, aha-moment\n- exploration: question, curiosity, investigation, research, trying, experimenting\n- conflict: tension, problem, contradiction, difficulty, obstacle, error\n- symbol: metaphor, archetype, image, myth, spiritual, dream, ceremony\n- system: architecture, structure, tool, process, rule, protocol, design\n- orphaned: DO NOT assign this — reserved for entries with no crosslinks after 7 days\n`.trim();\n\nconst prompt = `Analyze this Slack message and extract NEYEN knowledge graph metadata.\n\nMessage: ${messageText}\nSource: ${source}\nTimestamp: ${timestamp}\n\nReturn ONLY valid JSON (no markdown, no explanation):\n{\n  \"tags\": [\"tag1\", \"tag2\", \"tag3\"],\n  \"entities\": [\"entity1\", \"entity2\"],\n  \"summary\": \"1-2 sentence summary\",\n  \"narrative_role\": \"one of the 6 roles below\",\n  \"date_estimated\": \"YYYY-MM-DD or YYYY\",\n  \"timeline_group\": \"1974-1990|2019-2023|2024-2026\"\n}\n\nNarrative role — choose EXACTLY one (never use orphaned):\n${roleGuide}\n\nRules:\n- tags: 3-5 lowercase keywords capturing the core topic\n- entities: named people, companies, systems, or key concepts\n- summary: factual, present-tense, max 2 sentences\n- narrative_role: best fit from the 6 options above — if unclear, choose exploration\n- date_estimated: infer from message context or use the timestamp date\n- timeline_group: map to the closest period`;\n\nreturn {\n  json: {\n    ...$input.item.json,\n    claudeRequestBody: JSON.stringify({\n      model: 'claude-haiku-4-5-20251001',\n      max_tokens: 1024,\n      messages: [{ role: 'user', content: prompt }]\n    })\n  }\n};"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Build the Claude API request body with narrative_role classifier\nconst messageText = $input.item.json.message_text || '';\nconst source = $input.item.json.source || 'unknown';\nconst timestamp = $input.item.json.timestamp || new Date().toISOString();\n\n// Role definitions for accurate classification\nconst roleGuide = `\n- realisation: insight, breakthrough, understanding, clarity, epiphany, aha-moment\n- exploration: question, curiosity, investigation, research, trying, experimenting\n- conflict: tension, problem, contradiction, difficulty, obstacle, error\n- symbol: metaphor, archetype, image, myth, spiritual, dream, ceremony\n- system: architecture, structure, tool, process, rule, protocol, design\n- orphaned: DO NOT assign this — reserved for entries with no crosslinks after 7 days\n`.trim();\n\nconst prompt = `Analyze this Slack message and extract NEYEN knowledge graph metadata.\n\nMessage: ${messageText}\nSource: ${source}\nTimestamp: ${timestamp}\n\nReturn ONLY valid JSON (no markdown, no explanation):\n{\n  \"tags\": [\"tag1\", \"tag2\", \"tag3\"],\n  \"entities\": [\"entity1\", \"entity2\"],\n  \"summary\": \"1-2 sentence summary\",\n  \"narrative_role\": \"one of the 6 roles below\",\n  \"date_estimated\": \"YYYY-MM-DD or YYYY\",\n  \"timeline_group\": \"1974-1990|2019-2023|2024-2026\"\n}\n\nNarrative role — choose EXACTLY one (never use orphaned):\n${roleGuide}\n\nRules:\n- tags: 3-5 lowercase keywords capturing the core topic\n- entities: named people, companies, systems, or key concepts\n- summary: factual, present-tense, max 2 sentences\n- narrative_role: best fit from the 6 options above — if unclear, choose exploration\n- date_estimated: infer from message context or use the timestamp date\n- timeline_group: map to the closest period`;\n\nreturn {\n  json: {\n    ...$input.item.json,\n    claudeRequestBody: JSON.stringify({\n      model: 'claude-haiku-4-5-20251001',\n      max_tokens: 1024,\n      messages: [{ role: 'user', content: prompt }]\n    })\n  }\n};"
       },
       "id": "build-claude-request",
       "name": "Build Claude Request",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1050,
         350
@@ -182,12 +188,14 @@
     },
     {
       "parameters": {
-        "functionCode": "// Parse Claude API response\nconst response = $input.item.json;\nconst content = response.content && response.content[0] && response.content[0].text;\n\nif (!content) {\n  throw new Error('No content in Claude response');\n}\n\n// Strip markdown code fences if Claude added them\nlet jsonText = content.trim();\nif (jsonText.startsWith('```json')) {\n  jsonText = jsonText.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\n} else if (jsonText.startsWith('```')) {\n  jsonText = jsonText.replace(/```\\n?/g, '').trim();\n}\n\nconst classified = JSON.parse(jsonText);\n\n// Pull original message data from Extract Content node\nconst originalData = $node['Extract Content'].json;\nconst chosen = $node['Elegir paso'].json || {};\n\n// Generate a stable file_name using event_id when available\nconst suffix = originalData.event_id || new Date().getTime();\nconst file_name = `auto_slack_${suffix}`;\n\nreturn {\n  json: {\n    file_name: file_name,\n    type: null,\n    summary: classified.summary || '',\n    tags: classified.tags || [],\n    entities: classified.entities || [],\n    emotional_tone: null,\n    source: originalData.source,\n    themes: [],\n    concepts: [],\n    keywords: [],\n    mime_type: 'text/plain',\n    cluster: null,\n    related_ids: [],\n    date_estimated: classified.date_estimated || new Date().toISOString().split('T')[0],\n    timeline_group: classified.timeline_group || '2024-2026',\n    narrative_role: classified.narrative_role || 'exploration',\n    event_id: originalData.event_id,\n    only_step: chosen.only_step || originalData.only_step || ''\n  }\n};"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Parse Claude API response\nconst response = $input.item.json;\nconst content = response.content && response.content[0] && response.content[0].text;\n\nif (!content) {\n  throw new Error('No content in Claude response');\n}\n\n// Strip markdown code fences if Claude added them\nlet jsonText = content.trim();\nif (jsonText.startsWith('```json')) {\n  jsonText = jsonText.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\n} else if (jsonText.startsWith('```')) {\n  jsonText = jsonText.replace(/```\\n?/g, '').trim();\n}\n\nconst classified = JSON.parse(jsonText);\n\n// Pull original message data from Extract Content node\nconst originalData = $node['Extract Content'].json;\nconst chosen = $node['Elegir paso'].json || {};\n\n// Generate a stable file_name using event_id when available\nconst suffix = originalData.event_id || new Date().getTime();\nconst file_name = `auto_slack_${suffix}`;\n\nreturn {\n  json: {\n    file_name: file_name,\n    type: null,\n    summary: classified.summary || '',\n    tags: classified.tags || [],\n    entities: classified.entities || [],\n    emotional_tone: null,\n    source: originalData.source,\n    themes: [],\n    concepts: [],\n    keywords: [],\n    mime_type: 'text/plain',\n    cluster: null,\n    related_ids: [],\n    date_estimated: classified.date_estimated || new Date().toISOString().split('T')[0],\n    timeline_group: classified.timeline_group || '2024-2026',\n    narrative_role: classified.narrative_role || 'exploration',\n    event_id: originalData.event_id,\n    only_step: chosen.only_step || originalData.only_step || ''\n  }\n};"
       },
       "id": "parse-classification",
       "name": "Parse Classification",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1450,
         400
@@ -461,12 +469,14 @@
     },
     {
       "parameters": {
-        "functionCode": "const prev = $('Route /tag Command').item.json;\nconst result = $input.item.json;\nconst related = (result.crosslink || {}).related_count || 0;\nconst values = (prev.values || []).map(v => '`' + v + '`').join(' ');\nconst text = result.status === 'ok'\n  ? `:white_check_mark: *Tag aplicado*\\n*Entrada:* \\`${prev.file_name}\\`\\n*Campo:* \\`${prev.field}\\` → ${values}\\n*Conexiones:* ${related}`\n  : `:x: *Error al aplicar /slowest-tag*\\n\\`${prev.file_name}\\` — ${result.message || 'Error desconocido'}`;\nreturn { json: { ...prev, rpc_result: result, slack_text: text, channel_id: prev.channel_id } };\n"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const prev = $('Route /tag Command').item.json;\nconst result = $input.item.json;\nconst related = (result.crosslink || {}).related_count || 0;\nconst values = (prev.values || []).map(v => '`' + v + '`').join(' ');\nconst text = result.status === 'ok'\n  ? `:white_check_mark: *Tag aplicado*\\n*Entrada:* \\`${prev.file_name}\\`\\n*Campo:* \\`${prev.field}\\` → ${values}\\n*Conexiones:* ${related}`\n  : `:x: *Error al aplicar /slowest-tag*\\n\\`${prev.file_name}\\` — ${result.message || 'Error desconocido'}`;\nreturn { json: { ...prev, rpc_result: result, slack_text: text, channel_id: prev.channel_id } };\n"
       },
       "id": "compose-slowest",
       "name": "Componer respuesta",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1750,
         510
@@ -554,12 +564,14 @@
     },
     {
       "parameters": {
-        "functionCode": "const item = $input.item.json;\nconst step = item.only_step || 'classify';\nreturn { json: { ...item, route: step } };\n"
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const item = $input.item.json;\nconst step = item.only_step || 'classify';\nreturn { json: { ...item, route: step } };\n"
       },
       "id": "elegir-paso",
       "name": "Elegir paso",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         760,
         300
@@ -582,7 +594,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.classification || $json) }}",
+        "jsonBody": "={{ JSON.stringify((({ event_id, only_step, ...row }) => row)($json.classification || $json)) }}",
         "options": {}
       },
       "id": "upsert-event",

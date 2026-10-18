@@ -27,7 +27,21 @@ class N8nProcessor:
         )
         if int(response.get("status", 200)) >= 400:
             raise RuntimeError("n8n rechazo el paso")
-        return response.get("body") or {}
+        body = response.get("body") or {}
+        if isinstance(body, list):
+            body = {"items": body}
+        if not isinstance(body, dict):
+            raise RuntimeError("n8n devolvio una respuesta no valida")
+        if (
+            body.get("error")
+            or body.get("status") == "error"
+            or body.get("ok") is False
+            or (body.get("code") and body.get("message"))
+        ):
+            raise RuntimeError("n8n devolvio 200 con error funcional")
+        if step == "classify" and not all(body.get(k) for k in ("file_name", "event_id")):
+            raise RuntimeError("clasificacion incompleta")
+        return body
 
     def classify(self, payload):
         return self._post("classify", payload, None)
