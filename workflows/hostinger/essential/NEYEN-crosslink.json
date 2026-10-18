@@ -6,7 +6,8 @@
         "httpMethod": "POST",
         "path": "wf02-crosslink",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "id": "wf02-webhook",
       "name": "Webhook Trigger",
@@ -16,7 +17,13 @@
         250,
         300
       ],
-      "webhookId": "wf02-crosslink"
+      "webhookId": "wf02-crosslink",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      }
     },
     {
       "parameters": {
@@ -33,7 +40,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Call Supabase RPC endpoint to crosslink entries\nconst fileName = $input.item.json.file_name;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://REPLACE_WITH_SUPABASE_HOST.supabase.co/rest/v1/rpc/crosslink_entry',\n  headers: {\n    'apikey': 'REPLACE_WITH_SUPABASE_KEY',\n    'Authorization': 'Bearer REPLACE_WITH_SUPABASE_KEY',\n    'Content-Type': 'application/json'\n  },\n  body: {\n    p_file_name: fileName\n  },\n  json: true\n});\n\nreturn {\n  json: response\n};"
+        "functionCode": "const prev = $('Extract File Name').item.json;\nconst result = $input.item.json;\nreturn { json: { ...prev, ...result, crosslink_result: result } };\n"
       },
       "id": "call-crosslink-rpc",
       "name": "Call Crosslink RPC",
@@ -81,7 +88,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Trigger WF-03 notification — RPC result already has all data\nconst rpcResult = $input.item.json;\n\n// Fire WF-03 webhook with full crosslink data\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://n8n.thespiralwithin.ai/webhook/wf03-crosslink-notify',\n  headers: { 'Content-Type': 'application/json' },\n  body: rpcResult,\n  json: true\n});\n\nreturn {\n  json: {\n    ...rpcResult,\n    wf03_triggered: true\n  }\n};"
+        "functionCode": "const rpcResult = $input.item.json;\nreturn { json: { ...rpcResult, route: 'notify' } };\n"
       },
       "id": "trigger-wf03",
       "name": "Trigger WF-03 Notify",
@@ -91,6 +98,59 @@
         1050,
         200
       ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/crosslink_entry",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_file_name: $json.file_name }) }}"
+      },
+      "id": "http-call-crosslink-rpc",
+      "name": "Credencial Call Crosslink RPC",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        650,
+        440
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.thespiralwithin.ai/webhook/wf03-crosslink-notify",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "call-wf03",
+      "name": "Llamar WF-03",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1270,
+        320
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -109,7 +169,7 @@
       "main": [
         [
           {
-            "node": "Call Crosslink RPC",
+            "node": "Credencial Call Crosslink RPC",
             "type": "main",
             "index": 0
           }
@@ -146,6 +206,28 @@
       ]
     },
     "Trigger WF-03 Notify": {
+      "main": [
+        [
+          {
+            "node": "Llamar WF-03",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Credencial Call Crosslink RPC": {
+      "main": [
+        [
+          {
+            "node": "Call Crosslink RPC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar WF-03": {
       "main": [
         [
           {

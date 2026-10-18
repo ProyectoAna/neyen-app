@@ -1,40 +1,70 @@
 # Copias para Hostinger
 
-Estas copias preparan la migración. No están importadas ni publicadas en n8n.
+Preparación. No están importadas, publicadas ni ejecutadas.
 
-Los archivos originales de `workflows/WF-*.json` no se han modificado.
+Los originales de `workflows/WF-*.json` no cambian.
 
-## Qué cambia
+## Dónde está cada flujo
 
-- El nombre ya no usa WF-02, WF-05 ni WF-07, porque en Hostinger esos números pertenecen a otros flujos.
-- Las llamadas internas apuntan a `https://n8n.thespiralwithin.ai`, no a Render.
-- `active` queda en `false`.
-- Las claves escritas en el código se sustituyen por `REPLACE_WITH_SUPABASE_KEY`.
-- El host de Supabase se sustituye por `REPLACE_WITH_SUPABASE_HOST`.
-- El webhook de Slack deja de tener una URL fija. Solo queda `$env.SLACK_WEBHOOK_NEYEN_CORE`.
-- Los identificadores de credencial quedan en `pending-hostinger`. Hay que volver a elegirlas al importar.
+Esenciales, en `essential/`:
 
-## Correspondencia
-
-| Original | Copia | Función |
+| Archivo | Nombre | Función |
 |---|---|---|
-| WF-01: Ingestion Pipeline | NEYEN Ingest | Recibe Slack en `POST /webhook/wf01-ingest` |
-| WF-02: Crosslink | NEYEN Crosslink | `POST /webhook/wf02-crosslink` |
-| WF-03: Crosslink Notify | NEYEN Crosslink Notify | `POST /webhook/wf03-crosslink-notify` |
-| WF-04: Timeline Engine | NEYEN Timeline | `POST /webhook/wf04-timeline` |
-| WF-04: Weekly Digest | NEYEN Weekly Digest | `POST /webhook/wf04-weekly-digest` |
-| WF-05: Slack Tagger | NEYEN Slack Tagger | `POST /webhook/wf05-slack-tagger` |
-| WF-06: Search | NEYEN Search | `POST /webhook/wf06-search` |
-| WF-07: Auto Crosslink | NEYEN Auto Crosslink | `POST /webhook/wf07-auto-crosslink` |
+| NEYEN-ingest.json | NEYEN Ingest | Recibe Slack |
+| NEYEN-crosslink.json | NEYEN Crosslink | Cruza entradas |
+| NEYEN-crosslink-notify.json | NEYEN Crosslink Notify | Avisa el cruce |
+| NEYEN-slack-tagger.json | NEYEN Slack Tagger | Comandos de etiquetado |
+| NEYEN-search.json | NEYEN Search | Búsqueda |
+| NEYEN-auto-crosslink.json | NEYEN Auto Crosslink | Cruce automático |
 
-## No incluido
+Adicionales, en `additional/`:
 
-Drive Watch no está localizado. La integración con Google Drive sigue documentada como pendiente y no forma parte de estas copias.
+| Archivo | Nombre | Función |
+|---|---|---|
+| NEYEN-timeline.json | NEYEN Timeline | Línea temporal |
+| NEYEN-weekly-digest.json | NEYEN Weekly Digest | Resumen semanal |
 
-## Antes de importar
+Drive Watch no está aquí. No está localizado; la integración sigue documentada como pendiente.
 
-- Crear en Hostinger la credencial de Supabase y la de Anthropic. Ahora no existen.
-- Unificar los dos nombres usados en los originales: `Supabase account` y `Supabase API`.
-- Definir `SLACK_WEBHOOK_NEYEN_CORE` si se quiere conservar el aviso a Slack. La credencial de Slack ya presente no sustituye esa URL.
-- Comprobar que las rutas `wf01-ingest`, `wf02-crosslink`, `wf05-slack-tagger` y el resto no coinciden con webhooks ya publicados.
-- No publicar hasta completar lo anterior. No ejecutar llamadas de prueba desde esta rama.
+## Slack
+
+Todas las publicaciones a Slack usan el mismo mecanismo: un nodo HTTP Request a `https://slack.com/api/chat.postMessage` con la credencial `slackApi` llamada `Slack account`.
+
+No queda `SLACK_WEBHOOK_PLACEHOLDER`. No queda `SLACK_WEBHOOK_NEYEN_CORE`. No se usa `$env`.
+
+El canal sale de `channel_id` o `channel` del propio mensaje. Weekly Digest no trae canal, así que esa publicación no tiene destino y fallará cerrada.
+
+## Supabase
+
+`REPLACE_WITH_SUPABASE_KEY` ya no está en el código. Las llamadas REST van en nodos HTTP Request con la credencial `supabaseApi` llamada `Supabase account`. Timeline usa el nodo Supabase con ese mismo nombre.
+
+La credencial de n8n 2.43 inyecta `apikey` y `Authorization`. No inyecta el host, así que la URL del proyecto sigue en el nodo. La clave no está en el archivo.
+
+Los nodos Function que quedan solo preparan o leen datos. No llaman a HTTP ni leen credenciales. En esta versión el nodo Code no puede acceder a credenciales, y el nodo Function desaparece en n8n 3. No se ha desactivado `N8N_BLOCK_ENV_ACCESS_IN_NODE` para sortearlo.
+
+## Webhooks internos
+
+Los webhooks internos exigen la credencial `httpHeaderAuth` llamada `Internal Webhook Header`. Quien los llama usa la misma credencial. El valor no está en el archivo.
+
+`wf01-ingest` no usa esa cabecera: Slack no puede enviarla. La firma `X-Slack-Signature` no está implementada. Tampoco se puede calcular dentro de un nodo Function o Code sin meter el secreto en el código o abrir el acceso a variables de entorno. No se ha hecho ninguna de las dos cosas.
+
+## Reintentos
+
+El flujo de contenido responde a Slack antes de clasificar. Las rutas de comandos de `wf01-ingest` no tienen un nodo de respuesta. Slack puede reintentarlas. No hay lectura de `X-Slack-Retry-Num` ni deduplicación en el workflow.
+
+## Validar
+
+```bash
+python3 workflows/hostinger/validate.py
+```
+
+No hace llamadas externas. Comprueba JSON, conexiones, ausencia de claves en código y que Slack y Supabase usen credencial.
+
+## Pendiente antes de importar
+
+- Crear en Hostinger `Supabase account`, `Slack account`, `Header Auth account` e `Internal Webhook Header`. Los identificadores del archivo son `pending-hostinger`.
+- Elegir un canal para Weekly Digest si ese flujo adicional se importa.
+- Verificar la firma de Slack en `wf01-ingest` sin debilitar la seguridad.
+- Responder a Slack en las rutas de comandos antes de trabajar, o aceptar los reintentos.
+- Confirmar que las rutas `wf01-ingest`, `wf02-crosslink` y las demás no chocan con webhooks ya publicados.
+- Estas copias salen de GitHub del 8 de abril de 2026. Pueden no coincidir con la última ejecución de Render.

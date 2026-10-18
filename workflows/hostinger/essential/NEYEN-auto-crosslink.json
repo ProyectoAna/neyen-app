@@ -6,7 +6,8 @@
         "httpMethod": "POST",
         "path": "wf07-auto-crosslink",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "id": "wf07-webhook",
       "name": "Webhook Trigger",
@@ -16,7 +17,13 @@
         250,
         300
       ],
-      "webhookId": "wf07-auto-crosslink"
+      "webhookId": "wf07-auto-crosslink",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      }
     },
     {
       "parameters": {
@@ -79,7 +86,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Call Supabase crosslink_entry() RPC\nconst d = $input.item.json;\nconst ANON = 'REPLACE_WITH_SUPABASE_KEY';\n\nconst result = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://REPLACE_WITH_SUPABASE_HOST.supabase.co/rest/v1/rpc/crosslink_entry',\n  headers: {\n    'apikey': ANON,\n    'Authorization': 'Bearer ' + ANON,\n    'Content-Type': 'application/json'\n  },\n  body: { p_file_name: d.file_name },\n  json: true\n});\n\nreturn {\n  json: {\n    ...d,\n    crosslink_result: result\n  }\n};"
+        "functionCode": "const prev = $('Wait for Commit').item.json;\nconst result = $input.item.json;\nreturn { json: { ...prev, crosslink_result: result } };\n"
       },
       "id": "run-crosslink",
       "name": "Run Crosslink",
@@ -92,7 +99,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Check if 5+ crosslinks found — trigger WF-03 notification\nconst d = $input.item.json;\nconst cl = d.crosslink_result || {};\nconst relatedCount = cl.related_count || 0;\n\nif (relatedCount >= 5) {\n  // Fire WF-03 async\n  this.helpers.httpRequest({\n    method: 'POST',\n    url: 'https://n8n.thespiralwithin.ai/webhook/wf03-crosslink-notify',\n    headers: { 'Content-Type': 'application/json' },\n    body: {\n      entry_id: cl.entry_id || d.entry_id,\n      file_name: d.file_name,\n      related_ids: cl.related_ids || [],\n      related_count: relatedCount,\n      tags: cl.tags || [],\n      entities: cl.entities || [],\n      summary: cl.summary || ''\n    },\n    json: true\n  }).catch(() => {}); // fire-and-forget\n}\n\nreturn {\n  json: {\n    status: 'ok',\n    file_name: d.file_name,\n    source: d.source,\n    event_type: d.event_type,\n    related_count: relatedCount,\n    wf03_triggered: relatedCount >= 5\n  }\n};"
+        "functionCode": "const d = $input.item.json;\nconst cl = d.crosslink_result || {};\nconst relatedCount = cl.related_count || 0;\nreturn { json: { ...d, related_count: relatedCount, wf03_body: relatedCount >= 5 ? {\n  entry_id: cl.entry_id || d.entry_id,\n  file_name: d.file_name,\n  related_ids: cl.related_ids || [],\n  related_count: relatedCount,\n  tags: cl.tags || [],\n  entities: cl.entities || [],\n  summary: cl.summary || ''\n} : null } };\n"
       },
       "id": "check-notify",
       "name": "Check Notify Threshold",
@@ -100,6 +107,80 @@
       "typeVersion": 1,
       "position": [
         1250,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/crosslink_entry",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_file_name: $json.file_name }) }}"
+      },
+      "id": "http-run-crosslink",
+      "name": "Credencial Run Crosslink",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1050,
+        540
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.thespiralwithin.ai/webhook/wf03-crosslink-notify",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.wf03_body) }}",
+        "options": {}
+      },
+      "id": "auto-wf03",
+      "name": "Avisar WF-03",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1490,
+        540
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.wf03_body ? 'yes' : 'no'}}",
+              "operation": "equal",
+              "value2": "yes"
+            }
+          ]
+        }
+      },
+      "id": "if-threshold",
+      "name": "Umbral de aviso",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1450,
         400
       ]
     }
@@ -149,7 +230,7 @@
       "main": [
         [
           {
-            "node": "Run Crosslink",
+            "node": "Credencial Run Crosslink",
             "type": "main",
             "index": 0
           }
@@ -165,6 +246,40 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Credencial Run Crosslink": {
+      "main": [
+        [
+          {
+            "node": "Run Crosslink",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Notify Threshold": {
+      "main": [
+        [
+          {
+            "node": "Umbral de aviso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Umbral de aviso": {
+      "main": [
+        [
+          {
+            "node": "Avisar WF-03",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },

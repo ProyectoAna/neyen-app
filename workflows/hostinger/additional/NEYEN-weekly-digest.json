@@ -27,7 +27,8 @@
         "httpMethod": "POST",
         "path": "wf04-weekly-digest",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "id": "wf04-webhook",
       "name": "Manual Trigger",
@@ -37,11 +38,17 @@
         250,
         500
       ],
-      "webhookId": "wf04-weekly-digest"
+      "webhookId": "wf04-weekly-digest",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      }
     },
     {
       "parameters": {
-        "functionCode": "// Call weekly_digest() and role_distribution() from Supabase in parallel\nconst ANON = 'REPLACE_WITH_SUPABASE_KEY';\nconst BASE = 'https://REPLACE_WITH_SUPABASE_HOST.supabase.co/rest/v1/rpc';\nconst HEADERS = {\n  'apikey': ANON,\n  'Authorization': 'Bearer ' + ANON,\n  'Content-Type': 'application/json'\n};\n\nconst [digest, roles, spotlight, trend, declining, lboard, slowest] = await Promise.all([\n  this.helpers.httpRequest({ method: 'POST', url: BASE + '/weekly_digest', headers: HEADERS, body: { p_limit: 10 }, json: true }),\n  this.helpers.httpRequest({ method: 'POST', url: BASE + '/role_distribution', headers: HEADERS, body: {}, json: true }),\n  this.helpers.httpRequest({ method: 'POST', url: BASE + '/top_node_spotlight', headers: HEADERS, body: {}, json: true }),\n  this.helpers.httpRequest({ method: 'POST', url: BASE + '/anchor_trend', headers: HEADERS, body: { p_file_name: null, p_weeks: 8 }, json: true }),\n  this.helpers.httpRequest({ method: 'POST', url: BASE + '/declining_nodes', headers: HEADERS, body: { p_min_drop: 1, p_window_weeks: 4 }, json: true }),\n  this.helpers.httpRequest({ method: 'POST', url: BASE + '/leaderboard', headers: HEADERS, body: { p_weeks: 3 }, json: true }),\n  this.helpers.httpRequest({ method: 'POST', url: BASE + '/slowest_growing', headers: HEADERS, body: { p_min_age_days: 7, p_max_links: 8, p_limit: 10 }, json: true })\n]);\n\nreturn {\n  json: {\n    ...digest,\n    role_distribution: roles,\n    top_node_spotlight: spotlight,\n    anchor_trend: trend,\n    declining_nodes: declining,\n    leaderboard: lboard,\n    slowest_growing: slowest\n  }\n};"
+        "functionCode": "const weekly = $('RPC weekly_digest').item.json;\nreturn { json: {\n  ...weekly,\n  role_distribution: $('RPC role_distribution').item.json,\n  top_node_spotlight: $('RPC top_node_spotlight').item.json,\n  anchor_trend: $('RPC anchor_trend').item.json,\n  declining_nodes: $('RPC declining_nodes').item.json,\n  leaderboard: $('RPC leaderboard').item.json,\n  slowest_growing: $('RPC slowest_growing').item.json\n} };\n"
       },
       "id": "fetch-digest",
       "name": "Fetch Weekly Digest",
@@ -67,14 +74,225 @@
     },
     {
       "parameters": {
-        "functionCode": "// Post to Slack #general-neyen-core via incoming webhook\nconst msg = $input.item.json.message;\n\nconst slackResp = await this.helpers.httpRequest({\n  method: 'POST',\n  url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: msg },\n  json: true,\n  returnFullResponse: false\n});\n\nreturn {\n  json: {\n    status: 'ok',\n    slack_response: slackResp,\n    total: $input.item.json.total || 0,\n    crosslinked: $input.item.json.crosslinked || 0\n  }\n};"
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel_id || $json.channel || '', text: $json.slack_text || $json.message || $json.text || $json.slack_message || '' }) }}",
+        "options": {}
       },
       "id": "post-to-slack",
       "name": "Post to Slack",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         900,
+        400
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "pending-hostinger",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/weekly_digest",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"p_limit\": 10}) }}"
+      },
+      "id": "digest-weekly_digest",
+      "name": "RPC weekly_digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        120
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/role_distribution",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({}) }}"
+      },
+      "id": "digest-role_distribution",
+      "name": "RPC role_distribution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        200
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/top_node_spotlight",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({}) }}"
+      },
+      "id": "digest-top_node_spotlight",
+      "name": "RPC top_node_spotlight",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        280
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/anchor_trend",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"p_file_name\": null, \"p_weeks\": 8}) }}"
+      },
+      "id": "digest-anchor_trend",
+      "name": "RPC anchor_trend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        360
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/declining_nodes",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"p_min_drop\": 1, \"p_window_weeks\": 4}) }}"
+      },
+      "id": "digest-declining_nodes",
+      "name": "RPC declining_nodes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        440
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/leaderboard",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"p_weeks\": 3}) }}"
+      },
+      "id": "digest-leaderboard",
+      "name": "RPC leaderboard",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        520
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/slowest_growing",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"p_min_age_days\": 7, \"p_max_links\": 8, \"p_limit\": 10}) }}"
+      },
+      "id": "digest-slowest_growing",
+      "name": "RPC slowest_growing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        600
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 7,
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "merge-digest",
+      "name": "Unir digest",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        720,
         400
       ]
     }
@@ -84,7 +302,37 @@
       "main": [
         [
           {
-            "node": "Fetch Weekly Digest",
+            "node": "RPC weekly_digest",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC role_distribution",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC top_node_spotlight",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC anchor_trend",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC declining_nodes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC leaderboard",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC slowest_growing",
             "type": "main",
             "index": 0
           }
@@ -95,7 +343,37 @@
       "main": [
         [
           {
-            "node": "Fetch Weekly Digest",
+            "node": "RPC weekly_digest",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC role_distribution",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC top_node_spotlight",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC anchor_trend",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC declining_nodes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC leaderboard",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC slowest_growing",
             "type": "main",
             "index": 0
           }
@@ -118,6 +396,94 @@
         [
           {
             "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RPC weekly_digest": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RPC role_distribution": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "RPC top_node_spotlight": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "RPC anchor_trend": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "RPC declining_nodes": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "RPC leaderboard": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "RPC slowest_growing": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Unir digest": {
+      "main": [
+        [
+          {
+            "node": "Fetch Weekly Digest",
             "type": "main",
             "index": 0
           }

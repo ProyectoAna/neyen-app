@@ -6,7 +6,8 @@
         "httpMethod": "POST",
         "path": "wf06-search",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "id": "wf06-webhook",
       "name": "Webhook Trigger",
@@ -16,7 +17,13 @@
         250,
         300
       ],
-      "webhookId": "wf06-search"
+      "webhookId": "wf06-search",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      }
     },
     {
       "parameters": {
@@ -53,20 +60,33 @@
     },
     {
       "parameters": {
-        "functionCode": "// Send parse error to Slack\nconst d = $input.item.json;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: d.message },\n  json: true\n});\nreturn { json: { status: 'error_sent' } };"
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel_id || $json.channel || '', text: $json.slack_text || $json.message || $json.text || $json.slack_message || '' }) }}",
+        "options": {}
       },
       "id": "send-error",
       "name": "Send Parse Error",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         850,
         200
-      ]
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "pending-hostinger",
+          "name": "Slack account"
+        }
+      }
     },
     {
       "parameters": {
-        "functionCode": "// Call search_entries() RPC\nconst d = $input.item.json;\nconst ANON = 'REPLACE_WITH_SUPABASE_KEY';\n\nconst result = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://REPLACE_WITH_SUPABASE_HOST.supabase.co/rest/v1/rpc/search_entries',\n  headers: {\n    'apikey': ANON,\n    'Authorization': 'Bearer ' + ANON,\n    'Content-Type': 'application/json'\n  },\n  body: { p_query: d.query, p_limit: 5 },\n  json: true\n});\n\nreturn {\n  json: {\n    ...d,\n    search_result: result\n  }\n};"
+        "functionCode": "const prev = $('Parse Error?').item.json;\nconst result = $input.item.json;\nreturn { json: { ...prev, search_result: result } };\n"
       },
       "id": "call-search-rpc",
       "name": "Call search_entries RPC",
@@ -92,16 +112,55 @@
     },
     {
       "parameters": {
-        "functionCode": "// Post search results to Slack\nconst d = $input.item.json;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: '{{ SLACK_WEBHOOK_PLACEHOLDER }}',\n  headers: { 'Content-Type': 'application/json' },\n  body: { text: d.message },\n  json: true\n});\nreturn { json: { status: 'ok', command: 'search' } };"
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel_id || $json.channel || '', text: $json.slack_text || $json.message || $json.text || $json.slack_message || '' }) }}",
+        "options": {}
       },
       "id": "post-results",
       "name": "Post Search Results",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1250,
         400
-      ]
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "pending-hostinger",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/search_entries",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_query: $json.query, p_limit: 5 }) }}"
+      },
+      "id": "http-call-search-rpc",
+      "name": "Credencial Call search_entries RPC",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        850,
+        540
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
     }
   ],
   "connections": {
@@ -138,7 +197,7 @@
         ],
         [
           {
-            "node": "Call search_entries RPC",
+            "node": "Credencial Call search_entries RPC",
             "type": "main",
             "index": 0
           }
@@ -161,6 +220,17 @@
         [
           {
             "node": "Post Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Credencial Call search_entries RPC": {
+      "main": [
+        [
+          {
+            "node": "Call search_entries RPC",
             "type": "main",
             "index": 0
           }

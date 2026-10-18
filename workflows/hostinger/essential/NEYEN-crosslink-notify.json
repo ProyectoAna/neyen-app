@@ -6,7 +6,8 @@
         "httpMethod": "POST",
         "path": "wf03-crosslink-notify",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "id": "wf03-webhook",
       "name": "Webhook Trigger",
@@ -16,7 +17,13 @@
         250,
         300
       ],
-      "webhookId": "wf03-crosslink-notify"
+      "webhookId": "wf03-crosslink-notify",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      }
     },
     {
       "parameters": {
@@ -33,7 +40,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Fetch names of the related entries from Supabase\nconst data = $input.item.json;\nconst relatedIds = data.related_ids;\n\nif (!relatedIds || relatedIds.length === 0) {\n  return {\n    json: {\n      ...data,\n      related_entries: []\n    }\n  };\n}\n\n// Query Supabase for the related entry details\nconst idsParam = relatedIds.map(id => `\"${id}\"`).join(',');\nconst url = `https://REPLACE_WITH_SUPABASE_HOST.supabase.co/rest/v1/metadata?id=in.(${relatedIds.join(',')})&select=id,file_name,tags,summary`;\n\nconst response = await this.helpers.httpRequest({\n  method: 'GET',\n  url: url,\n  headers: {\n    'apikey': 'REPLACE_WITH_SUPABASE_KEY',\n    'Authorization': 'Bearer REPLACE_WITH_SUPABASE_KEY'\n  },\n  json: true\n});\n\nreturn {\n  json: {\n    ...data,\n    related_entries: response || []\n  }\n};"
+        "functionCode": "const prev = $('Parse Payload').item.json;\nconst fromHttp = $input.item.json;\nconst related = Array.isArray(fromHttp) ? fromHttp : (prev.related_entries || []);\nif (!prev.related_ids || prev.related_ids.length === 0) {\n  return { json: { ...prev, related_entries: [] } };\n}\nreturn { json: { ...prev, related_entries: related } };\n"
       },
       "id": "fetch-related-details",
       "name": "Fetch Related Details",
@@ -60,36 +67,72 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.SLACK_WEBHOOK_NEYEN_CORE }}",
-        "authentication": "noAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "text",
-              "value": "={{ $json.slack_message }}"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel_id || $json.channel || '', text: $json.slack_text || $json.message || $json.text || $json.slack_message || '' }) }}",
         "options": {}
       },
       "id": "post-to-slack",
       "name": "Post to Slack",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
+      "typeVersion": 4.2,
       "position": [
         1050,
         300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "pending-hostinger",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.related_ids && $json.related_ids.length ? 'yes' : 'no'}}",
+              "operation": "equal",
+              "value2": "yes"
+            }
+          ]
+        }
+      },
+      "id": "if-related",
+      "name": "Hay relacionadas",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        630,
+        300
       ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/metadata?select=id,file_name,tags,summary&id=in.(' + ($json.related_ids || []).join(',') + ')' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "id": "fetch-related-http",
+      "name": "Leer entradas relacionadas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        650,
+        440
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
     }
   ],
   "connections": {
@@ -108,7 +151,7 @@
       "main": [
         [
           {
-            "node": "Fetch Related Details",
+            "node": "Hay relacionadas",
             "type": "main",
             "index": 0
           }
@@ -131,6 +174,35 @@
         [
           {
             "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay relacionadas": {
+      "main": [
+        [
+          {
+            "node": "Leer entradas relacionadas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Related Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer entradas relacionadas": {
+      "main": [
+        [
+          {
+            "node": "Fetch Related Details",
             "type": "main",
             "index": 0
           }
