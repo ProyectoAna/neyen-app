@@ -2,7 +2,11 @@
 
 **Estado: PROPUESTO. Nada de esto se ha ejecutado.** Lo aprueba Ana antes del paso 1. Cada paso marca **PARAR** donde, si falla la comprobación, no se continúa y se avisa a Ana.
 
-Alcance: solo `NEYEN-ingest`, `NEYEN-crosslink`, `NEYEN-crosslink-notify`, el verificador de Slack y las migraciones 001 y 002. **Fuera de alcance y desactivados**: `NEYEN-auto-crosslink`, `NEYEN-slack-tagger`, `NEYEN-search` (importan, pero no tienen prueba de ejecución), Timeline, Weekly Digest y Drive Watch. No se activa ninguno de ellos ni se cambia su estado actual.
+Alcance del primer despliegue: solo `NEYEN-ingest`, `NEYEN-crosslink`, `NEYEN-crosslink-notify`, el verificador de Slack y las migraciones 001 y 002. **Quedan FUERA del primer despliegue** (no se importan, no se activan, no se cambia su estado actual): `NEYEN-auto-crosslink`, `NEYEN-slack-tagger`, `NEYEN-search`, Timeline, Weekly Digest y Drive Watch.
+
+**Decisión aceptada (Ana)**: `CONFIGURED_CHANNEL` queda vacío. Un evento sin canal se bloquea de forma explícita; no hay canal alternativo ni por defecto.
+
+**Puerta previa a cualquier mensaje real**: la prueba real usa un **canal de Slack dedicado de pruebas**. Ana confirma su ID (`C…`) **por escrito antes del primer mensaje**. Sin esa confirmación no se envía nada a Slack, ni siquiera de prueba.
 
 Roles: **Ana** aprueba y decide; ejecuta quien tenga acceso a Hostinger, Supabase y Slack. Ninguna fase posterior empieza sin el "OK" de Ana a la anterior.
 
@@ -20,7 +24,9 @@ Verificado en solo lectura (conector Supabase, proyecto `neyen-mvp`, PostgreSQL 
 
 **No se pudo verificar** (sin acceso): versión real de n8n en Hostinger y cómo se ejecuta (Docker o npm), si esa instancia es la dueña de la base anterior, rutas publicadas en Hostinger, credenciales existentes, el servidor donde irá el verificador, el bot y los permisos de Slack, ni los valores por defecto/RLS de otras tablas.
 
-> **Hallazgo que condiciona todo**: si la instancia de Hostinger usa esta misma base de Supabase, los workflows activos `wf01-ingest`, `wf02-crosslink` y `wf03-crosslink-notify` **ya existen con las mismas rutas** que las copias nuevas, y `wf07-auto-crosslink` (activo) llama a `wf03-crosslink-notify` sin `channel_id`: con la copia nueva esos avisos quedarían **bloqueados**. Ver paso 2.4.
+> **Sobre colisiones de rutas**: que esa base de Supabase contenga tablas de un n8n **no determina** si hay colisión de webhooks en la instancia de destino. Los datos anteriores son solo una observación de esa base. La comprobación de rutas se hace **sobre la instancia n8n concreta** donde se va a desplegar (paso 1.3).
+
+**Inventario de Hostinger**: no existe en el repo ni en los ficheros de trabajo un inventario obtenido por inspección de Hostinger. Solo hay referencias antiguas y no verificadas: correos de Ana de noviembre de 2025 (VPS Hostinger + Easypanel + Docker + Traefik, SSL Let's Encrypt, DNS en Cloudflare, n8n en `n8n.thespiralwithin.ai`) y los flujos de CI del repo, que consultan `/healthz` de esa URL. **Todo ello debe confirmarse** en el paso 1 (versión de n8n, modo de ejecución, rutas, credenciales, red interna entre contenedores, dominio libre para el verificador).
 
 ---
 
@@ -31,17 +37,15 @@ Verificado en solo lectura (conector Supabase, proyecto `neyen-mvp`, PostgreSQL 
 - npm/instalación directa: exige Node ≥ 24. Solo en ese caso hay que subir Node, y es decisión de Ana.
 - **PARAR** si la versión no es 2.43.7 o no se puede determinar: las pruebas se hicieron con 2.43.7 (los nodos `Function` ya no importan en esa versión).
 
-1.2 **¿Misma base que la de arriba?** Comparar la configuración de base de datos de n8n en Hostinger con el proyecto `neyen-mvp`.
-- Si es la misma: es el caso "colisión" (2.4). **PARAR y que Ana decida** (opciones: instancia separada de pruebas; renombrar rutas en las copias; o sustituir los tres workflows antiguos tras exportarlos).
-- Si es otra: continuar.
+1.2 **Confirmar el inventario de Hostinger** (sección 0): servidor, Easypanel, red interna, nombre del servicio n8n, dominio y puerto previstos para el verificador, credenciales ya creadas. Anotar qué ha cambiado respecto a lo supuesto. **PARAR** si algo de lo que exige esta guía (HTTPS público para el verificador, volumen persistente) no está disponible.
 
-1.3 **Rutas publicadas en Hostinger**: lista de workflows y rutas webhook activas. No debe haber ya `wf01-ingest`, `wf02-crosslink` ni `wf03-crosslink-notify` salvo decisión explícita de Ana. **PARAR** si hay colisión sin decisión.
+1.3 **Rutas publicadas en la instancia n8n concreta** (la que recibirá los workflows): lista de workflows y webhooks activos de **esa** instancia. Si ya existen `wf01-ingest`, `wf02-crosslink` o `wf03-crosslink-notify`, o cualquier otro flujo que llame a `wf03-crosslink-notify` sin `channel_id` (quedaría bloqueado), **PARAR** y que Ana decida (renombrar rutas en las copias, instancia separada, o sustituir tras exportar). Si no hay colisión, continuar. Compartir la base de Supabase con otra instancia no se considera colisión por sí mismo.
 
 1.4 **Pruebas en el commit a desplegar** (en un equipo de desarrollo): `python3 -m unittest test_verifier test_workflows test_reservation_access` y `python3 workflows/hostinger/validate.py` → `VALIDATION_OK`. **PARAR** si algo falla.
 
-1.5 **Verificador**: el repo tiene `server.py`, `worker.py` y `verifier.py` pero **no un arranque ni configuración de servicio** (defecto D1 de la lista de bloqueos). **PARAR** en la fase 5 hasta que exista y Ana lo apruebe.
+1.5 **Verificador**: tiene entrada (`service.py`), configuración por variables de entorno (`config.py`), `Dockerfile` y `docker-compose.yml`. Pruebas del servicio: `python3 -m unittest test_service`. **PARAR** si fallan.
 
-1.6 **Decisión previa de Ana (por escrito)**: canal de pruebas para la prueba controlada (el bot debe estar en él) y confirmación de que `CONFIGURED_CHANNEL` sigue vacío.
+1.6 **Puerta del canal de pruebas**: Ana confirma por escrito el **ID** del canal dedicado de pruebas (el bot debe estar en él). **PARAR** y no enviar ningún mensaje hasta tenerlo. Si el ID no coincide con el canal que Ana confirmó, no se usa.
 
 ---
 
@@ -50,7 +54,7 @@ Verificado en solo lectura (conector Supabase, proyecto `neyen-mvp`, PostgreSQL 
 2.1 Supabase: punto de restauración / copia de la base (panel de Supabase). Anotar su identificador. **PARAR** si no se puede crear.
 2.2 Exportar de n8n (Hostinger) **todos** los workflows activos y las credenciales (sin secretos en claro, con el método seguro de n8n) a un lugar privado. **PARAR** si no se puede exportar.
 2.3 Guardar la URL actual de eventos de Slack (la que hay hoy en la app de Slack) para el rollback.
-2.4 Si hubo colisión de rutas y Ana decidió sustituir: guardar también el estado activo/inactivo de cada workflow tal como está.
+2.4 Si en 1.3 hubo colisión y Ana decidió sustituir: guardar también el estado activo/inactivo de cada workflow tal como está.
 2.5 Guardar el hash del commit que se despliega.
 
 ---
@@ -92,9 +96,33 @@ Crear con exactamente estos nombres:
 
 ## 5. Verificador de Slack
 
-5.1 Prerrequisito: defecto D1 resuelto (arranque, configuración por variables de entorno, servicio que se reinicia solo, HTTPS público delante). **PARAR** si no está.
-5.2 Configurar: secreto de firma de Slack, URL interna de n8n (`.../webhook/wf01-ingest`), cabecera interna, ruta de la base SQLite (persistente, con copia de seguridad).
-5.3 Arrancarlo **sin** apuntar Slack a él. Comprobar que rechaza una petición sin firma (401/403) y que responde al challenge solo con firma válida. **PARAR** si no.
+Carpeta: `workflows/hostinger/slack-verifier/` (`service.py`, `config.py`, `Dockerfile`, `docker-compose.yml`, `.env.example`). Solo biblioteca estándar de Python.
+
+**Variables** (los valores NO van al repo; en Easypanel se definen en el servicio, con Docker Compose en un `.env` fuera del repo; también se admite `NOMBRE_FILE` para secretos en fichero):
+
+| Variable | Obligatoria | Notas |
+|---|---|---|
+| `SLACK_SIGNING_SECRET` | sí | ≥ 16 caracteres; el de la app de Slack |
+| `N8N_BASE_URL` | sí | solo la base, p. ej. `http://n8n:5678` (red interna) o `https://…`; `http` solo para localhost o nombre de servicio sin punto |
+| `N8N_INTERNAL_HEADER_NAME` / `N8N_INTERNAL_HEADER_VALUE` | sí | los de la credencial `Internal Webhook Header`; el valor ≥ 16 caracteres y distinto del secreto de Slack |
+| `SQLITE_PATH` | no (`/data/events.sqlite`) | el directorio debe existir y ser escribible |
+| `PORT` (8080), `WORKER_POLL_SECONDS` (2), `SHUTDOWN_GRACE_SECONDS` (35), `SLACK_EVENTS_PATH` (`/slack/events`), `HOST` | no | |
+
+**Arranque**: `python service.py serve` valida la configuración **antes** de abrir puerto o tocar SQLite. Si algo falla, sale con código 2 y escribe `CONFIGURACION INVALIDA` con la variable y el motivo, **nunca el valor**. `python service.py check-config` solo valida.
+
+**Puertos, HTTPS y volúmenes**
+- El contenedor escucha HTTP en `8080`. **El HTTPS lo termina el proxy** (Traefik de Easypanel, con Let's Encrypt): un dominio dedicado al verificador, apuntando al puerto 8080 del servicio. El `docker-compose.yml` solo publica `127.0.0.1:8080` para no exponer HTTP en claro.
+- URL que se daría a Slack **más adelante (paso 8)**: `https://<dominio-del-verificador>/slack/events`. Cualquier otra ruta responde 404; solo se acepta POST firmado en esa ruta.
+- Volumen persistente `/data` (SQLite en modo WAL). **Debe sobrevivir a redeploys** y entrar en las copias de seguridad. Un solo contenedor (una réplica): SQLite no se comparte entre réplicas.
+- `GET /healthz` devuelve `{"status","db","worker"}` (`ok`/`error`), 200 o 503, sin versiones, rutas, secretos ni contadores. Es lo que usa el `HEALTHCHECK` del Dockerfile. Si se expone por el dominio público solo revela que el servicio vive.
+
+**Reinicio controlado**: `SIGTERM` (docker stop / redeploy) detiene la recepción, deja terminar el paso en curso (hasta 35 s; `stop_grace_period: 40s`) y sale con código 0. Al arrancar, el trabajador retoma de SQLite los eventos recibidos que no se procesaron. Un paso que quedó a medias por una caída brusca (`SIGKILL`, corte de luz) queda `started`: **no se reenvía solo**; se reconcilia como en la sección 10.
+
+5.1 Construir y arrancar **sin** apuntar Slack a él: `docker compose up -d --build` (o crear el servicio en Easypanel desde el `Dockerfile`). **PARAR** si `check-config` falla o el contenedor no queda `healthy`.
+5.2 Comprobar: `GET /healthz` → 200; un POST sin firma o con firma errónea a `/slack/events` → **401** y nada en SQLite. **PARAR** si acepta una firma errónea.
+5.3 Reiniciar el servicio (`docker compose restart`) y comprobar que vuelve a `healthy` y que los datos de `/data` siguen. **PARAR** si el volumen se pierde.
+
+> El `Dockerfile` y el `docker-compose.yml` **no se han construido** en el entorno de pruebas (no hay Docker). Lo probado es `service.py` arrancado desde una carpeta limpia con solo los ficheros que copia el `Dockerfile`, con entorno vacío, y su definición revisada por pruebas estáticas. La primera construcción real ocurre en este paso 5.1.
 
 ---
 
@@ -115,7 +143,7 @@ Sin tocar Slack. Con el canal de pruebas que Ana indicó. Sustituir `<ID>` por u
 7.1 **Sin canal → bloqueo**: llamar a `wf03-crosslink-notify` (con la cabecera interna) con `entry_id` nuevo y sin `channel_id`. Esperado: `status: blocked`, `blocker: sin_canal_de_destino`, **ningún mensaje** en Slack. **PARAR** si publica.
 7.2 **Con canal → un aviso**: mismo cuerpo con `channel_id` del canal de pruebas, `related_ids` vacío. Esperado: 1 mensaje, respuesta `ok: true`, y fila `done` en `notification_reservations`. **PARAR** si hay 0 o 2 mensajes.
 7.3 **Duplicado**: repetir 7.2. Esperado: `duplicate: true`, **ningún mensaje nuevo**. **PARAR** si publica otra vez.
-7.4 **Cadena real**: enviar al verificador un evento firmado de prueba con ese canal. Esperado: ficha en `metadata` (`file_name = auto_slack_<event_id>`, una sola fila), aviso solo si hay 5+ relacionadas, evento `processed` en SQLite.
+7.4 **Cadena real**: enviar al verificador un evento firmado de prueba (canal de pruebas confirmado en 1.6). Esperado: ficha en `metadata` (`file_name = auto_slack_<event_id>`, una sola fila), aviso solo si hay 5+ relacionadas, evento `processed` en SQLite.
 7.5 **Limpieza**: borrar las filas de prueba de `metadata` y `notification_reservations` (solo las identificadas por Ana, una a una).
 7.6 Si cualquier paso falla: ir a la sección 9 (rollback) y no cambiar Slack.
 
@@ -168,7 +196,7 @@ Y en el SQLite del verificador (para que el evento se dé por completado):
 ```sql
 update events set notify_state = 'done', last_error = null where event_id = '<event_id>';
 ```
-Después ejecutar la recuperación del trabajador para ese evento (`recover(event_id, …)`): marcará el evento como `processed` sin reenviar nada.
+Después, en el contenedor: `python service.py recover <event_id>` (`docker compose exec slack-verifier python service.py recover <event_id>`). Marca el evento como `processed` sin reenviar nada.
 
 **Paso 3b — NO se publicó → autorizar reintento expresamente** (Ana lo escribe: "autorizo reenviar `<entry_id>`"):
 ```sql
@@ -181,9 +209,11 @@ update events set notify_state = 'pending', status = 'failed', last_error = null
        claim_owner = null, claimed_at = null, authorized = 0
 where event_id = '<event_id>';
 ```
-Después `recover(event_id, …)` repite solo el aviso (clasificación e inserción ya están `done`).
+Después `python service.py recover <event_id>` repite solo el aviso (clasificación e inserción ya están `done`). También lo retomaría el trabajador por sí solo en pocos segundos.
 
 **Paso 4 — Verificar**: la fila queda `done` (3a) o se crea una nueva y acaba `done` (3b); en Slack hay **exactamente un** mensaje. Anotar fecha, `entry_id`, quién decidió y el motivo.
+
+**Caída brusca a mitad de paso** (evento con `classify_state`, `insert_state` o `notify_state` en `started`): Ana decide con el mismo criterio. Si el paso no llegó a hacerse (p. ej. clasificación), `update events set classify_state='pending', status='failed', last_error=null, claim_owner=null, claimed_at=null, authorized=0 where event_id='<event_id>';` y `recover`. Si pudo hacerse (inserción, aviso), primero comprobar el efecto real (ficha en `metadata`, mensaje en Slack) y marcar `done` o `pending` según corresponda. Probado con SQLite real en `test_service.py`.
 
 **Si no se puede comprobar en Slack**: no tocar. La reserva sigue bloqueando; mejor un aviso menos que uno duplicado.
 
@@ -199,6 +229,6 @@ En el SQLite del verificador: `select status, count(*) from events group by stat
 
 ---
 
-## 12. Eventos sin canal (este primer alcance)
+## 12. Eventos sin canal (decisión aceptada)
 
-`CONFIGURED_CHANNEL` queda **vacío**. Un evento sin `channel_id` queda **bloqueado de forma explícita** (`sin_canal_de_destino`), el trabajador lo registra como fallo y **no se publica nada**. Se desbloquea solo cuando Ana elija un destino real, lo escriba en `Parse Payload` y se vuelva a desplegar (un cambio con su propia prueba de la sección 7). No hay canal por defecto. Los avisos de `wf07-auto-crosslink` (si sigue activo en la misma instancia) no llevan canal y quedarían bloqueados.
+`CONFIGURED_CHANNEL` queda **vacío** por decisión de Ana; ya no es un punto pendiente. Un evento sin `channel_id` queda **bloqueado de forma explícita** (`sin_canal_de_destino`), el trabajador lo registra como fallo y **no se publica nada**. No hay canal por defecto ni alternativo. Cambiarlo exigiría una nueva decisión, un nuevo despliegue y repetir la sección 7. Un flujo ajeno que llame a `wf03-crosslink-notify` sin canal (ver 1.3) quedaría bloqueado.

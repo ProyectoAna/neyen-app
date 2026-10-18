@@ -39,7 +39,7 @@ Sustituye a los datos estáticos de n8n (no atómicos con varias réplicas).
 Los seis workflows de `essential/` importan sin error.
 
 ### 2. Pruebas unitarias (offline)
-`python3 -m unittest test_verifier test_workflows` → 30 de 30 offline (20 del verificador/trabajador + 6 estructurales: sin Function, comprobación de `ok` tras cada Slack, reserva externa sin datos estáticos, migraciones preparadas fuera de `supabase/migrations`, sin canal por defecto, `channel_id` reenviado; + 1 de migración RLS/revoke y 3 de las recetas de reconciliación). `validate.py` → `VALIDATION_OK`.
+`python3 -m unittest test_verifier test_workflows` → 30 de 30 offline (+ 16 del servicio, ver abajo) (20 del verificador/trabajador + 6 estructurales: sin Function, comprobación de `ok` tras cada Slack, reserva externa sin datos estáticos, migraciones preparadas fuera de `supabase/migrations`, sin canal por defecto, `channel_id` reenviado; + 1 de migración RLS/revoke y 3 de las recetas de reconciliación). `validate.py` → `VALIDATION_OK`.
 
 ### 3. Integración (n8n 2.43.7 real, dos réplicas, PostgreSQL y PostgREST locales, credenciales ficticias, Anthropic/Slack/RPC simulados)
 | Workflow / cadena | Pruebas | Resultado |
@@ -71,7 +71,17 @@ Los seis workflows de `essential/` importan sin error.
 
 ## Procedimiento de despliegue y hallazgos de solo lectura (18/10/2026)
 
-El procedimiento único está en `docs/DEPLOYMENT-PROCEDURE.md` (pre-comprobaciones, copias, migraciones, credenciales, despliegue, prueba controlada, rollback, reconciliación y puntos de PARAR). Hallazgos clave de la lectura de Supabase: `crosslink_entry` no es ejecutable por `anon`; la base contiene las tablas de un n8n con los mismos webhooks activos (`wf01-ingest`, `wf02-crosslink`, `wf03-crosslink-notify`…) y `wf07-auto-crosslink` llama a `wf03` sin canal; el único JWT del repo es `anon` (sin `service_role`). Imagen `n8nio/n8n:2.43.7` con Node 24 propio: no hace falta subir Node en el servidor si se usa Docker.
+El procedimiento único está en `docs/DEPLOYMENT-PROCEDURE.md` (pre-comprobaciones, copias, migraciones, credenciales, despliegue, prueba controlada, rollback, reconciliación y puntos de PARAR). Hallazgos clave de la lectura de Supabase: `crosslink_entry` no es ejecutable por `anon`; la base contiene las tablas de un n8n con webhooks activos de esos mismos nombres (observación sobre esa base; las colisiones reales se comprueban en la instancia n8n de destino, no se deducen de compartir Supabase); el único JWT del repo es `anon` (sin `service_role`). Imagen `n8nio/n8n:2.43.7` con Node 24 propio: no hace falta subir Node en el servidor si se usa Docker.
+
+## Servicio del verificador (entrada, configuración, contenedor)
+
+Añadidos en `workflows/hostinger/slack-verifier/`: `service.py` (servidor + trabajador, `serve`/`check-config`/`recover`), `config.py` (variables de entorno, validación al arrancar con error claro sin valores, secretos también por `*_FILE`), `GET /healthz` sin datos sensibles, ruta única `/slack/events`, cierre ordenado con SIGTERM, `Dockerfile`, `docker-compose.yml`, `.env.example`, `.dockerignore`.
+
+Pruebas del servicio (`test_service.py`, 16, n8n simulado, sin Slack real): configuración (8), definición estática de Dockerfile/compose (2) y proceso arrancado desde carpeta limpia con entorno vacío (6): fallo rápido sin valores, recepción firmada → procesado una vez, firma errónea → 401 sin guardar, reinicio con eventos pendientes, caída brusca a mitad de paso (no reenvía; reconciliación y `recover`), SIGTERM durante un paso. **No se construyó la imagen Docker** (no hay Docker en el entorno de pruebas).
+
+## Alcance y decisiones (Ana)
+
+Primer despliegue: solo ingest → crosslink → notify. Fuera: auto-crosslink, slack-tagger, search, Timeline, Weekly Digest y Drive Watch. `CONFIGURED_CHANNEL` vacío es decisión aceptada. La prueba real usa un canal de pruebas cuyo ID confirma Ana antes del primer mensaje. Compartir Supabase no determina colisiones de webhooks: se comprueban en la instancia n8n concreta.
 
 ## Límites de lo probado
 

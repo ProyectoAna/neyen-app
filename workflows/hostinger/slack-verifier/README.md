@@ -1,6 +1,6 @@
 # Verificador de Slack
 
-No está desplegado. Slack no debe apuntar todavía a n8n.
+No está desplegado. Slack no debe apuntar todavía a n8n ni a este servicio.
 
 n8n 2.43 no puede comprobar la firma dentro de un nodo Function o Code sin escribir el secreto en el flujo o abrir el acceso general a variables de entorno. Este verificador hace esa comprobación fuera de n8n.
 
@@ -45,3 +45,9 @@ El secreto de firma no está en el código. Se pasa al ejecutar el verificador y
 ```bash
 python3 -m unittest workflows/hostinger/slack-verifier/test_verifier.py
 ```
+
+## Servicio (entrada, configuración y contenedor)
+
+- `service.py serve | check-config | recover EVENT_ID`; configuración por variables de entorno en `config.py` (ver `.env.example`; los secretos nunca van al repo).
+- `Dockerfile` + `docker-compose.yml` (volumen `/data`, `GET /healthz`, HTTPS terminado por el proxy). Detalle, puertos y pasos en `docs/DEPLOYMENT-PROCEDURE.md`, sección 5.
+- Pruebas del servicio: `python3 -m unittest test_service` (arranca `service.py` desde carpeta limpia, con n8n simulado).
