@@ -1,5 +1,6 @@
 # Verificador de Slack. Los secretos NO estan aqui: se pasan por .env (fuera del repo) o por
-# las variables de entorno del servicio en Easypanel. Ver .env.example y docs/DEPLOYMENT-PROCEDURE.md.
+# las variables de entorno del servicio en Easypanel. NO publica puertos: el proxy llega por la red
+# (docker-compose.traefik.yml) o, solo para pruebas locales, docker-compose.local.yml. Ver .env.example y docs/DEPLOYMENT-PROCEDURE.md.
 services:
   slack-verifier:
     build: .
@@ -13,9 +14,12 @@ services:
       N8N_INTERNAL_HEADER_VALUE: ${N8N_INTERNAL_HEADER_VALUE:?defina N8N_INTERNAL_HEADER_VALUE}
       SQLITE_PATH: /data/events.sqlite
       PORT: "8080"
+    healthcheck:
+      test: ["CMD", "python", "service.py", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     volumes:
       - verifier-data:/data         # SQLite persistente: incluirlo en las copias de seguridad
-    ports:
-      - "127.0.0.1:${VERIFIER_HOST_PORT:-8080}:8080"   # solo local; el HTTPS lo termina el proxy (Traefik/Easypanel)
 volumes:
   verifier-data:

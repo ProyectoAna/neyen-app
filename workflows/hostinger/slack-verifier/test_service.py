@@ -184,7 +184,8 @@ class StaticDefinitionTests(unittest.TestCase):
         for name in copied:
             self.assertTrue((HERE / name).exists(), name)
         self.assertRegex(text, r"(?m)^USER verifier")
-        self.assertIn("/healthz", text)
+        self.assertIn("service.py", text.split("HEALTHCHECK")[1])
+        self.assertIn("healthcheck", text)
         self.assertIn('VOLUME ["/data"]', text)
 
     def test_compose_and_env_example_have_no_secret_values(self):
@@ -192,7 +193,9 @@ class StaticDefinitionTests(unittest.TestCase):
         for name in ("SLACK_SIGNING_SECRET", "N8N_INTERNAL_HEADER_VALUE"):
             self.assertRegex(compose, name + r": \$\{" + name + r":\?")
         self.assertIn("verifier-data:/data", compose)
-        self.assertIn("127.0.0.1:", compose)
+        self.assertNotIn("ports:", compose)
+        self.assertIn("127.0.0.1:", (HERE / "docker-compose.local.yml").read_text())
+        self.assertNotIn("ports:", (HERE / "docker-compose.traefik.yml").read_text())
         example = (HERE / ".env.example").read_text()
         for name in ("SLACK_SIGNING_SECRET", "N8N_INTERNAL_HEADER_VALUE"):
             self.assertRegex(example, r"(?m)^" + name + r"=$")
@@ -270,6 +273,14 @@ class ServiceProcessTests(unittest.TestCase):
         self.assertIn("SLACK_SIGNING_SECRET", p.stderr)
         self.assertNotIn("corto-secreto", p.stdout + p.stderr)
         self.assertFalse(self.sqlite.exists())
+
+    def test_healthcheck_command_reflects_service(self):
+        run = lambda: subprocess.run([sys.executable, "service.py", "healthcheck"], cwd=self.app,
+                                     env={"PORT": str(self.port), "PATH": os.environ["PATH"]}).returncode
+        self.assertEqual(run(), 1)          # servicio parado
+        self.start()
+        self.assertEqual(run(), 0)
+        self.assertEqual(self.stop()[0], 0)
 
     def test_check_config_does_not_open_port_or_db(self):
         p = subprocess.run([sys.executable, "service.py", "check-config"], cwd=self.app, env=self.env(),

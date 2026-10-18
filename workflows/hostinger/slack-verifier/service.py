@@ -3,6 +3,7 @@
     python service.py serve            # arranca (valida la configuracion antes)
     python service.py check-config     # solo valida; no abre puertos ni toca SQLite
     python service.py recover EVENT_ID # reanuda un evento tras reconciliarlo (ver docs)
+    python service.py healthcheck      # exit 0 si GET /healthz local da 200 (lo usa el contenedor)
 
 Un SIGTERM/SIGINT detiene el servidor, deja terminar el paso en curso (hasta
 SHUTDOWN_GRACE_SECONDS) y sale con codigo 0. Los eventos pendientes quedan en SQLite y se
@@ -88,9 +89,17 @@ def run(config, transport=urllib_transport, install_signals=True, ready=None):
 def main(argv=None, env=None):
     argv = sys.argv[1:] if argv is None else argv
     command = argv[0] if argv else "serve"
-    if command not in ("serve", "check-config", "recover"):
-        print("uso: service.py serve | check-config | recover EVENT_ID", file=sys.stderr)
+    if command not in ("serve", "check-config", "recover", "healthcheck"):
+        print("uso: service.py serve | check-config | recover EVENT_ID | healthcheck", file=sys.stderr)
         return 2
+    if command == "healthcheck":
+        import os
+        import urllib.request
+        try:
+            url = "http://127.0.0.1:%s/healthz" % ((env or os.environ).get("PORT") or "8080")
+            return 0 if urllib.request.urlopen(url, timeout=4).status == 200 else 1
+        except Exception:
+            return 1
     try:
         config = load_config(env)
     except ConfigError as exc:
