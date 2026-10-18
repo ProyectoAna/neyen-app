@@ -42,9 +42,9 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForEachItem",
+        "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const prev = $('Parse Payload').item.json;\nconst fromHttp = $input.item.json;\nconst related = Array.isArray(fromHttp) ? fromHttp : (prev.related_entries || []);\nif (!prev.related_ids || prev.related_ids.length === 0) {\n  return { json: { ...prev, related_entries: [] } };\n}\nreturn { json: { ...prev, related_entries: related } };\n"
+        "jsCode": "const prev = $('Parse Payload').first().json;\nconst hasRelated = prev.related_ids && prev.related_ids.length > 0;\nconst related = hasRelated\n  ? $input.all().map(i => i.json).filter(e => e && e.file_name)\n  : [];\nreturn [{ json: { ...prev, related_entries: related } }];\n"
       },
       "id": "fetch-related-details",
       "name": "Fetch Related Details",
@@ -138,7 +138,8 @@
           "id": "pending-hostinger",
           "name": "Supabase account"
         }
-      }
+      },
+      "alwaysOutputData": true
     }
   ],
   "connections": {
