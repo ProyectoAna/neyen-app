@@ -1,4 +1,4 @@
-import json,threading
+import json,threading,socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 calls=[]; mode={"supabase":"ok","anthropic":"ok","notify":"ok","rpc":"five","slack":"ok"}
 class H(BaseHTTPRequestHandler):
@@ -39,6 +39,12 @@ class H(BaseHTTPRequestHandler):
         if self.path.startswith('/supabase-related'):
             return self._send(200,[{"id":"r%d"%i,"file_name":"old_%d"%i,"tags":["t"],"summary":"previo"} for i in range(5)])
         if self.path=='/slack':
+            if mode['slack']=='drop':
+                try:self.request.shutdown(socket.SHUT_RDWR)
+                except Exception:pass
+                self.close_connection=True;return
+            if mode['slack']=='slow':
+                import time;time.sleep(float(mode.get('delay',0.5)))
             if mode['slack']=='err200':return self._send(200,{"ok":False,"error":"channel_not_found"})
             return self._send(200,{"ok":True,"ts":"1"})
         self._send(200,{"ok":True})
