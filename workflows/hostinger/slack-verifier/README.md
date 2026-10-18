@@ -49,5 +49,6 @@ python3 -m unittest workflows/hostinger/slack-verifier/test_verifier.py
 ## Servicio (entrada, configuración y contenedor)
 
 - `service.py serve | check-config | recover EVENT_ID`; configuración por variables de entorno en `config.py` (ver `.env.example`; los secretos nunca van al repo).
-- `Dockerfile` + `docker-compose.yml` (volumen `/data`, `GET /healthz`, HTTPS terminado por el proxy). Detalle, puertos y pasos en `docs/DEPLOYMENT-PROCEDURE.md`, sección 5.
+- `Dockerfile` + `docker-compose.yml` (sin puertos publicados, volumen `/data`, `GET /healthz`), `docker-compose.local.yml` (loopback, pruebas) y `docker-compose.traefik.yml` (Traefik propio). HTTPS lo termina el proxy. Detalle, puertos y pasos en `docs/DEPLOYMENT-PROCEDURE.md`, sección 5.
 - Pruebas del servicio: `python3 -m unittest test_service` (arranca `service.py` desde carpeta limpia, con n8n simulado).
+- Prueba de contenedor (podman o docker): `bash integration-harness/container/run_container_test.sh` (n8n simulado, secretos ficticios, efímera).

@@ -77,7 +77,15 @@ El procedimiento único está en `docs/DEPLOYMENT-PROCEDURE.md` (pre-comprobacio
 
 Añadidos en `workflows/hostinger/slack-verifier/`: `service.py` (servidor + trabajador, `serve`/`check-config`/`recover`), `config.py` (variables de entorno, validación al arrancar con error claro sin valores, secretos también por `*_FILE`), `GET /healthz` sin datos sensibles, ruta única `/slack/events`, cierre ordenado con SIGTERM, `Dockerfile`, `docker-compose.yml`, `.env.example`, `.dockerignore`.
 
-Pruebas del servicio (`test_service.py`, 16, n8n simulado, sin Slack real): configuración (8), definición estática de Dockerfile/compose (2) y proceso arrancado desde carpeta limpia con entorno vacío (6): fallo rápido sin valores, recepción firmada → procesado una vez, firma errónea → 401 sin guardar, reinicio con eventos pendientes, caída brusca a mitad de paso (no reenvía; reconciliación y `recover`), SIGTERM durante un paso. **No se construyó la imagen Docker** (no hay Docker en el entorno de pruebas).
+Pruebas del servicio (`test_service.py`, 16, n8n simulado, sin Slack real): configuración (8), definición estática de Dockerfile/compose (2) y proceso arrancado desde carpeta limpia con entorno vacío (6): fallo rápido sin valores, recepción firmada → procesado una vez, firma errónea → 401 sin guardar, reinicio con eventos pendientes, caída brusca a mitad de paso (no reenvía; reconciliación y `recover`), SIGTERM durante un paso. La imagen se construyó y probó después con podman rootless (ver abajo).
+
+## Prueba de contenedor (podman rootless 5.4.2 en la caja)
+
+`integration-harness/container/run_container_test.sh`: 19 de 19 comprobaciones OK con n8n simulado y secretos ficticios. Imagen construida, uid 10001 escribe en `/data` (volumen con nombre), bind de otro propietario → fallo rápido y claro, `/healthz` y healthcheck, firma válida 200 / errónea 401, el proxy llega por nombre de servicio y **no** por `127.0.0.1` (por eso el compose ya no publica puertos; ver `docker-compose.traefik.yml` y la sección 5 del procedimiento), SQLite persiste tras recrear el contenedor, apagado con código 0, logs sin secretos. Hallazgo corregido: el healthcheck con `python -c` quedaba mal formado al fusionar ficheros compose en podman-compose; ahora es `python service.py healthcheck`. No probado: Docker Engine, Easypanel y Traefik reales.
+
+## Hostinger (sin credenciales)
+
+Inventario de Comet (VPS srv1121428, Ubuntu 24.04, Easypanel, servicio `neyen_n8n`, n8n 2.43.7, SQLite en `/opt/n8n_data`) **no verificado por Ana**. Solo se confirmó públicamente que `https://n8n.thespiralwithin.ai/healthz` responde 200; versión, servidor, rutas y credenciales siguen sin confirmar por falta de acceso.
 
 ## Alcance y decisiones (Ana)
 

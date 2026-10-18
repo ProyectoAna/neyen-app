@@ -26,7 +26,9 @@ Verificado en solo lectura (conector Supabase, proyecto `neyen-mvp`, PostgreSQL 
 
 > **Sobre colisiones de rutas**: que esa base de Supabase contenga tablas de un n8n **no determina** si hay colisión de webhooks en la instancia de destino. Los datos anteriores son solo una observación de esa base. La comprobación de rutas se hace **sobre la instancia n8n concreta** donde se va a desplegar (paso 1.3).
 
-**Inventario de Hostinger**: no existe en el repo ni en los ficheros de trabajo un inventario obtenido por inspección de Hostinger. Solo hay referencias antiguas y no verificadas: correos de Ana de noviembre de 2025 (VPS Hostinger + Easypanel + Docker + Traefik, SSL Let's Encrypt, DNS en Cloudflare, n8n en `n8n.thespiralwithin.ai`) y los flujos de CI del repo, que consultan `/healthz` de esa URL. **Todo ello debe confirmarse** en el paso 1 (versión de n8n, modo de ejecución, rutas, credenciales, red interna entre contenedores, dominio libre para el verificador).
+**Inventario de Hostinger (NO verificado por Ana)**: procede de un informe anterior de Comet: VPS `srv1121428`, Ubuntu 24.04, Docker con Easypanel, servicio `neyen_n8n.1.du8sb78p2jbr90n88mzzrsmji`, n8n 2.43.7, SQLite montado desde `/opt/n8n_data`. Dato adicional que encaja: el nombre `neyen_n8n` indica proyecto `neyen`, servicio `n8n` (convención de Easypanel `<proyecto>_<servicio>`).
+
+Reconfirmado el 18/10/2026 **solo con lo público y sin credenciales** (sin iniciar sesión, sin tocar webhooks): `https://n8n.thespiralwithin.ai/healthz` y `/healthz/readiness` → 200 `{"status":"ok"}` (hay una instancia n8n viva en esa URL, detrás de Cloudflare). **No se pudo confirmar sin acceso**: la versión (el endpoint público `/rest/settings` no la expone), que sea 2.43.7, el servidor `srv1121428`, Ubuntu, Easypanel, el nombre del servicio, que la base sea SQLite en `/opt/n8n_data`, las rutas webhook publicadas (probar un webhook por GET puede ejecutarlo; no se hizo) y las credenciales existentes. Un SQLite local en n8n significa además que la base de n8n **no** es la de Supabase observada antes: son instancias distintas hasta que se demuestre lo contrario.
 
 ---
 
@@ -110,19 +112,34 @@ Carpeta: `workflows/hostinger/slack-verifier/` (`service.py`, `config.py`, `Dock
 
 **Arranque**: `python service.py serve` valida la configuración **antes** de abrir puerto o tocar SQLite. Si algo falla, sale con código 2 y escribe `CONFIGURACION INVALIDA` con la variable y el motivo, **nunca el valor**. `python service.py check-config` solo valida.
 
-**Puertos, HTTPS y volúmenes**
-- El contenedor escucha HTTP en `8080`. **El HTTPS lo termina el proxy** (Traefik de Easypanel, con Let's Encrypt): un dominio dedicado al verificador, apuntando al puerto 8080 del servicio. El `docker-compose.yml` solo publica `127.0.0.1:8080` para no exponer HTTP en claro.
-- URL que se daría a Slack **más adelante (paso 8)**: `https://<dominio-del-verificador>/slack/events`. Cualquier otra ruta responde 404; solo se acepta POST firmado en esa ruta.
-- Volumen persistente `/data` (SQLite en modo WAL). **Debe sobrevivir a redeploys** y entrar en las copias de seguridad. Un solo contenedor (una réplica): SQLite no se comparte entre réplicas.
-- `GET /healthz` devuelve `{"status","db","worker"}` (`ok`/`error`), 200 o 503, sin versiones, rutas, secretos ni contadores. Es lo que usa el `HEALTHCHECK` del Dockerfile. Si se expone por el dominio público solo revela que el servicio vive.
+**Puertos, proxy, HTTPS y volúmenes — configuración concreta**
+
+Publicar `127.0.0.1:8080` **no** sirve para el proxy: Traefik corre en otro contenedor y su `127.0.0.1` no es el del servicio (comprobado: desde otro contenedor, `127.0.0.1:8080` no llega; por nombre de servicio sí). Por eso `docker-compose.yml` **no publica puertos**; el proxy llega por la red del contenedor.
+
+*A) Easypanel (el despliegue previsto; Easypanel usa Docker con Traefik propio)*
+1. En el proyecto `neyen`, crear un servicio **App** llamado `slack-verifier`.
+2. **Source**: el repositorio, rama aprobada. **Build**: Dockerfile, *Build Path* `/workflows/hostinger/slack-verifier` (es también el contexto de construcción; el `Dockerfile` copia solo ficheros de esa carpeta), ruta `Dockerfile`.
+3. **Environment**: `SLACK_SIGNING_SECRET`, `N8N_BASE_URL`, `N8N_INTERNAL_HEADER_NAME`, `N8N_INTERNAL_HEADER_VALUE` (los valores se escriben en Easypanel, nunca en el repo). `N8N_BASE_URL` por la red interna: `http://neyen_n8n:5678` (nombre de servicio `<proyecto>_<servicio>`; **confirmar el nombre y el puerto 5678 en el paso 1.2**). Si el nombre interno no resuelve, usar `https://n8n.thespiralwithin.ai`.
+4. **Domains**: dominio del verificador (DNS apuntando al VPS, p. ej. en Cloudflare), **HTTPS activado** (Let's Encrypt), protocolo interno **HTTP**, **puerto de destino 8080**. Sin sección *Ports* (no se publica nada en el host).
+5. **Storage → Mounts → Volume**: nombre `data`, ruta del contenedor `/data`. Es un volumen gestionado: hereda el propietario del directorio de la imagen (uid 10001), por lo que el usuario no root escribe sin cambios. Programar la copia de seguridad del volumen en Easypanel.
+6. Si en lugar de *Volume* se usa **Bind** (carpeta del host), esa carpeta debe pertenecer al uid 10001 (`chown 10001:10001 <carpeta>`); si no, el arranque falla rápido con `SQLITE_PATH: el directorio no es escribible` (comprobado).
+7. **Una sola réplica.** Deploy. Un redeploy envía SIGTERM y espera al paso en curso (ver *Reinicio controlado*).
+
+*B) Docker Compose con Traefik propio* (solo si no se usa Easypanel): `docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d --build` con `TRAEFIK_NETWORK` (la red a la que está unido Traefik), `VERIFIER_DOMAIN` y `TRAEFIK_CERTRESOLVER`. Ese superpuesto une el servicio a esa red y publica las etiquetas de Traefik (router solo para `/slack/events`, TLS, puerto 8080). Solo se comprobó que el superpuesto se fusiona; **no se probó con un Traefik real**.
+
+*C) Pruebas locales*: `docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build` publica `127.0.0.1:8080` solo en esa máquina.
+
+- URL que se daría a Slack **más adelante (paso 8)**: `https://<dominio-del-verificador>/slack/events`. Cualquier otra ruta responde 404.
+- Volumen persistente `/data` (SQLite en modo WAL), una réplica (SQLite no se comparte entre réplicas). Debe sobrevivir a redeploys y entrar en las copias de seguridad.
+- `GET /healthz` devuelve `{"status","db","worker"}` (`ok`/`error`), 200 o 503, sin versiones, rutas, secretos ni contadores. El `HEALTHCHECK` ejecuta `python service.py healthcheck`.
 
 **Reinicio controlado**: `SIGTERM` (docker stop / redeploy) detiene la recepción, deja terminar el paso en curso (hasta 35 s; `stop_grace_period: 40s`) y sale con código 0. Al arrancar, el trabajador retoma de SQLite los eventos recibidos que no se procesaron. Un paso que quedó a medias por una caída brusca (`SIGKILL`, corte de luz) queda `started`: **no se reenvía solo**; se reconcilia como en la sección 10.
 
-5.1 Construir y arrancar **sin** apuntar Slack a él: `docker compose up -d --build` (o crear el servicio en Easypanel desde el `Dockerfile`). **PARAR** si `check-config` falla o el contenedor no queda `healthy`.
-5.2 Comprobar: `GET /healthz` → 200; un POST sin firma o con firma errónea a `/slack/events` → **401** y nada en SQLite. **PARAR** si acepta una firma errónea.
-5.3 Reiniciar el servicio (`docker compose restart`) y comprobar que vuelve a `healthy` y que los datos de `/data` siguen. **PARAR** si el volumen se pierde.
+5.1 Crear el servicio (A) o `docker compose … up -d --build` (B/C), **sin** apuntar Slack a él. **PARAR** si `check-config` falla (el contenedor sale con código 2 y un mensaje por variable) o si el servicio no queda sano.
+5.2 Comprobar: `GET https://<dominio>/healthz` → 200; un POST sin firma o con firma errónea a `/slack/events` → **401** y nada en SQLite. **PARAR** si acepta una firma errónea o si el dominio no llega al servicio (revisar puerto de destino 8080 y red).
+5.3 Redeploy/reinicio del servicio: vuelve a estar sano y los datos de `/data` siguen. **PARAR** si el volumen se pierde.
 
-> El `Dockerfile` y el `docker-compose.yml` **no se han construido** en el entorno de pruebas (no hay Docker). Lo probado es `service.py` arrancado desde una carpeta limpia con solo los ficheros que copia el `Dockerfile`, con entorno vacío, y su definición revisada por pruebas estáticas. La primera construcción real ocurre en este paso 5.1.
+> **Qué está probado y qué no.** En la caja de pruebas, con **podman rootless 5.4.2** (no Docker; mismo formato de imagen y compose), `integration-harness/container/run_container_test.sh` construyó la imagen y comprobó, con n8n simulado y secretos ficticios: usuario no root (uid 10001) que escribe en un volumen con nombre; fallo rápido con un bind de otro propietario; `/healthz` limpio y healthcheck del compose; recepción firmada (200) y firma errónea (401, sin llegar a n8n); alcance por nombre de servicio y no por loopback; persistencia de SQLite tras **recrear** el contenedor y reenvío de Slack sin reprocesar; apagado ordenado con código 0; logs sin secretos. **No probado**: Docker Engine, Easypanel real, Traefik real, build con BuildKit/Buildx, ni el planificador de healthchecks del motor (en podman sin systemd se ejecuta el comando a mano).
 
 ---
 
