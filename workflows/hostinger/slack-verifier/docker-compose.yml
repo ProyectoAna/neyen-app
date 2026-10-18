@@ -1,0 +1,21 @@
+# Verificador de Slack. Los secretos NO estan aqui: se pasan por .env (fuera del repo) o por
+# las variables de entorno del servicio en Easypanel. Ver .env.example y docs/DEPLOYMENT-PROCEDURE.md.
+services:
+  slack-verifier:
+    build: .
+    image: neyen/slack-verifier:local
+    restart: unless-stopped
+    stop_grace_period: 40s          # > SHUTDOWN_GRACE_SECONDS: deja terminar el paso en curso
+    environment:
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET:?defina SLACK_SIGNING_SECRET}
+      N8N_BASE_URL: ${N8N_BASE_URL:?defina N8N_BASE_URL}
+      N8N_INTERNAL_HEADER_NAME: ${N8N_INTERNAL_HEADER_NAME:?defina N8N_INTERNAL_HEADER_NAME}
+      N8N_INTERNAL_HEADER_VALUE: ${N8N_INTERNAL_HEADER_VALUE:?defina N8N_INTERNAL_HEADER_VALUE}
+      SQLITE_PATH: /data/events.sqlite
+      PORT: "8080"
+    volumes:
+      - verifier-data:/data         # SQLite persistente: incluirlo en las copias de seguridad
+    ports:
+      - "127.0.0.1:${VERIFIER_HOST_PORT:-8080}:8080"   # solo local; el HTTPS lo termina el proxy (Traefik/Easypanel)
+volumes:
+  verifier-data:
