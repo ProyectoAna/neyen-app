@@ -1,0 +1,301 @@
+{
+  "name": "NEYEN Auto Crosslink",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf07-auto-crosslink",
+        "responseMode": "lastNode",
+        "options": {},
+        "authentication": "headerAuth"
+      },
+      "id": "wf07-webhook",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "wf07-auto-crosslink",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Parse the Supabase Database Webhook INSERT payload\n// Supabase sends: { type: 'INSERT', table: 'metadata', record: {...}, schema: 'public' }\n// The record is the full new row\nconst body = $input.item.json.body || $input.item.json;\n\n// Handle both direct Supabase webhook format and manual triggers\nconst eventType = body.type;\nconst record = body.record || body;  // Supabase sends record under 'record' key\n\nconst fileName = record.file_name;\nconst source = record.source || 'unknown';\nconst entryId = record.id;\n\n// Skip if triggered from Slack — WF-02 already handles those\nif (source === 'slack') {\n  return {\n    json: {\n      skip: true,\n      reason: 'slack entries handled by WF-02',\n      file_name: fileName,\n      source: source\n    }\n  };\n}\n\nif (!fileName) {\n  throw new Error('No file_name in webhook payload. Keys: ' + Object.keys(body).join(', '));\n}\n\nreturn {\n  json: {\n    skip: false,\n    file_name: fileName,\n    entry_id: entryId,\n    source: source,\n    event_type: eventType || 'INSERT'\n  }\n};"
+      },
+      "id": "parse-insert-event",
+      "name": "Parse Insert Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.skip }}",
+              "value2": false
+            }
+          ]
+        }
+      },
+      "id": "check-skip",
+      "name": "Should Crosslink?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Skip — log and return\nconst d = $input.item.json;\nreturn {\n  json: {\n    status: 'skipped',\n    reason: d.reason,\n    file_name: d.file_name,\n    source: d.source\n  }\n};"
+      },
+      "id": "skip-node",
+      "name": "Skip (Slack source)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        850,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Small delay to allow the INSERT transaction to fully commit\n// before we read the row back in crosslink_entry()\nawait new Promise(resolve => setTimeout(resolve, 500));\nreturn { json: $input.item.json };"
+      },
+      "id": "commit-delay",
+      "name": "Wait for Commit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        850,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const prev = $('Wait for Commit').item.json;\nconst result = $input.item.json;\nreturn { json: { ...prev, crosslink_result: result } };\n"
+      },
+      "id": "run-crosslink",
+      "name": "Run Crosslink",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1050,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const d = $input.item.json;\nconst cl = d.crosslink_result || {};\nconst relatedCount = cl.related_count || 0;\nreturn { json: { ...d, related_count: relatedCount, wf03_body: relatedCount >= 5 ? {\n  entry_id: cl.entry_id || d.entry_id,\n  file_name: d.file_name,\n  related_ids: cl.related_ids || [],\n  related_count: relatedCount,\n  tags: cl.tags || [],\n  entities: cl.entities || [],\n  summary: cl.summary || ''\n} : null } };\n"
+      },
+      "id": "check-notify",
+      "name": "Check Notify Threshold",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/crosslink_entry",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_file_name: $json.file_name }) }}"
+      },
+      "id": "http-run-crosslink",
+      "name": "Credencial Run Crosslink",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1050,
+        540
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.thespiralwithin.ai/webhook/wf03-crosslink-notify",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.wf03_body) }}",
+        "options": {}
+      },
+      "id": "auto-wf03",
+      "name": "Avisar WF-03",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1490,
+        540
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.wf03_body ? 'yes' : 'no'}}",
+              "operation": "equal",
+              "value2": "yes"
+            }
+          ]
+        }
+      },
+      "id": "if-threshold",
+      "name": "Umbral de aviso",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Insert Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Insert Event": {
+      "main": [
+        [
+          {
+            "node": "Should Crosslink?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Crosslink?": {
+      "main": [
+        [
+          {
+            "node": "Wait for Commit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip (Slack source)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Commit": {
+      "main": [
+        [
+          {
+            "node": "Credencial Run Crosslink",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Crosslink": {
+      "main": [
+        [
+          {
+            "node": "Check Notify Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Credencial Run Crosslink": {
+      "main": [
+        [
+          {
+            "node": "Run Crosslink",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Notify Threshold": {
+      "main": [
+        [
+          {
+            "node": "Umbral de aviso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Umbral de aviso": {
+      "main": [
+        [
+          {
+            "node": "Avisar WF-03",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

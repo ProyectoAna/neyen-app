@@ -1,0 +1,500 @@
+{
+  "name": "NEYEN Weekly Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtDay": 1,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "wf04-cron",
+      "name": "Every Monday 9:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf04-weekly-digest",
+        "responseMode": "lastNode",
+        "options": {},
+        "authentication": "headerAuth"
+      },
+      "id": "wf04-webhook",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        500
+      ],
+      "webhookId": "wf04-weekly-digest",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const weekly = $('RPC weekly_digest').item.json;\nreturn { json: {\n  ...weekly,\n  role_distribution: $('RPC role_distribution').item.json,\n  top_node_spotlight: $('RPC top_node_spotlight').item.json,\n  anchor_trend: $('RPC anchor_trend').item.json,\n  declining_nodes: $('RPC declining_nodes').item.json,\n  leaderboard: $('RPC leaderboard').item.json,\n  slowest_growing: $('RPC slowest_growing').item.json\n} };\n"
+      },
+      "id": "fetch-digest",
+      "name": "Fetch Weekly Digest",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        500,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Format the full weekly digest including role breakdown\nconst d = $input.item.json;\nconst total = d.total_entries_this_week || 0;\nconst crosslinked = d.total_crosslinked || 0;\nconst entries = d.top_entries || [];\nconst orphanData = d.orphaned_nodes || {};\nconst orphans = orphanData.orphans || [];\nconst orphanCount = orphanData.orphan_count || 0;\nconst threshold = orphanData.threshold_days || 7;\n\n// Role distribution\nconst roles = d.role_distribution || {};\nconst byRole = roles.by_role || {};\nconst roleTotal = roles.total || 0;\n\nconst start = d.period_start ? new Date(d.period_start).toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'}) : '?';\nconst end = d.period_end ? new Date(d.period_end).toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'}) : '?';\n\nlet msg = `:spiral_calendar_pad: *Digest Semanal NEYEN*\\n_${start} — ${end}_\\n\\n`;\n\nif (total === 0 && roleTotal === 0) {\n  msg += 'Sin actividad esta semana. La espiral descansa.';\n} else {\n  // Week stats\n  msg += `:bar_chart: Esta semana: *${total}* entradas | *${crosslinked}* con crosslinks`;\n  if (orphanCount > 0) msg += ` | *${orphanCount}* sin conectar`;\n  msg += '\\n\\n';\n\n  // Top crosslinked entries this week\n  if (entries.length > 0) {\n    msg += '*Top entradas por conexiones (esta semana):*\\n\\n';\n    const medals = [':first_place_medal:', ':second_place_medal:', ':third_place_medal:'];\n    entries.forEach((e, i) => {\n      const medal = medals[i] || `${i+1}.`;\n      const tags = (e.tags || []).slice(0, 4).map(t => '`' + t + '`').join(' ');\n      const summary = (e.summary || '').substring(0, 100);\n      msg += `${medal} *${e.crosslink_count} links* — \\`${e.file_name}\\`\\n`;\n      msg += `    _${summary}${summary.length >= 100 ? '...' : ''}_\\n`;\n      if (tags) msg += `    ${tags}\\n`;\n      msg += '\\n';\n    });\n  }\n\n  // Role distribution (full graph)\n  if (Object.keys(byRole).length > 0) {\n    const ROLE_EMOJI = {\n      realisation: ':bulb:', exploration: ':mag:', conflict: ':zap:',\n      symbol: ':cyclone:', system: ':gear:', orphaned: ':white_circle:',\n      setup: ':triangular_ruler:', integration: ':link:',\n      inciting_event: ':boom:', unclassified: ':question:'\n    };\n\n    const sorted = Object.entries(byRole).sort((a, b) => b[1] - a[1]);\n    const maxCount = sorted[0]?.[1] || 1;\n    const BAR = 10;\n\n    const roleLines = sorted.map(([role, count]) => {\n      const emoji = ROLE_EMOJI[role] || ':small_blue_diamond:';\n      const pct = Math.round((count / (roleTotal || 1)) * 100);\n      const bars = Math.round((count / maxCount) * BAR);\n      const bar = '█'.repeat(bars) + '░'.repeat(BAR - bars);\n      return `${emoji} \\`${bar}\\` *${count}* ${role} _(${pct}%)_`;\n    }).join('\\n');\n\n    msg += `*Grafo completo — ${roleTotal} entradas por rol:*\\n${roleLines}\\n\\n`;\n  }\n\n  // Orphaned nodes — prominent alert with per-entry /tag quick-commands\n  // Post-backfill baseline is clean, so any new orphan is a genuine straggler\n  if (orphanCount > 0) {\n    const urgencyEmoji = orphanCount >= 3 ? ':rotating_light:' : ':warning:';\n    msg += `${urgencyEmoji} *ALERTA: ${orphanCount} nodo${orphanCount !== 1 ? 's' : ''} huérfano${orphanCount !== 1 ? 's' : ''} detectado${orphanCount !== 1 ? 's' : ''}*\\n`;\n    msg += `_Sin crosslinks tras ${threshold}+ días · la espiral no los ha alcanzado aún_\\n\\n`;\n\n    // Role list for quick reference in the message\n    const VALID_ROLES = 'realisation · exploration · conflict · symbol · system · orphaned';\n\n    orphans.forEach(o => {\n      const existingTags = (o.tags || []).slice(0, 3).join(', ') || '—';\n      const ageEmoji = o.days_old >= 30 ? ':red_circle:' : o.days_old >= 14 ? ':large_orange_circle:' : ':yellow_circle:';\n      const fn = o.file_name;\n      const roleStr = o.narrative_role || 'unclassified';\n\n      // Entry header\n      msg += `${ageEmoji} \\`${fn}\\` — *${o.days_old}d* sin conectar · _${roleStr}_\\n`;\n      msg += `    Tags actuales: ${existingTags}\\n\\n`;\n\n      // Pre-filled /tag commands the user can copy-paste directly into #neyen-core\n      msg += `    *Comandos rápidos:*\\n`;\n      msg += `    \\`/tag ${fn} entities NEYEN\\`\\n`;\n      if (!o.narrative_role || o.narrative_role === 'unclassified') {\n        msg += `    \\`/tag ${fn} narrative_role exploration\\`  ← roles: ${VALID_ROLES}\\n`;\n      }\n      msg += `    \\`/tag ${fn} tags <añade tags aquí>\\`\\n\\n`;\n    });\n\n    msg += `_Copia cualquier comando arriba y pégalo en #neyen-core para reclasificar._\\n`;\n    msg += `_Grafo: <https://neyen.thespiralwithin.ai/graph/|neyen.thespiralwithin.ai/graph>_\\n\\n`;\n  } else {\n    // Clean graph celebration\n    msg += `:white_check_mark: *Sin nodos huérfanos* — todos los nodos tienen al menos un crosslink.\\n\\n`;\n  }\n}\n\n  // Top node spotlight\n  const spotlight = d.top_node_spotlight || {};\n  if (spotlight.found) {\n    const ROLE_EMOJI = {\n      realisation: ':bulb:', exploration: ':mag:', conflict: ':zap:',\n      symbol: ':cyclone:', system: ':gear:', orphaned: ':white_circle:',\n      setup: ':triangular_ruler:', integration: ':link:',\n      inciting_event: ':boom:', unclassified: ':question:'\n    };\n    const roleEmoji = ROLE_EMOJI[spotlight.narrative_role] || ':small_blue_diamond:';\n    const tags = (spotlight.tags || []).slice(0, 5).map(t => '`' + t + '`').join(' ');\n    const entities = (spotlight.entities || []).slice(0, 4).join(', ');\n    const neighbors = (spotlight.neighbors || []).slice(0, 6);\n    const neighborLines = neighbors.map(n => {\n      const ne = ROLE_EMOJI[n.narrative_role] || ':small_blue_diamond:';\n      return `  ${ne} \\`${n.file_name}\\` (${n.link_count} links)`;\n    }).join('\\n');\n\n    const recentEdits = spotlight.recent_tag_edits || [];\n    const editLines = recentEdits.length > 0\n      ? recentEdits.map(e => `  :pencil2: \\`${e.field}\\` → ${(e.values_applied || []).join(', ')}`).join('\\n')\n      : '  _Sin ediciones recientes_';\n\n    msg += `:star2: *Nodo Ancla de la Semana*\\n\\n`;\n    msg += `${roleEmoji} *\\`${spotlight.file_name}\\`*  `;\n    msg += `:link: *${spotlight.link_count} conexiones* · _${spotlight.narrative_role}_ · ${spotlight.timeline_group}\\n\\n`;\n    msg += `_${(spotlight.summary || '').substring(0, 180)}${spotlight.summary?.length > 180 ? '...' : ''}_\\n\\n`;\n    if (tags) msg += `*Tags:* ${tags}\\n`;\n    if (entities) msg += `*Entidades:* ${entities}\\n\\n`;\n    if (neighbors.length > 0) {\n      msg += `*Vecinos más conectados:*\\n${neighborLines}\\n\\n`;\n    }\n    if (recentEdits.length > 0) {\n      msg += `*Ediciones recientes via /tag:*\\n${editLines}\\n\\n`;\n    }\n  }\n\n\n  // Anchor trend — top node's peak_crosslink_count week over week\n  const trend = d.anchor_trend || {};\n  const trendRows = trend.trend || [];\n  if (trendRows.length > 0) {\n    const tFile = trend.file_name || '';\n    const tLinks = trend.current_links || 0;\n    const BAR = 8;\n    const maxPeak = Math.max(...trendRows.map(r => r.peak_links || 0), 1);\n\n    // Build sparkline-style rows for each week with edits\n    const weekLines = trendRows.map(r => {\n      const bars = Math.round(((r.peak_links || 0) / maxPeak) * BAR);\n      const bar = '█'.repeat(bars) + '░'.repeat(BAR - bars);\n      const fieldsStr = (r.fields_edited || []).join(', ');\n      const editStr = r.edits > 0 ? ` ✎ ${r.edits} edit${r.edits !== 1 ? 's' : ''} (${fieldsStr})` : '';\n      const rangeStr = (r.min_links != null && r.min_links !== r.peak_links) ? ` (${r.min_links}→${r.peak_links})` : '';\n      const snapStr = (r.snapshot_count || 0) > 1 ? ` ·${r.snapshot_count}snaps` : '';\n      return `\\`${r.week}\\` \\`${bar}\\` *${r.peak_links}* links${rangeStr}${editStr}${snapStr}`;\n    }).join('\\n');\n\n    // Trend direction emoji\n    const firstPeak = trendRows[0]?.peak_links || 0;\n    const lastPeak = trendRows[trendRows.length - 1]?.peak_links || 0;\n    const trendEmoji = lastPeak > firstPeak ? ':chart_with_upwards_trend:' :\n                       lastPeak < firstPeak ? ':chart_with_downwards_trend:' :\n                       ':left_right_arrow:';\n\n    msg += `:anchor: *Nodo Ancla — Trayectoria Semanal* ${trendEmoji}\\n`;\n    msg += `\\`${tFile}\\` · *${tLinks} links* actuales\\n\\n`;\n    msg += weekLines + '\\n\\n';\n    if (trendRows.length < 2) {\n      msg += `_Solo hay datos de 1 semana. El patrón se irá formando con cada /tag._\\n\\n`;\n    }\n  }\n\n\n  // Declining nodes — entries whose link_count dropped vs prior week\n  const declining = d.declining_nodes || {};\n  const declines = declining.declining || [];\n  const declineCount = declining.declining_count || 0;\n  if (declineCount > 0) {\n    const ROLE_EMOJI = {\n      realisation: ':bulb:', exploration: ':mag:', conflict: ':zap:',\n      symbol: ':cyclone:', system: ':gear:', orphaned: ':white_circle:',\n      setup: ':triangular_ruler:', integration: ':link:', unclassified: ':question:'\n    };\n    msg += `:chart_with_downwards_trend: *Nodos en Declive — ${declineCount} entr${declineCount !== 1 ? 'adas perdieron' : 'ada perdió'} conexiones*\\n`;\n    msg += `_Ventana: ${declining.window_weeks} semanas · caída mínima: ${declining.min_drop} link_\\n\\n`;\n    declines.forEach(n => {\n      const re = ROLE_EMOJI[n.narrative_role] || ':small_blue_diamond:';\n      const tags = (n.tags || []).slice(0, 3).map(t => '`' + t + '`').join(' ');\n      msg += `${re} \\`${n.file_name}\\` *${n.prev_peak}* → *${n.current_peak}* links _(−${n.drop_amount})_`;\n      if (tags) msg += ` · ${tags}`;\n      msg += '\\n';\n    });\n    msg += `\\n_Usa \\`/trend <file>\\` para ver la trayectoria completa._\\n\\n`;\n  }\n\n\n\n  // Slowest-growing nodes — 7+ days old with < 8 crosslinks\n  const slowestData = d.slowest_growing || {};\n  const slowestEntries = slowestData.entries || [];\n  const slowestCount = slowestData.count || 0;\n  if (slowestCount > 0) {\n    const ROLE_EMOJI = {\n      realisation: ':bulb:', exploration: ':mag:', conflict: ':zap:',\n      symbol: ':cyclone:', system: ':gear:', orphaned: ':white_circle:',\n      setup: ':triangular_ruler:', integration: ':link:',\n      inciting_event: ':boom:', unclassified: ':question:'\n    };\n    msg += `:seedling: *Nodos de Crecimiento Lento — ${slowestCount} entr${slowestCount !== 1 ? 'adas con' : 'ada con'} pocas conexiones*\\n`;\n    msg += `_${slowestData.min_age_days}+ días · menos de ${slowestData.max_links_threshold} crosslinks · pueden necesitar atención_\\n\\n`;\n    slowestEntries.forEach(e => {\n      const re = ROLE_EMOJI[e.narrative_role] || ':small_blue_diamond:';\n      const tags = (e.tags || []).slice(0, 3).map(t => '`' + t + '`').join(' ');\n      const editNote = e.tag_edit_count > 0 ? ` · ✎ ${e.tag_edit_count} edits` : '';\n      msg += `${re} \\`${e.file_name}\\` · *${e.current_links} links* · _${e.days_old}d_ · ${e.narrative_role}${editNote}\\n`;\n      if (tags) msg += `   ${tags}\\n`;\n      msg += `   \\`/tag ${e.file_name} tags <añade>\\`\\n\\n`;\n    });\n    msg += `_Usa \\`/trend <file>\\` para ver su trayectoria completa._\\n\\n`;\n  }\n\n\n  // Leaderboard snapshot — top risers and decliners this week\n  const lboard = d.leaderboard || {};\n  const lbEntries = lboard.entries || [];\n  if (lbEntries.length > 0) {\n    const lbWeeks = lboard.window_weeks || 3;\n    const risers  = lbEntries.filter(e => e.velocity > 0).slice(0, 3);\n    const fallers = lbEntries.filter(e => e.velocity < 0).slice(0, 3);\n    const topByLinks = lbEntries.slice(0, 3);\n\n    const ROLE_EMOJI = {\n      realisation: ':bulb:', exploration: ':mag:', conflict: ':zap:',\n      symbol: ':cyclone:', system: ':gear:', orphaned: ':white_circle:',\n      setup: ':triangular_ruler:', integration: ':link:', unclassified: ':question:'\n    };\n\n    msg += `:trophy: *Leaderboard NEYEN* _(${lbWeeks} semanas)_\\n\\n`;\n\n    // Always show top 3 by link count\n    msg += `*Top 3 más conectados:*\\n`;\n    const medals = [':first_place_medal:', ':second_place_medal:', ':third_place_medal:'];\n    topByLinks.forEach((e, i) => {\n      const re = ROLE_EMOJI[e.narrative_role] || ':small_blue_diamond:';\n      const tags = (e.tags || []).slice(0, 2).map(t => '`'+t+'`').join(' ');\n      msg += `${medals[i]} ${re} \\`${e.file_name}\\` · *${e.current_links} links* ${tags}\\n`;\n    });\n\n    if (risers.length > 0) {\n      msg += `\\n:chart_with_upwards_trend: *En ascenso:*\\n`;\n      risers.forEach(e => {\n        const re = ROLE_EMOJI[e.narrative_role] || ':small_blue_diamond:';\n        msg += `  ${re} \\`${e.file_name}\\` *+${e.velocity}* links\\n`;\n      });\n    }\n    if (fallers.length > 0) {\n      msg += `\\n:chart_with_downwards_trend: *En declive:*\\n`;\n      fallers.forEach(e => {\n        const re = ROLE_EMOJI[e.narrative_role] || ':small_blue_diamond:';\n        msg += `  ${re} \\`${e.file_name}\\` *${e.velocity}* links\\n`;\n      });\n    }\n    if (risers.length === 0 && fallers.length === 0) {\n      msg += `\\n_Velocidad 0 — grafo estable. Las tendencias emergerán en próximas semanas._\\n`;\n    }\n    msg += `\\n`;\n  }\n\n\nmsg += '\\n_La espiral sigue tejiendo conexiones._';\n\nreturn {\n  json: {\n    message: msg,\n    has_entries: total > 0 || Object.keys(byRole).length > 0,\n    total, crosslinked, orphan_count: orphanCount\n  }\n};"
+      },
+      "id": "format-message",
+      "name": "Format Digest Message",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        700,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel_id || $json.channel || '', text: $json.slack_text || $json.message || $json.text || $json.slack_message || '' }) }}",
+        "options": {}
+      },
+      "id": "post-to-slack",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        400
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "pending-hostinger",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/weekly_digest",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"p_limit\": 10}) }}"
+      },
+      "id": "digest-weekly_digest",
+      "name": "RPC weekly_digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        120
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/role_distribution",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({}) }}"
+      },
+      "id": "digest-role_distribution",
+      "name": "RPC role_distribution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        200
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/top_node_spotlight",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({}) }}"
+      },
+      "id": "digest-top_node_spotlight",
+      "name": "RPC top_node_spotlight",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        280
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/anchor_trend",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"p_file_name\": null, \"p_weeks\": 8}) }}"
+      },
+      "id": "digest-anchor_trend",
+      "name": "RPC anchor_trend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        360
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/declining_nodes",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"p_min_drop\": 1, \"p_window_weeks\": 4}) }}"
+      },
+      "id": "digest-declining_nodes",
+      "name": "RPC declining_nodes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        440
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/leaderboard",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"p_weeks\": 3}) }}"
+      },
+      "id": "digest-leaderboard",
+      "name": "RPC leaderboard",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        520
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/rpc/slowest_growing",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"p_min_age_days\": 7, \"p_max_links\": 8, \"p_limit\": 10}) }}"
+      },
+      "id": "digest-slowest_growing",
+      "name": "RPC slowest_growing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        600
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 7,
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "merge-digest",
+      "name": "Unir digest",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        720,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Every Monday 9:00": {
+      "main": [
+        [
+          {
+            "node": "RPC weekly_digest",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC role_distribution",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC top_node_spotlight",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC anchor_trend",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC declining_nodes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC leaderboard",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC slowest_growing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "RPC weekly_digest",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC role_distribution",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC top_node_spotlight",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC anchor_trend",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC declining_nodes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC leaderboard",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RPC slowest_growing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Weekly Digest": {
+      "main": [
+        [
+          {
+            "node": "Format Digest Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Digest Message": {
+      "main": [
+        [
+          {
+            "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RPC weekly_digest": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RPC role_distribution": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "RPC top_node_spotlight": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "RPC anchor_trend": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "RPC declining_nodes": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "RPC leaderboard": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "RPC slowest_growing": {
+      "main": [
+        [
+          {
+            "node": "Unir digest",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Unir digest": {
+      "main": [
+        [
+          {
+            "node": "Fetch Weekly Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Madrid"
+  },
+  "tags": []
+}

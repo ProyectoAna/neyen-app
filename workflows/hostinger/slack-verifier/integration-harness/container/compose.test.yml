@@ -1,0 +1,15 @@
+# Prueba aislada: se superpone a ../../docker-compose.yml. n8n simulado con el nombre de servicio "n8n".
+services:
+  slack-verifier:
+    image: localhost/neyen/slack-verifier:local
+    depends_on: [n8n]
+    environment:
+      WORKER_POLL_SECONDS: "0.5"
+  n8n:
+    image: localhost/neyen/slack-verifier:local
+    entrypoint: ["python", "/mock/fake_n8n.py"]
+    environment:
+      H_NAME: ${N8N_INTERNAL_HEADER_NAME}
+      H_VALUE: ${N8N_INTERNAL_HEADER_VALUE}
+    volumes:
+      - ${FAKE_N8N}:/mock/fake_n8n.py:ro,z

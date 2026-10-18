@@ -1,0 +1,6 @@
+db-uri = "postgres://authenticator@/neyen_test?host=/tmp&port=5544"
+db-schemas = "public"
+db-anon-role = "anon"
+jwt-secret = "<secreto-local-de-prueba-de-32-o-mas-caracteres>"
+server-port = 3000
+server-host = "127.0.0.1"
