@@ -8,9 +8,11 @@ import hmac
 import json
 import sqlite3
 import time
+import uuid
 from pathlib import Path
 
 MAX_AGE_SECONDS = 300
+CLAIM_TTL_SECONDS = 900
 STEPS = ("classify", "insert", "notify")
 
 
@@ -46,7 +48,7 @@ def verify_request(raw_body, timestamp, signature, secret, now):
 class EventStore:
     def __init__(self, path):
         self.path = Path(path)
-        self.conn = sqlite3.connect(self.path)
+        self.conn = sqlite3.connect(self.path, timeout=5, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute(
             """
@@ -58,10 +60,16 @@ class EventStore:
               insert_state text not null default 'pending',
               notify_state text not null default 'pending',
               classification text,
-              last_error text
+              last_error text,
+              claim_owner text,
+              claimed_at real
             )
             """
         )
+        columns = {row[1] for row in self.conn.execute("pragma table_info(events)")}
+        if "claim_owner" not in columns:
+            self.conn.execute("alter table events add column claim_owner text")
+            self.conn.execute("alter table events add column claimed_at real")
         self.conn.commit()
 
     def persist_if_new(self, event_id, payload):
@@ -94,6 +102,38 @@ class EventStore:
         self.conn.execute("update events set status = 'failed', last_error = ? where event_id = ?", (error, event_id))
         self.conn.commit()
 
+    def try_claim(self, event_id, owner, now):
+        self.conn.execute("BEGIN IMMEDIATE")
+        try:
+            row = self.conn.execute(
+                "select claim_owner, claimed_at, status from events where event_id = ?",
+                (event_id,),
+            ).fetchone()
+            if not row or row["status"] == "processed":
+                self.conn.rollback()
+                return False
+            current = row["claim_owner"]
+            stale = row["claimed_at"] is not None and row["claimed_at"] < now - CLAIM_TTL_SECONDS
+            if current and current != owner and not stale:
+                self.conn.rollback()
+                return False
+            self.conn.execute(
+                "update events set claim_owner = ?, claimed_at = ?, status = 'processing' where event_id = ?",
+                (owner, now, event_id),
+            )
+            self.conn.commit()
+            return True
+        except Exception:
+            self.conn.rollback()
+            raise
+
+    def release_claim(self, event_id, owner):
+        self.conn.execute(
+            "update events set claim_owner = null, claimed_at = null where event_id = ? and claim_owner = ?",
+            (event_id, owner),
+        )
+        self.conn.commit()
+
 
 def planned_steps(payload):
     text = ((payload.get("event") or {}).get("text") or "")
@@ -120,50 +160,62 @@ def receive(raw_body, headers, secret, store, now=None):
     return {"status": 200, "body": {"ok": True}, "persisted": True, "duplicate": not created, "event_id": event_id}
 
 
-def process(event_id, store, processor):
-    """Ejecuta solo pasos que no han empezado. No repite Claude, inserciones ni avisos."""
+def process(event_id, store, processor, owner=None, now=None):
+    """Ejecuta solo pasos pendientes. Un paso incierto bloquea los siguientes."""
     row = store.get(event_id)
     if not row:
         raise Rejected(404, "evento no conservado")
     if row["status"] == "processed":
-        return {"skipped": True}
-    payload = json.loads(row["payload"])
-    classification = json.loads(row["classification"]) if row["classification"] else None
-    for step in planned_steps(payload):
-        state = row[f"{step}_state"] if step != "classify" else store.state(event_id, step)
-        state = store.state(event_id, step)
-        if state in ("started", "done", "uncertain"):
-            continue
-        store.mark(event_id, step, "started")
-        try:
-            if step == "classify":
-                classification = processor.classify(payload)
-                store.mark(event_id, step, "done", classification=classification)
-            elif step == "insert":
-                processor.insert(payload, classification)
-                store.mark(event_id, step, "done")
-            else:
-                processor.notify(payload, classification)
-                store.mark(event_id, step, "done")
-        except Exception as exc:
-            store.mark(event_id, step, "uncertain", error=str(exc))
-            store.mark_failed(event_id, str(exc))
-            raise
+        return {"skipped": True, "busy": False, "complete": True}
+    owner = owner or str(uuid.uuid4())
+    now = time.time() if now is None else now
+    if not store.try_claim(event_id, owner, now):
+        return {"skipped": True, "busy": True, "complete": False}
+    try:
         row = store.get(event_id)
-    pending = [step for step in planned_steps(payload) if store.state(event_id, step) != "done"]
-    if pending:
-        store.mark_failed(event_id, "pasos incompletos o inciertos")
-        return {"skipped": False, "complete": False}
-    store.mark_processed(event_id)
-    return {"skipped": False, "complete": True}
+        payload = json.loads(row["payload"])
+        classification = json.loads(row["classification"]) if row["classification"] else None
+        for step in planned_steps(payload):
+            if step not in STEPS:
+                raise Rejected(500, "paso no permitido")
+            state = store.state(event_id, step)
+            if state == "uncertain":
+                store.mark_failed(event_id, step + " incierto")
+                return {"skipped": False, "busy": False, "complete": False, "blocked": step}
+            if state in ("started", "done"):
+                continue
+            store.mark(event_id, step, "started")
+            try:
+                if step == "classify":
+                    classification = processor.classify(payload)
+                    store.mark(event_id, step, "done", classification=classification)
+                elif step == "insert":
+                    processor.insert(payload, classification)
+                    store.mark(event_id, step, "done")
+                else:
+                    processor.notify(payload, classification)
+                    store.mark(event_id, step, "done")
+            except Exception as exc:
+                store.mark(event_id, step, "uncertain", error=str(exc))
+                store.mark_failed(event_id, str(exc))
+                raise
+        pending = [step for step in planned_steps(payload) if store.state(event_id, step) != "done"]
+        if pending:
+            store.mark_failed(event_id, "pasos incompletos o inciertos")
+            return {"skipped": False, "busy": False, "complete": False, "blocked": pending[0]}
+        store.mark_processed(event_id)
+        return {"skipped": False, "busy": False, "complete": True}
+    finally:
+        store.release_claim(event_id, owner)
 
 
 def recover(event_id, store, processor):
     row = store.get(event_id)
     if not row or row["status"] != "failed":
         return {"recovered": False}
-    process(event_id, store, processor)
-    return {"recovered": True}
+    result = process(event_id, store, processor)
+    result["recovered"] = bool(result.get("complete"))
+    return result
 
 
 def forward_body(event_id, payload, step, classification=None):

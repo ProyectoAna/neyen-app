@@ -24,7 +24,11 @@ Cada paso queda en `pending`, `done` o `uncertain`:
 - `insert` es la inserción. En n8n va con `on_conflict=file_name` para no crear otra ficha si el nombre ya existe.
 - `notify` cubre avisos y el cruce.
 
-La recuperación solo ejecuta pasos `pending`. No repite un paso `done` ni uno `uncertain`. Un paso `uncertain` pudo haberse ejecutado antes de fallar la respuesta; repetirlo podría duplicar Claude, la ficha o el aviso. Hay que revisarlo a mano antes de devolverlo a `pending`.
+La recuperación solo ejecuta pasos `pending`. Si un paso queda `uncertain`, los siguientes no se ejecutan. Tampoco lo repite. Hay que revisarlo a mano antes de devolverlo a `pending`.
+
+Un evento solo puede tener un trabajador a la vez. El segundo intento queda en espera y no llama a Claude, no inserta y no avisa.
+
+`server.py` recibe, guarda y responde. `worker.py` procesa después, un paso cada vez, con la cabecera interna. Ninguno está desplegado.
 
 Los comandos que empiezan por `/` no planifican Claude ni inserción.
 

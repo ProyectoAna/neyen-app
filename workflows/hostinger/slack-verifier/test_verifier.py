@@ -1,11 +1,17 @@
 import json
 import sys
 import tempfile
+import threading
 import unittest
+import urllib.error
+import urllib.request
 from pathlib import Path
+from queue import Queue
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from server import accept, serve
 from verifier import EventStore, Rejected, forward_body, planned_steps, receive, recover, sign, process
+from worker import N8nProcessor, work_once, work_queue
 
 
 SECRET = "secreto-de-prueba"
@@ -107,10 +113,10 @@ class VerifierTests(unittest.TestCase):
         self.assertEqual(failing.calls, ["classify", "insert"])
         self.assertEqual(self.store.get("EvTEST")["status"], "failed")
         recovery = FakeProcessor()
-        recover(stored["event_id"], self.store, recovery)
-        self.assertEqual(recovery.calls, ["notify"])
-        self.assertNotIn("classify", recovery.calls)
-        self.assertNotIn("insert", recovery.calls)
+        result = recover(stored["event_id"], self.store, recovery)
+        self.assertEqual(recovery.calls, [])
+        self.assertEqual(result.get("blocked"), "insert")
+        self.assertEqual(self.store.state("EvTEST", "notify"), "pending")
         self.assertEqual(self.store.get("EvTEST")["status"], "failed")
 
     def test_uncertain_notification_is_not_repeated(self):
@@ -135,6 +141,94 @@ class VerifierTests(unittest.TestCase):
         body = forward_body("EvTEST", {"event": {"text": "hola"}}, "classify")
         self.assertEqual(body["verifier"], "slack-verifier")
         self.assertNotIn("secret", json.dumps(body).lower())
+
+    def test_second_worker_does_not_run_while_claimed(self):
+        raw, headers = envelope()
+        stored = receive(raw, headers, SECRET, self.store, now=NOW)
+        self.assertTrue(self.store.try_claim(stored["event_id"], "worker-a", NOW))
+        other = EventStore(self.store.path)
+        processor = FakeProcessor()
+        result = process(stored["event_id"], other, processor, owner="worker-b", now=NOW)
+        self.assertTrue(result["busy"])
+        self.assertEqual(processor.calls, [])
+        other.conn.close()
+
+    def test_server_acks_after_persist_and_does_not_process(self):
+        raw, headers = envelope(event_id="EvSERVER")
+        queue = Queue()
+        status, body, enqueued = accept(raw, headers, SECRET, self.store, queue, now=NOW)
+        self.assertEqual(status, 200)
+        self.assertEqual(body, {"ok": True})
+        self.assertTrue(enqueued)
+        self.assertEqual(queue.get_nowait(), "EvSERVER")
+        self.assertIsNotNone(self.store.get("EvSERVER"))
+        again = accept(raw, headers, SECRET, self.store, queue, now=NOW)
+        self.assertFalse(again[2])
+
+    def test_worker_sends_one_step_with_internal_header(self):
+        raw, headers = envelope(event_id="EvWORK")
+        stored = receive(raw, headers, SECRET, self.store, now=NOW)
+        seen = []
+
+        def transport(url, request_headers, body):
+            seen.append((url, request_headers, body))
+            if body["only_step"] == "classify":
+                return {"status": 200, "body": {"summary": "ok"}}
+            return {"status": 200, "body": {}}
+
+        processor = N8nProcessor(
+            "https://n8n.thespiralwithin.ai",
+            "X-Internal-Webhook",
+            "cabecera-de-prueba",
+            transport,
+        )
+        result = work_once(self.store, processor, stored["event_id"])
+        self.assertTrue(result["complete"])
+        self.assertEqual([item[2]["only_step"] for item in seen], ["classify", "insert", "notify"])
+        self.assertEqual(seen[0][1]["X-Internal-Webhook"], "cabecera-de-prueba")
+        self.assertTrue(seen[0][0].endswith("/webhook/wf01-ingest"))
+
+    def test_local_server_rejects_bad_signature(self):
+        queue = Queue()
+        httpd = serve("127.0.0.1", 0, SECRET, self.store, queue)
+        thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+        thread.start()
+        try:
+            raw, headers = envelope(event_id="EvHTTP")
+            headers["X-Slack-Signature"] = "v0=" + "ab" * 32
+            req = urllib.request.Request(
+                "http://127.0.0.1:%s/" % httpd.server_address[1],
+                data=raw,
+                headers=headers,
+                method="POST",
+            )
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                urllib.request.urlopen(req, timeout=3)
+            self.assertEqual(caught.exception.code, 401)
+            caught.exception.close()
+            self.assertTrue(queue.empty())
+        finally:
+            httpd.shutdown()
+            thread.join(timeout=2)
+            httpd.server_close()
+
+    def test_worker_loop_processes_queued_event_once(self):
+        raw, headers = envelope(event_id="EvQUEUE")
+        queue = Queue()
+        accept(raw, headers, SECRET, self.store, queue, now=NOW)
+        processor = FakeProcessor()
+        stop = threading.Event()
+
+        def run():
+            work_queue(queue, self.store, processor, stop)
+
+        thread = threading.Thread(target=run, daemon=True)
+        thread.start()
+        queue.join()
+        stop.set()
+        thread.join(timeout=2)
+        self.assertEqual(processor.calls, ["classify", "insert", "notify"])
+        self.assertEqual(self.store.get("EvQUEUE")["status"], "processed")
 
 
 if __name__ == "__main__":
