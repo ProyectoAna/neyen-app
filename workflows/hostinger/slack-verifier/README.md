@@ -24,9 +24,11 @@ Cada paso queda en `pending`, `done` o `uncertain`:
 - `insert` es la inserción. En n8n va con `on_conflict=file_name` para no crear otra ficha si el nombre ya existe.
 - `notify` cubre avisos y el cruce.
 
-La recuperación solo ejecuta pasos `pending`. Si un paso queda `uncertain`, los siguientes no se ejecutan. Tampoco lo repite. Hay que revisarlo a mano antes de devolverlo a `pending`.
+Solo un paso `done` permite avanzar. `started` y `uncertain` bloquean los siguientes y exigen reconciliación; no se reintentan solos.
 
-Un evento solo puede tener un trabajador a la vez. El segundo intento queda en espera y no llama a Claude, no inserta y no avisa.
+SQLite es la fuente de trabajo. Al arrancar, y de forma periódica, se recuperan los eventos pendientes. La cola en memoria solo avisa; no es el único mecanismo.
+
+Una reserva autorizada no caduca por tiempo mientras ese trabajador pueda seguir escribiendo.
 
 `server.py` recibe, guarda y responde. `worker.py` procesa después, un paso cada vez, con la cabecera interna. Ninguno está desplegado.
 

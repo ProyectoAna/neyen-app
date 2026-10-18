@@ -45,94 +45,140 @@ def verify_request(raw_body, timestamp, signature, secret, now):
         raise Rejected(401, "firma inválida")
 
 
+class _Transaction:
+    def __init__(self, conn):
+        self.conn = conn
+
+    def __enter__(self):
+        self.conn.execute("BEGIN IMMEDIATE")
+        return self.conn
+
+    def __exit__(self, exc_type, exc, tb):
+        try:
+            if exc_type is None:
+                self.conn.execute("COMMIT")
+            else:
+                self.conn.execute("ROLLBACK")
+        finally:
+            self.conn.close()
+
+
 class EventStore:
     def __init__(self, path):
         self.path = Path(path)
-        self.conn = sqlite3.connect(self.path, timeout=5, check_same_thread=False)
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute(
-            """
-            create table if not exists events (
-              event_id text primary key,
-              payload text not null,
-              status text not null,
-              classify_state text not null default 'pending',
-              insert_state text not null default 'pending',
-              notify_state text not null default 'pending',
-              classification text,
-              last_error text,
-              claim_owner text,
-              claimed_at real
+        with self._transaction() as conn:
+            conn.execute(
+                """
+                create table if not exists events (
+                  event_id text primary key,
+                  payload text not null,
+                  status text not null,
+                  classify_state text not null default 'pending',
+                  insert_state text not null default 'pending',
+                  notify_state text not null default 'pending',
+                  classification text,
+                  last_error text,
+                  claim_owner text,
+                  claimed_at real,
+                  authorized integer not null default 0
+                )
+                """
             )
-            """
-        )
-        columns = {row[1] for row in self.conn.execute("pragma table_info(events)")}
-        if "claim_owner" not in columns:
-            self.conn.execute("alter table events add column claim_owner text")
-            self.conn.execute("alter table events add column claimed_at real")
-        self.conn.commit()
+            columns = {row[1] for row in conn.execute("pragma table_info(events)")}
+            if "claim_owner" not in columns:
+                conn.execute("alter table events add column claim_owner text")
+                conn.execute("alter table events add column claimed_at real")
+            if "authorized" not in columns:
+                conn.execute("alter table events add column authorized integer not null default 0")
+
+    def _connect(self):
+        conn = sqlite3.connect(self.path, timeout=5, isolation_level=None)
+        conn.row_factory = sqlite3.Row
+        conn.execute("pragma journal_mode=WAL")
+        conn.execute("pragma busy_timeout=5000")
+        return conn
+
+    def _transaction(self):
+        return _Transaction(self._connect())
 
     def persist_if_new(self, event_id, payload):
-        cur = self.conn.execute(
-            "insert or ignore into events(event_id, payload, status) values (?, ?, 'received')",
-            (event_id, json.dumps(payload)),
-        )
-        self.conn.commit()
-        return cur.rowcount == 1
+        with self._transaction() as conn:
+            cur = conn.execute(
+                "insert or ignore into events(event_id, payload, status) values (?, ?, 'received')",
+                (event_id, json.dumps(payload)),
+            )
+            return cur.rowcount == 1
 
     def get(self, event_id):
-        row = self.conn.execute("select * from events where event_id = ?", (event_id,)).fetchone()
-        return dict(row) if row else None
+        with self._transaction() as conn:
+            row = conn.execute("select * from events where event_id = ?", (event_id,)).fetchone()
+            return dict(row) if row else None
 
     def state(self, event_id, step):
+        if step not in STEPS:
+            raise Rejected(500, "paso no permitido")
         return self.get(event_id)[f"{step}_state"]
 
     def mark(self, event_id, step, state, classification=None, error=None):
-        self.conn.execute(
-            f"update events set {step}_state = ?, classification = coalesce(?, classification), last_error = ?, status = ? where event_id = ?",
-            (state, json.dumps(classification) if classification is not None else None, error, "failed" if state == "started" and error else "processing", event_id),
-        )
-        self.conn.commit()
+        if step not in STEPS:
+            raise Rejected(500, "paso no permitido")
+        status = "failed" if state in ("started", "uncertain") else "processing"
+        with self._transaction() as conn:
+            conn.execute(
+                f"update events set {step}_state = ?, classification = coalesce(?, classification), last_error = ?, status = ? where event_id = ?",
+                (state, json.dumps(classification) if classification is not None else None, error, status, event_id),
+            )
 
     def mark_processed(self, event_id):
-        self.conn.execute("update events set status = 'processed', last_error = null where event_id = ?", (event_id,))
-        self.conn.commit()
+        with self._transaction() as conn:
+            conn.execute("update events set status = 'processed', last_error = null where event_id = ?", (event_id,))
 
     def mark_failed(self, event_id, error):
-        self.conn.execute("update events set status = 'failed', last_error = ? where event_id = ?", (error, event_id))
-        self.conn.commit()
+        with self._transaction() as conn:
+            conn.execute("update events set status = 'failed', last_error = ? where event_id = ?", (error, event_id))
 
     def try_claim(self, event_id, owner, now):
-        self.conn.execute("BEGIN IMMEDIATE")
-        try:
-            row = self.conn.execute(
-                "select claim_owner, claimed_at, status from events where event_id = ?",
+        with self._transaction() as conn:
+            row = conn.execute(
+                "select claim_owner, authorized, status, classify_state, insert_state, notify_state from events where event_id = ?",
                 (event_id,),
             ).fetchone()
             if not row or row["status"] == "processed":
-                self.conn.rollback()
                 return False
-            current = row["claim_owner"]
-            stale = row["claimed_at"] is not None and row["claimed_at"] < now - CLAIM_TTL_SECONDS
-            if current and current != owner and not stale:
-                self.conn.rollback()
+            if row["authorized"] and row["claim_owner"] != owner:
                 return False
-            self.conn.execute(
-                "update events set claim_owner = ?, claimed_at = ?, status = 'processing' where event_id = ?",
+            if any(row[f"{step}_state"] in ("started", "uncertain") for step in STEPS):
+                return False
+            if row["claim_owner"] and row["claim_owner"] != owner:
+                return False
+            conn.execute(
+                "update events set claim_owner = ?, claimed_at = ?, authorized = 1, status = 'processing' where event_id = ?",
                 (owner, now, event_id),
             )
-            self.conn.commit()
             return True
-        except Exception:
-            self.conn.rollback()
-            raise
 
     def release_claim(self, event_id, owner):
-        self.conn.execute(
-            "update events set claim_owner = null, claimed_at = null where event_id = ? and claim_owner = ?",
-            (event_id, owner),
-        )
-        self.conn.commit()
+        with self._transaction() as conn:
+            conn.execute(
+                "update events set claim_owner = null, claimed_at = null, authorized = 0 where event_id = ? and claim_owner = ?",
+                (event_id, owner),
+            )
+
+    def list_available(self):
+        with self._transaction() as conn:
+            rows = conn.execute(
+                """
+                select event_id from events
+                where status != 'processed'
+                  and ifnull(authorized, 0) = 0
+                  and claim_owner is null
+                  and classify_state in ('pending', 'done')
+                  and insert_state in ('pending', 'done')
+                  and notify_state in ('pending', 'done')
+                order by event_id
+                """
+            ).fetchall()
+            return [row["event_id"] for row in rows]
 
 
 def planned_steps(payload):
@@ -167,22 +213,38 @@ def process(event_id, store, processor, owner=None, now=None):
         raise Rejected(404, "evento no conservado")
     if row["status"] == "processed":
         return {"skipped": True, "busy": False, "complete": True}
+    payload = json.loads(row["payload"])
+    for step in planned_steps(payload):
+        if row[f"{step}_state"] in ("started", "uncertain"):
+            store.mark_failed(event_id, step + " requiere reconciliacion")
+            return {
+                "skipped": False,
+                "busy": False,
+                "complete": False,
+                "blocked": step,
+                "reconciliation": True,
+            }
     owner = owner or str(uuid.uuid4())
     now = time.time() if now is None else now
     if not store.try_claim(event_id, owner, now):
         return {"skipped": True, "busy": True, "complete": False}
     try:
         row = store.get(event_id)
-        payload = json.loads(row["payload"])
         classification = json.loads(row["classification"]) if row["classification"] else None
         for step in planned_steps(payload):
             if step not in STEPS:
                 raise Rejected(500, "paso no permitido")
             state = store.state(event_id, step)
-            if state == "uncertain":
-                store.mark_failed(event_id, step + " incierto")
-                return {"skipped": False, "busy": False, "complete": False, "blocked": step}
-            if state in ("started", "done"):
+            if state in ("started", "uncertain"):
+                store.mark_failed(event_id, step + " requiere reconciliacion")
+                return {
+                    "skipped": False,
+                    "busy": False,
+                    "complete": False,
+                    "blocked": step,
+                    "reconciliation": True,
+                }
+            if state == "done":
                 continue
             store.mark(event_id, step, "started")
             try:

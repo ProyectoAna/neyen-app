@@ -11,7 +11,7 @@ from queue import Queue
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from server import accept, serve
 from verifier import EventStore, Rejected, forward_body, planned_steps, receive, recover, sign, process
-from worker import N8nProcessor, work_once, work_queue
+from worker import N8nProcessor, work_available, work_once, work_queue
 
 
 SECRET = "secreto-de-prueba"
@@ -151,7 +151,6 @@ class VerifierTests(unittest.TestCase):
         result = process(stored["event_id"], other, processor, owner="worker-b", now=NOW)
         self.assertTrue(result["busy"])
         self.assertEqual(processor.calls, [])
-        other.conn.close()
 
     def test_server_acks_after_persist_and_does_not_process(self):
         raw, headers = envelope(event_id="EvSERVER")
@@ -229,6 +228,103 @@ class VerifierTests(unittest.TestCase):
         thread.join(timeout=2)
         self.assertEqual(processor.calls, ["classify", "insert", "notify"])
         self.assertEqual(self.store.get("EvQUEUE")["status"], "processed")
+
+    def test_crash_after_insert_started_does_not_notify(self):
+        raw, headers = envelope(event_id="EvCRASH")
+        stored = receive(raw, headers, SECRET, self.store, now=NOW)
+        self.store.mark(stored["event_id"], "classify", "done", classification={"summary": "ya clasificado"})
+        self.store.mark(stored["event_id"], "insert", "started")
+        processor = FakeProcessor()
+        result = process(stored["event_id"], self.store, processor, now=NOW)
+        self.assertEqual(result["blocked"], "insert")
+        self.assertTrue(result["reconciliation"])
+        self.assertEqual(processor.calls, [])
+        self.assertNotIn("notify", processor.calls)
+        self.assertNotIn(stored["event_id"], self.store.list_available())
+
+    def test_restart_after_ack_keeps_event_available(self):
+        raw, headers = envelope(event_id="EvRESTART")
+        queue = Queue()
+        status, _body, enqueued = accept(raw, headers, SECRET, self.store, queue, now=NOW)
+        self.assertEqual(status, 200)
+        self.assertTrue(enqueued)
+        restarted = EventStore(self.store.path)
+        self.assertIn("EvRESTART", restarted.list_available())
+        outcomes = work_available(restarted, FakeProcessor())
+        self.assertEqual(outcomes[0][1]["complete"], True)
+        self.assertEqual(restarted.get("EvRESTART")["status"], "processed")
+
+    def test_one_event_fails_and_the_next_is_processed(self):
+        first, first_headers = envelope(event_id="EvBAD")
+        second, second_headers = envelope(event_id="EvGOOD")
+        receive(first, first_headers, SECRET, self.store, now=NOW)
+        receive(second, second_headers, SECRET, self.store, now=NOW)
+
+        class Selective(FakeProcessor):
+            def classify(self, payload):
+                if payload["event_id"] == "EvBAD":
+                    self.calls.append("classify")
+                    raise RuntimeError("claude no disponible")
+                return super().classify(payload)
+
+        processor = Selective()
+        work_available(self.store, processor)
+        self.assertEqual(self.store.state("EvBAD", "classify"), "uncertain")
+        self.assertEqual(self.store.state("EvBAD", "notify"), "pending")
+        self.assertEqual(self.store.get("EvGOOD")["status"], "processed")
+        self.assertEqual(self.store.state("EvGOOD", "notify"), "done")
+        again = FakeProcessor()
+        work_available(self.store, again)
+        self.assertEqual(again.calls, [])
+
+    def test_receive_and_process_do_not_interfere(self):
+        raw_a, headers_a = envelope(event_id="EvA")
+        stored = receive(raw_a, headers_a, SECRET, self.store, now=NOW)
+        started = threading.Event()
+        release = threading.Event()
+        errors = []
+
+        class Slow(FakeProcessor):
+            def classify(self, payload):
+                started.set()
+                release.wait(2)
+                return super().classify(payload)
+
+        def run_process():
+            try:
+                process(stored["event_id"], EventStore(self.store.path), Slow(), now=NOW)
+            except Exception as exc:
+                errors.append(exc)
+
+        worker = threading.Thread(target=run_process)
+        worker.start()
+        self.assertTrue(started.wait(2))
+        raw_b, headers_b = envelope(event_id="EvB")
+        other = EventStore(self.store.path)
+        received = receive(raw_b, headers_b, SECRET, other, now=NOW)
+        release.set()
+        worker.join(timeout=3)
+        self.assertEqual(errors, [])
+        self.assertTrue(received["persisted"])
+        self.assertIsNotNone(other.get("EvB"))
+        self.assertEqual(other.get("EvA")["status"], "processed")
+        self.assertEqual(other.state("EvA", "notify"), "done")
+
+    def test_authorized_claim_does_not_expire(self):
+        raw, headers = envelope(event_id="EvCLAIM")
+        stored = receive(raw, headers, SECRET, self.store, now=NOW)
+        self.assertTrue(self.store.try_claim(stored["event_id"], "worker-a", NOW))
+        later = EventStore(self.store.path)
+        self.assertFalse(later.try_claim(stored["event_id"], "worker-b", NOW + 10_000))
+        self.store.mark(stored["event_id"], "classify", "done", classification={"summary": "sigue autorizado"})
+        current = later.get(stored["event_id"])
+        self.assertEqual(current["claim_owner"], "worker-a")
+        self.assertEqual(current["authorized"], 1)
+        self.assertEqual(current["classify_state"], "done")
+        processor = FakeProcessor()
+        blocked = process(stored["event_id"], later, processor, owner="worker-b", now=NOW + 10_000)
+        self.assertTrue(blocked["busy"])
+        self.assertEqual(processor.calls, [])
 
 
 if __name__ == "__main__":

@@ -47,17 +47,30 @@ def urllib_transport(url, headers, body):
         return {"status": response.status, "body": json.loads(raw)}
 
 
+def work_available(store, processor):
+    """SQLite es la fuente de trabajo. Un fallo queda registrado y no detiene el resto."""
+    outcomes = []
+    for event_id in store.list_available():
+        try:
+            result = process(event_id, store, processor)
+        except Exception as exc:
+            store.mark_failed(event_id, str(exc))
+            result = {"error": str(exc), "complete": False}
+        outcomes.append((event_id, result))
+    return outcomes
+
+
 def work_once(store, processor, event_id):
     return process(event_id, store, processor)
 
 
 def work_queue(queue, store, processor, stop_event):
+    work_available(store, processor)
     while not stop_event.is_set():
-        try:
-            event_id = queue.get(timeout=0.1)
-        except Empty:
-            continue
-        try:
-            process(event_id, store, processor)
-        finally:
-            queue.task_done()
+        if queue is not None:
+            try:
+                queue.get(timeout=0.1)
+                queue.task_done()
+            except Empty:
+                pass
+        work_available(store, processor)
