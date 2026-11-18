@@ -1,0 +1,18 @@
+# Solo para Docker Compose + Traefik propio (NO se usa en Easypanel; ahi se configura en la interfaz,
+# ver docs/DEPLOYMENT-PROCEDURE.md seccion 5). Se superpone: docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
+# Sustituya VERIFIER_DOMAIN, TRAEFIK_NETWORK (red a la que esta unido Traefik) y el resolvedor de certificados.
+services:
+  slack-verifier:
+    networks: [default, proxy]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:?defina TRAEFIK_NETWORK}
+      traefik.http.routers.neyen-verifier.rule: Host(`${VERIFIER_DOMAIN:?defina VERIFIER_DOMAIN}`) && PathPrefix(`/slack/events`)
+      traefik.http.routers.neyen-verifier.entrypoints: websecure
+      traefik.http.routers.neyen-verifier.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      traefik.http.services.neyen-verifier.loadbalancer.server.port: "8080"
+networks:
+  default: {}
+  proxy:
+    name: ${TRAEFIK_NETWORK}
+    external: true

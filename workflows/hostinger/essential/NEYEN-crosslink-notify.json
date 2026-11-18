@@ -1,0 +1,714 @@
+{
+  "name": "NEYEN Crosslink Notify",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf03-crosslink-notify",
+        "responseMode": "lastNode",
+        "options": {},
+        "authentication": "headerAuth"
+      },
+      "id": "wf03-webhook",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "wf03-crosslink-notify",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pending-hostinger",
+          "name": "Internal Webhook Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Extract crosslink data from WF-02's POST body\n// Canal de destino: el channel_id del evento de origen. Si no hay, SOLO el canal\n// configurado aqui. Nunca hay canal por defecto: sin canal no se publica.\nconst CONFIGURED_CHANNEL = '';\nconst body = $input.item.json.body || $input.item.json;\n\nconst entryId = body.entry_id;\nconst fileName = body.file_name;\nconst relatedIds = body.related_ids || [];\nconst relatedCount = body.related_count || relatedIds.length;\nconst tags = body.tags || [];\nconst entities = body.entities || [];\nconst summary = body.summary || '';\nconst channelId = body.channel_id || CONFIGURED_CHANNEL;\n\nif (!entryId) {\n  throw new Error('No entry_id in payload');\n}\n\nreturn {\n  json: {\n    entry_id: entryId,\n    file_name: fileName,\n    channel_id: channelId,\n    related_ids: relatedIds,\n    related_count: relatedCount,\n    tags: tags,\n    entities: entities,\n    summary: summary\n  }\n};"
+      },
+      "id": "parse-payload",
+      "name": "Parse Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const prev = $('Parse Payload').first().json;\nconst hasRelated = prev.related_ids && prev.related_ids.length > 0;\nconst related = hasRelated\n  ? $input.all().map(i => i.json).filter(e => e && e.file_name)\n  : [];\nreturn [{ json: { ...prev, related_entries: related } }];\n"
+      },
+      "id": "fetch-related-details",
+      "name": "Fetch Related Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Build a Slack notification message\nconst data = $input.item.json;\nconst relatedEntries = data.related_entries || [];\nconst count = data.related_count;\nconst fileName = data.file_name || 'unknown';\nconst tags = data.tags || [];\nconst entities = data.entities || [];\nconst summary = data.summary || '';\n\n// Build the matched entries list (top 10)\nconst entryLines = relatedEntries.slice(0, 10).map((e, i) => {\n  const eTags = (e.tags || []).slice(0, 3).join(', ');\n  const shortSummary = (e.summary || '').substring(0, 80);\n  return `${i + 1}. *${e.file_name}* — _${shortSummary}${shortSummary.length >= 80 ? '...' : ''}_ [${eTags}]`;\n}).join('\\n');\n\nconst moreText = relatedEntries.length > 10 ? `\\n_...y ${relatedEntries.length - 10} mas_` : '';\n\nconst message = `:link: *Crosslink Alert: ${count} conexiones encontradas*\\n\\n` +\n  `*Entrada nueva:* \\`${fileName}\\`\\n` +\n  (summary ? `*Resumen:* ${summary}\\n` : '') +\n  `*Tags:* ${tags.join(', ')}\\n` +\n  `*Entidades:* ${entities.join(', ')}\\n\\n` +\n  `*Entradas relacionadas:*\\n${entryLines}${moreText}\\n\\n` +\n  `_La espiral conecta ${count} nodos._`;\n\nreturn {\n  json: {\n    slack_message: message,\n    channel_id: data.channel_id,\n    file_name: fileName,\n    entry_id: data.entry_id,\n    related_count: count\n  }\n};"
+      },
+      "id": "build-message",
+      "name": "Build Slack Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel_id || $json.channel || '', text: $json.slack_text || $json.message || $json.text || $json.slack_message || '' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "post-to-slack",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1050,
+        300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "pending-hostinger",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.related_ids && $json.related_ids.length ? 'yes' : 'no'}}",
+              "operation": "equal",
+              "value2": "yes"
+            }
+          ]
+        }
+      },
+      "id": "if-related",
+      "name": "Hay relacionadas",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        630,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/metadata?select=id,file_name,tags,summary&id=in.(' + ($json.related_ids || []).join(',') + ')' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "id": "fetch-related-http",
+      "name": "Leer entradas relacionadas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        650,
+        440
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !!$json.channel_id }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-channel",
+      "name": "Hay canal de destino",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// Sin canal de origen ni canal configurado: se registra el bloqueo y NO se publica.\nreturn { json: { ok: false, status: 'blocked', blocker: 'sin_canal_de_destino', detail: 'Ni channel_id de origen ni canal configurado en Parse Payload. No se publica.', entry_id: $input.item.json.entry_id, file_name: $input.item.json.file_name } };\n"
+      },
+      "id": "blocked-no-channel",
+      "name": "Registrar bloqueo sin canal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/notification_reservations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ entry_id: $json.entry_id, state: 'inflight' }) }}"
+      },
+      "id": "res-insert",
+      "name": "Reservar aviso (INSERT atomico)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// 201 = reserva obtenida. 409 = ya existe (otro llamador, otra replica o un envio anterior).\n// Cualquier otra cosa: no se publica.\nconst prev = $('Parse Payload').first().json;\nconst code = Number($input.item.json.statusCode);\nif (code === 201 || code === 200 || code === 204) return { json: { ...prev, reserved: true } };\nif (code === 409) return { json: { ...prev, reserved: false } };\nthrow new Error('No se pudo reservar el aviso (HTTP ' + code + '). No se publica.');\n"
+      },
+      "id": "res-eval",
+      "name": "Evaluar reserva",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.reserved }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "res-if",
+      "name": "Reserva obtenida",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/notification_reservations?select=state&entry_id=eq.' + encodeURIComponent($('Parse Payload').first().json.entry_id) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "id": "res-read",
+      "name": "Leer reserva existente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        120
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// La reserva ya existe: no se publica. 'done' = ya enviado; el resto exige actuar a mano.\nconst prev = $('Parse Payload').first().json;\nconst state = $input.item.json.state;\nconst base = { entry_id: prev.entry_id, file_name: prev.file_name };\nif (state === 'done') return { json: { ok: true, duplicate: true, status: 'duplicate', ...base } };\nif (state === 'inflight') return { json: { ok: false, status: 'blocked', blocker: 'aviso_en_curso_o_sin_confirmar', detail: 'Otro llamador lo esta enviando o quedo sin confirmar. Reconciliar antes de reenviar.', ...base } };\nif (state === 'uncertain') return { json: { ok: false, status: 'blocked', blocker: 'requiere_reconciliacion', detail: 'El resultado de un envio anterior es incierto: pudo publicarse. Comprobar Slack antes de reenviar.', ...base } };\nreturn { json: { ok: false, status: 'blocked', blocker: 'reserva_cambio_reintentar', detail: 'La reserva desaparecio mientras se leia. Reintentar.', ...base } };\n"
+      },
+      "id": "res-existing",
+      "name": "Respuesta por reserva existente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "// ok:true = publicado. ok:false con error = Slack lo rechazo explicitamente (no se publico).\n// Cualquier otro caso (timeout, corte, HTTP no JSON, sin ok) = incierto: pudo publicarse.\nconst r = $input.item.json;\nlet outcome = 'uncertain';\nif (r && r.ok === true) outcome = 'done';\nelse if (r && r.ok === false && typeof r.error === 'string') outcome = 'rejected';\nconst built = $('Build Slack Message').item.json;\nreturn { json: { outcome, slack_error: (r && typeof r.error === 'string') ? r.error : null, entry_id: built.entry_id, file_name: built.file_name, channel_id: built.channel_id, slack: outcome === 'done' ? r : null } };\n"
+      },
+      "id": "slack-eval",
+      "name": "Evaluar Slack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.outcome === 'done' }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "slack-ok-if",
+      "name": "Slack acepto",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/notification_reservations' + '?entry_id=eq.' + encodeURIComponent($('Parse Payload').first().json.entry_id) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ state: 'done', updated_at: new Date().toISOString() }) }}"
+      },
+      "id": "res-done",
+      "name": "Marcar aviso como enviado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1480,
+        200
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const e = $('Evaluar Slack').item.json;\nreturn { json: { ...(e.slack || {}), ok: true, entry_id: e.entry_id, file_name: e.file_name, channel_id: e.channel_id } };\n"
+      },
+      "id": "ok-final",
+      "name": "Respuesta OK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.outcome === 'rejected' }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "slack-rej-if",
+      "name": "Rechazo explicito",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1480,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "={{ 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/notification_reservations' + '?entry_id=eq.' + encodeURIComponent($('Parse Payload').first().json.entry_id) + '&state=eq.inflight' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "id": "res-release",
+      "name": "Liberar reserva (rechazo explicito)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1600,
+        360
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const e = $('Evaluar Slack').item.json;\nthrow new Error('Slack rechazo el mensaje: ' + e.slack_error + ' (reserva liberada; se puede reintentar)');\n"
+      },
+      "id": "fail-rejected",
+      "name": "Fallar por rechazo de Slack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://gsmtzdramqzcqdywboro.supabase.co/rest/v1/notification_reservations' + '?entry_id=eq.' + encodeURIComponent($('Parse Payload').first().json.entry_id) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ state: 'uncertain', updated_at: new Date().toISOString() }) }}"
+      },
+      "id": "res-uncertain",
+      "name": "Marcar aviso como incierto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1600,
+        480
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "pending-hostinger",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "throw new Error('Resultado de Slack incierto: el mensaje pudo publicarse. Requiere reconciliacion antes de reenviar (reserva en estado uncertain).');\n"
+      },
+      "id": "fail-uncertain",
+      "name": "Fallar por resultado incierto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        480
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Payload": {
+      "main": [
+        [
+          {
+            "node": "Hay canal de destino",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Related Details": {
+      "main": [
+        [
+          {
+            "node": "Build Slack Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Slack Message": {
+      "main": [
+        [
+          {
+            "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay relacionadas": {
+      "main": [
+        [
+          {
+            "node": "Leer entradas relacionadas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Related Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer entradas relacionadas": {
+      "main": [
+        [
+          {
+            "node": "Fetch Related Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Slack": {
+      "main": [
+        [
+          {
+            "node": "Evaluar Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay canal de destino": {
+      "main": [
+        [
+          {
+            "node": "Reservar aviso (INSERT atomico)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar bloqueo sin canal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservar aviso (INSERT atomico)": {
+      "main": [
+        [
+          {
+            "node": "Evaluar reserva",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluar reserva": {
+      "main": [
+        [
+          {
+            "node": "Reserva obtenida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reserva obtenida": {
+      "main": [
+        [
+          {
+            "node": "Hay relacionadas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Leer reserva existente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer reserva existente": {
+      "main": [
+        [
+          {
+            "node": "Respuesta por reserva existente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluar Slack": {
+      "main": [
+        [
+          {
+            "node": "Slack acepto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack acepto": {
+      "main": [
+        [
+          {
+            "node": "Marcar aviso como enviado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazo explicito",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar aviso como enviado": {
+      "main": [
+        [
+          {
+            "node": "Respuesta OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rechazo explicito": {
+      "main": [
+        [
+          {
+            "node": "Liberar reserva (rechazo explicito)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Marcar aviso como incierto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Liberar reserva (rechazo explicito)": {
+      "main": [
+        [
+          {
+            "node": "Fallar por rechazo de Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar aviso como incierto": {
+      "main": [
+        [
+          {
+            "node": "Fallar por resultado incierto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

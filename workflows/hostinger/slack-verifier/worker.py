@@ -1,0 +1,101 @@
+"""Trabajador de procesamiento. No está desplegado.
+
+Llama a n8n solo con la cabecera interna y un paso cada vez.
+"""
+from queue import Empty
+import json
+from urllib import error, request
+
+from verifier import forward_body, process
+
+
+class N8nProcessor:
+    def __init__(self, base_url, header_name, header_value, transport):
+        if not header_name or not header_value:
+            raise ValueError("cabecera interna incompleta")
+        self.url = base_url.rstrip("/") + "/webhook/wf01-ingest"
+        self.header_name = header_name
+        self.header_value = header_value
+        self.transport = transport
+
+    def _post(self, step, payload, classification):
+        body = forward_body(payload["event_id"], payload, step, classification)
+        response = self.transport(
+            self.url,
+            {self.header_name: self.header_value, "Content-Type": "application/json"},
+            body,
+        )
+        if int(response.get("status", 200)) >= 400:
+            detail = ""
+            if isinstance(response.get("body"), dict):
+                detail = str(response["body"].get("message") or "")[:200]
+            raise RuntimeError("n8n rechazo el paso" + (": " + detail if detail else ""))
+        body = response.get("body") or {}
+        if isinstance(body, list):
+            body = {"items": body}
+        if not isinstance(body, dict):
+            raise RuntimeError("n8n devolvio una respuesta no valida")
+        if (
+            body.get("error")
+            or body.get("status") in ("error", "blocked")
+            or body.get("ok") is False
+            or (body.get("code") and body.get("message"))
+        ):
+            detail = str(body.get("blocker") or body.get("error") or body.get("message") or "")[:200]
+            raise RuntimeError("n8n devolvio 200 con error funcional" + (": " + detail if detail else ""))
+        if step == "classify" and not all(body.get(k) for k in ("file_name", "event_id")):
+            raise RuntimeError("clasificacion incompleta")
+        return body
+
+    def classify(self, payload):
+        return self._post("classify", payload, None)
+
+    def insert(self, payload, classification):
+        return self._post("insert", payload, classification)
+
+    def notify(self, payload, classification):
+        return self._post("notify", payload, classification)
+
+
+def urllib_transport(url, headers, body):
+    data = json.dumps(body).encode()
+    req = request.Request(url, data=data, headers=headers, method="POST")
+    try:
+        with request.urlopen(req, timeout=30) as response:
+            raw = response.read().decode() or "{}"
+            return {"status": response.status, "body": json.loads(raw)}
+    except error.HTTPError as exc:
+        try:
+            body = json.loads(exc.read().decode() or "{}")
+        except ValueError:
+            body = {}
+        return {"status": exc.code, "body": body}
+
+
+def work_available(store, processor):
+    """SQLite es la fuente de trabajo. Un fallo queda registrado y no detiene el resto."""
+    outcomes = []
+    for event_id in store.list_available():
+        try:
+            result = process(event_id, store, processor)
+        except Exception as exc:
+            store.mark_failed(event_id, str(exc))
+            result = {"error": str(exc), "complete": False}
+        outcomes.append((event_id, result))
+    return outcomes
+
+
+def work_once(store, processor, event_id):
+    return process(event_id, store, processor)
+
+
+def work_queue(queue, store, processor, stop_event):
+    work_available(store, processor)
+    while not stop_event.is_set():
+        if queue is not None:
+            try:
+                queue.get(timeout=0.1)
+                queue.task_done()
+            except Empty:
+                pass
+        work_available(store, processor)

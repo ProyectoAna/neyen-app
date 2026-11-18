@@ -1,0 +1,5 @@
+# Solo pruebas locales: publica el puerto en loopback del host (no lo alcanza ningun proxy en otro contenedor).
+services:
+  slack-verifier:
+    ports:
+      - "127.0.0.1:${VERIFIER_HOST_PORT:-8080}:8080"

@@ -1,0 +1,8 @@
+test_*.py
+integration-harness
+__pycache__
+*.sqlite*
+.env
+.env.*
+!.env.example
+secrets
