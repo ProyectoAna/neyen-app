@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>NEYĒN Brain · Aprobaciones</title>
+<style>
+  :root { --bg:#0B1D35; --ink:#F6F0E4; --gold:#B99656; --mist:#B8C7D9; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-weight:600; font-size:22px; color:var(--gold); margin:0 0 4px; }
+  .sub { color:var(--mist); margin:0 0 24px; font-size:14px; }
+  input, button { font:inherit; border-radius:8px; }
+  input { width:100%; padding:12px; border:1px solid var(--mist); background:#fff; color:#111; }
+  button { padding:10px 16px; border:0; cursor:pointer; }
+  .primary { background:var(--gold); color:var(--bg); font-weight:600; margin-top:12px; }
+  .card { background:rgba(246,240,228,.06); border:1px solid rgba(184,199,217,.25); border-radius:12px; padding:16px; margin:0 0 16px; }
+  .meta { font-size:13px; color:var(--mist); margin-bottom:6px; }
+  .title { font-weight:600; margin:0 0 8px; }
+  .body { white-space:pre-wrap; font-size:14px; max-height:240px; overflow:auto; background:rgba(0,0,0,.2); padding:10px; border-radius:8px; }
+  .actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .ok { background:#3f7d58; color:#fff; } .no { background:#8a3b3b; color:#fff; } .ghost { background:transparent; color:var(--mist); border:1px solid var(--mist); }
+  .msg { padding:12px; border-radius:8px; background:rgba(185,150,86,.15); margin:12px 0; }
+  .done { opacity:.45; }
+</style>
+</head>
+<body>
+<main>
+  <h1>NEYĒN Brain · Aprobaciones</h1>
+  <p class="sub">Solo Ana puede aprobar. Lo que apruebas aquí pasa a tener autoridad para todas las IAs.</p>
+  <div id="app"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// Public values only: project URL and publishable key are designed to be visible.
+// Who may approve is decided on the server (brain-api checks the signed-in email).
+const SUPABASE_URL = "https://gsmtzdramqzcqdywboro.supabase.co";
+const PUBLISHABLE_KEY = "sb_publishable_RgvJSpceqRsmzhZpmcUsLg_ObGRl7fY";
+const API = SUPABASE_URL + "/functions/v1/brain-api/ana";
+const sb = supabase.createClient(SUPABASE_URL, PUBLISHABLE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true, persistSession: true } });
+const app = document.getElementById("app");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+function showLogin(note) {
+  app.innerHTML = `
+    ${note ? `<div class="msg">${esc(note)}</div>` : ""}
+    <label for="email">Tu email</label>
+    <input id="email" type="email" autocomplete="email" placeholder="tu@email.com">
+    <button class="primary" id="send">Enviarme el enlace para entrar</button>`;
+  document.getElementById("send").onclick = async () => {
+    const email = document.getElementById("email").value.trim();
+    if (!email) return;
+    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    showLogin(error ? "No se pudo enviar: " + error.message : "Revisa tu correo y pulsa el enlace. Ábrelo en este mismo navegador.");
+  };
+}
+
+async function call(path, opts = {}) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) throw Object.assign(new Error("Sesión caducada"), { status: 401 });
+  const r = await fetch(API + path, { ...opts, headers: { "Authorization": "Bearer " + session.access_token, "Content-Type": "application/json" } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(j.error || ("Error " + r.status)), { status: r.status });
+  return j;
+}
+
+async function showPending() {
+  app.innerHTML = `<div class="msg">Cargando…</div>`;
+  let items;
+  try { items = await call("/pending"); }
+  catch (e) {
+    if (e.status === 401 || e.status === 403) { await sb.auth.signOut(); return showLogin(e.status === 403 ? "Esta cuenta no puede aprobar." : "Vuelve a entrar."); }
+    app.innerHTML = `<div class="msg">${esc(e.message)}</div>`; return;
+  }
+  const head = `<div class="actions" style="margin-bottom:16px"><span class="sub" style="margin:0">${items.length} propuesta(s) pendiente(s)</span><button class="ghost" id="out">Salir</button></div>`;
+  app.innerHTML = head + (items.length ? items.map((i) => `
+    <div class="card" id="c-${esc(i.id)}">
+      <div class="meta">${esc(i.project)} · ${esc(i.kind)} · propuesto por ${esc(i.by)} · ${esc((i.created_at||"").slice(0,10))} · ${esc(i.verification)}</div>
+      <p class="title">${esc(i.title)}</p>
+      <div class="body">${esc(i.body)}</div>
+      ${i.source?.title ? `<div class="meta" style="margin-top:6px">Fuente: ${esc(i.source.title)}</div>` : ""}
+      <div class="actions">
+        <button class="ok" data-id="${esc(i.id)}" data-d="approve">Aprobar</button>
+        <button class="no" data-id="${esc(i.id)}" data-d="reject">Rechazar</button>
+      </div>
+    </div>`).join("") : `<div class="msg">No hay nada pendiente.</div>`);
+  document.getElementById("out").onclick = async () => { await sb.auth.signOut(); showLogin("Has salido."); };
+  app.querySelectorAll("button[data-id]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.id, d = b.dataset.d;
+    if (!confirm(d === "approve" ? "¿Aprobar este ítem?" : "¿Rechazar este ítem?")) return;
+    try {
+      const r = await call(`/items/${id}/decide`, { method: "POST", body: JSON.stringify({ decision: d }) });
+      const card = document.getElementById("c-" + id);
+      card.classList.add("done");
+      card.querySelector(".actions").innerHTML = `<span>${r.status === "approved" ? "✓ Aprobado" : "✗ Rechazado"}</span>`;
+    } catch (e) { alert(e.message); }
+  });
+}
+
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (location.hash) history.replaceState(null, "", location.pathname);
+  session ? showPending() : showLogin();
+})();
+</script>
+</body>
+</html>
