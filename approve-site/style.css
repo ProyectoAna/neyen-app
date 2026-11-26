@@ -19,3 +19,5 @@ button:disabled { opacity:.5; cursor:wait; }
 .ghost { background:transparent; color:var(--mist); border:1px solid var(--mist); }
 .msg { padding:12px; border-radius:8px; background:rgba(185,150,86,.15); margin:12px 0; }
 .done { opacity:.45; }
+.warn { color:#e0b36a; }
+a { color:var(--gold); }

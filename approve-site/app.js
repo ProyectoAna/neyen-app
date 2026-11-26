@@ -80,33 +80,53 @@ async function signOut(message) { await sb.auth.signOut(); memory.clear(); showE
 async function showPending(message) {
   clear();
   app.append(note("Cargando…"));
-  let items;
-  try { items = await call("/pending"); }
+  let res;
+  try { res = await call("/pending"); }
   catch (e) {
     if (e.status === 401) return signOut("Vuelve a entrar.");
     if (e.status === 403) return signOut("Esta cuenta no puede aprobar.");
     clear(); app.append(note("No se pudo cargar la lista. Recarga la página.")); return;
   }
+  if (!res || !Array.isArray(res.items)) { clear(); app.append(note("Respuesta inesperada del servidor. Recarga la página.")); return; }
+  const items = res.items;
   clear();
   if (message) app.append(note(message));
   const out = el("button", { class: "ghost", text: "Salir" });
   out.onclick = () => signOut("Has salido.");
-  app.append(el("div", { class: "actions" }, el("span", { class: "sub", text: items.length + " propuesta(s) pendiente(s)" }), out));
+  const countText = res.total > res.shown
+    ? "Mostrando las " + res.shown + " más recientes de " + res.total + " pendientes. Decide estas y recarga para ver las siguientes."
+    : res.total + " propuesta(s) pendiente(s)";
+  app.append(el("div", { class: "actions" }, el("span", { class: "sub", text: countText }), out));
   if (!items.length) { app.append(note("No hay nada pendiente.")); return; }
   for (const i of items) app.append(card(i));
 }
 
+const ORIGIN_LABEL = { ai_interpretation: "Interpretación de una IA", human: "Dicho por Ana", source_material: "Material original" };
+
+// Source line: a clickable link only for https URLs (opened without referrer); anything else is shown as plain text.
+function sourceLine(src) {
+  if (!src || (!src.title && !src.uri)) return el("div", { class: "meta warn", text: "Fuente: sin fuente registrada." });
+  const line = el("div", { class: "meta", text: "Fuente: " + (src.title || "(sin título)") + " " });
+  let safe = null;
+  try { const u = new URL(src.uri || ""); if (u.protocol === "https:") safe = u.href; } catch { /* not a URL */ }
+  if (safe) line.append(el("a", { href: safe, target: "_blank", rel: "noopener noreferrer", text: "abrir" }));
+  else if (src.uri) line.append(el("span", { text: "(referencia interna: " + src.uri + ")" }));
+  else line.append(el("span", { text: "(sin enlace)" }));
+  return line;
+}
+
 function card(i) {
-  const meta = [i.project, i.kind, "propuesto por " + (i.by || "?"), (i.created_at || "").slice(0, 10), i.verification, "v" + i.version].join(" · ");
+  const meta = [i.project, i.kind, "propuesto por " + (i.by || "?"), (i.created_at || "").slice(0, 10), "versión " + i.version].join(" · ");
   const ok = el("button", { class: "ok", text: "Aprobar" });
   const no = el("button", { class: "no", text: "Rechazar" });
   const status = el("span");
   const actions = el("div", { class: "actions" }, ok, no, status);
   const c = el("div", { class: "card" },
     el("div", { class: "meta", text: meta }),
+    el("div", { class: "meta", text: "Tipo: " + (ORIGIN_LABEL[i.origin] || i.origin || "desconocido") + " · Comprobado: " + (i.verification === "verified" ? "sí" : i.verification === "disputed" ? "en disputa" : "no") }),
     el("p", { class: "title", text: i.title }),
-    el("div", { class: "body", text: i.body || "" }),
-    i.source && i.source.title ? el("div", { class: "meta", text: "Fuente: " + i.source.title }) : null,
+    el("div", { class: "body", text: i.body || "(sin texto)" }),
+    sourceLine(i.source),
     actions);
   const send = async (decision) => {
     if (!confirm(decision === "approve" ? "¿Aprobar este ítem?" : "¿Rechazar este ítem?")) return;
