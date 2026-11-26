@@ -101,7 +101,7 @@ async function showPending(message) {
   for (const i of items) app.append(card(i));
 }
 
-const ORIGIN_LABEL = { ai_interpretation: "Interpretación de una IA", human: "Dicho por Ana", source_material: "Material original" };
+const ORIGIN_LABEL = { ai_interpretation: "Interpretación de una IA", human: "Aportación humana", source_material: "Material original" };
 
 // Source line: a clickable link only for https URLs (opened without referrer); anything else is shown as plain text.
 function sourceLine(src) {
